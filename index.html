@@ -1,0 +1,2094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<!-- ============================================================
+  AUTO FLUCHOS COCHES — Car Rental Tétouan / Tangier
+  Single file, ready to deploy (Vercel / Netlify / any static host).
+
+  Content on this page mirrors the original autofluchoscoches.com wording
+  (hero text, fleet, testimonials, FAQ) 1:1 — only technical SEO issues
+  were fixed: page title, meta description, single H1, image alt text,
+  structured data (Schema.org), duplicate car listings merged, and a
+  real embedded Google Map was added.
+
+  TODO before going live (search "TODO" in this file):
+  1. Car photos and the hero background (images/*.webp, images/hero-tetouan.webp) are
+     AI-generated representative renders — replace each with a real photo (of the agency's
+     actual vehicles, and of Tétouan) as soon as available. The logo (images/logo.webp) IS
+     the real logo. .team-photo is still an emoji placeholder — add a real photo there too.
+  2. Fix the Google Business Profile name: this site says "COCHES", the current Google Maps
+     listing says "COOHES" -> both MUST match exactly (NAP consistency = local SEO).
+  3. Update the canonical URL if the domain changes.
+  4. Replace the Instagram link with the real account.
+  5. If you run Meta/Facebook ads, add the Pixel snippet just before </head>.
+  6. "David Jhonson / Manager" in the Team section is placeholder content copied from the
+     original site's template — replace with a real team member or remove the section.
+  7. Testimonials are 2 real Google reviews (Jules Pesci, Pierre Faure), translated from
+     the original French. Update periodically as new reviews come in.
+============================================================= -->
+
+<title>Car Rental in Tétouan &amp; Tangier from €25/day | Auto Fluchos Coches</title>
+<meta name="description" content="Auto Fluchos Coches: car rental in Tétouan &amp; Tangier, open 24/7. Dacia, Renault, Citroën, Peugeot from €25/day. Airport delivery, insurance included, no hidden deposit. Book on WhatsApp.">
+<link rel="canonical" href="https://autofluchoscoches.com/">
+<meta name="robots" content="index, follow">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Auto Fluchos Coches">
+<meta property="og:title" content="Car Rental in Tétouan &amp; Tangier | Auto Fluchos Coches">
+<meta property="og:description" content="Search, book and rent your vehicle easily in Northern Morocco. Airport delivery, insurance included, 24/7 service. Fast booking on WhatsApp.">
+<meta property="og:url" content="https://autofluchoscoches.com/">
+<meta property="og:image" content="https://autofluchoscoches.com/og-image.jpg">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:locale:alternate" content="ar_MA">
+<meta property="og:locale:alternate" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+
+<meta name="theme-color" content="#0b1730">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- JSON-LD: local business (Local SEO). Fix address/phone here if they ever change. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "AutoRental",
+  "name": "Auto Fluchos Coches",
+  "image": "https://autofluchoscoches.com/og-image.jpg",
+  "url": "https://autofluchoscoches.com/",
+  "telephone": "+212661304574",
+  "priceRange": "€25 - €50",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "N°30, Av. Bejaia",
+    "addressLocality": "Tétouan",
+    "postalCode": "93000",
+    "addressCountry": "MA"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 35.5785,
+    "longitude": -5.3684
+  },
+  "openingHoursSpecification": {
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+    "opens": "00:00",
+    "closes": "23:59"
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "5.0",
+    "reviewCount": "484",
+    "bestRating": "5"
+  },
+  "areaServed": ["Tétouan","Tangier","Chefchaouen","Rabat","Casablanca","Marrakech","Agadir"],
+  "sameAs": [
+    "https://www.tiktok.com/@auto.fluchos.cars"
+  ]
+}
+</script>
+
+<!-- JSON-LD: FAQ, exact same 3 questions/answers published on the original site -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What guarantees do you require for car reservations?",
+      "acceptedAnswer": { "@type": "Answer", "text": "$300 or $500. Please contact us via WhatsApp for further inquiries." }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the minimum age requirement to rent your car?",
+      "acceptedAnswer": { "@type": "Answer", "text": "The minimum age requirement is 25 years old. Alternatively, please contact us via WhatsApp." }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the minimum number of days for car rental?",
+      "acceptedAnswer": { "@type": "Answer", "text": "3 days." }
+    }
+  ]
+}
+</script>
+
+<style>
+:root{
+  --navy-900:#070d1a;
+  --navy-800:#0b1730;
+  --navy-700:#122145;
+  --navy-600:#1a2d57;
+  --blue-500:#1f6feb;
+  --blue-400:#3b82f6;
+  --blue-glow:rgba(31,111,235,.35);
+  --gold:#f5a524;
+  --offer:#e63950;
+  --ink:#eef2fb;
+  --ink-dim:#a9b6d6;
+  --card:#0f1c3a;
+  --card-border:#203157;
+  --radius:16px;
+  --font-ar:'Cairo',sans-serif;
+  --font-lat:'Poppins',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--navy-900);
+  color:var(--ink);
+  font-family:var(--font-lat);
+  line-height:1.6;
+  overflow-x:hidden;
+}
+html[dir="rtl"] body{font-family:var(--font-ar)}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+ul{list-style:none}
+.container{width:100%;max-width:1200px;margin:0 auto;padding:0 20px}
+section{padding:80px 0}
+h1,h2,h3{font-weight:800;line-height:1.25}
+h2.section-title{
+  font-size:clamp(1.8rem,4vw,2.6rem);
+  text-align:center;
+  margin-bottom:12px;
+}
+.section-eyebrow{
+  text-align:center;
+  color:var(--blue-400);
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  font-size:.8rem;
+  margin-bottom:10px;
+}
+.section-sub{
+  text-align:center;
+  color:var(--ink-dim);
+  max-width:640px;
+  margin:0 auto 48px;
+}
+.btn{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding:14px 28px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:.95rem;
+  border:none;
+  cursor:pointer;
+  transition:transform .15s ease, box-shadow .15s ease;
+  white-space:nowrap;
+}
+.btn:hover{transform:translateY(-2px)}
+.btn-primary{
+  background:linear-gradient(135deg,#25d366,#1ebe5d);
+  color:#fff;
+  box-shadow:0 10px 25px rgba(37,211,102,.35);
+}
+.btn-blue{
+  background:linear-gradient(135deg,var(--blue-500),var(--blue-400));
+  color:#fff;
+  box-shadow:0 10px 25px var(--blue-glow);
+}
+.btn-outline{
+  background:transparent;
+  color:var(--ink);
+  border:1.5px solid var(--card-border);
+}
+.btn-outline:hover{border-color:var(--blue-400)}
+.btn-block{width:100%;justify-content:center}
+.ico-wa{width:18px;height:18px;fill:currentColor;flex:none}
+
+/* ---------- Header ---------- */
+header{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(7,13,26,.85);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.nav-wrap{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;max-width:1200px;margin:0 auto;
+}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.15rem}
+.logo-badge{
+  width:42px;height:42px;border-radius:12px;
+  background:linear-gradient(135deg,var(--blue-500),var(--navy-600));
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;box-shadow:0 6px 18px var(--blue-glow);
+  overflow:hidden;flex:none;
+}
+.logo-badge img{width:100%;height:100%;object-fit:cover}
+.logo-text small{display:block;font-size:.62rem;color:var(--ink-dim);font-weight:600;letter-spacing:.12em}
+.nav-links{display:flex;gap:26px;align-items:center}
+.nav-links a{font-weight:600;font-size:.9rem;color:var(--ink-dim);transition:color .15s}
+.nav-links a:hover{color:#fff}
+.nav-actions{display:flex;align-items:center;gap:14px}
+.lang-switch{display:flex;gap:4px;background:var(--navy-700);padding:4px;border-radius:999px}
+.lang-switch button{
+  background:transparent;border:none;color:var(--ink-dim);
+  font-weight:700;font-size:.78rem;padding:6px 10px;border-radius:999px;cursor:pointer;
+}
+.lang-switch button.active{background:var(--blue-500);color:#fff}
+.phone-pill{
+  display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:700;font-size:.88rem;
+}
+.burger{display:none;background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer}
+
+@media (max-width:1080px){
+  .nav-links{
+    position:fixed;top:70px;left:0;right:0;
+    background:var(--navy-800);
+    flex-direction:column;padding:24px;gap:18px;
+    transform:translateY(-150%);opacity:0;
+    transition:all .25s ease;border-bottom:1px solid var(--card-border);
+  }
+  .nav-links.open{transform:translateY(0);opacity:1}
+  .phone-pill{display:none}
+  .burger{display:block}
+}
+
+/* ---------- Hero ---------- */
+.hero{
+  padding:150px 0 60px;
+  background:var(--navy-900);
+  position:relative;
+  overflow:hidden;
+}
+/* Animated hero background: a slow continuous Ken Burns zoom/pan on a photo of Tétouan
+   (AI-generated representative image — swap images/hero-tetouan.webp for a real photo
+   of Tétouan whenever one is available). */
+.hero-bg-wrap{position:absolute;inset:0;z-index:0}
+.hero-bg-img{
+  width:100%;height:100%;object-fit:cover;
+  animation:heroKenBurns 26s ease-in-out infinite alternate;
+  opacity:.5;
+}
+@keyframes heroKenBurns{
+  0%{transform:scale(1) translate(0,0)}
+  100%{transform:scale(1.18) translate(-2.5%,-1.5%)}
+}
+@media (prefers-reduced-motion: reduce){ .hero-bg-img{animation:none} }
+.hero-overlay{
+  position:absolute;inset:0;z-index:1;
+  background:
+    radial-gradient(circle at 15% 20%, var(--blue-glow), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(245,165,36,.15), transparent 40%),
+    linear-gradient(180deg, rgba(7,13,26,.55) 0%, rgba(7,13,26,.8) 65%, var(--navy-900) 100%);
+}
+.hero > .container{position:relative;z-index:2}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:50px;align-items:center}
+@media (max-width:960px){.hero-grid{grid-template-columns:1fr}}
+.badge-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px}
+.pill-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--navy-700);border:1px solid var(--card-border);
+  padding:7px 14px;border-radius:999px;font-size:.8rem;font-weight:700;color:var(--ink-dim);
+}
+.pill-badge b{color:var(--gold)}
+.hero h1{font-size:clamp(2.1rem,4.6vw,3.2rem);margin-bottom:20px}
+.hero p.lead{color:var(--ink-dim);font-size:1.05rem;max-width:520px;margin-bottom:28px}
+.hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:36px}
+.hero-features{display:flex;flex-wrap:wrap;gap:26px}
+.hero-feature{display:flex;align-items:center;gap:12px}
+.hero-feature .ico{
+  width:44px;height:44px;border-radius:12px;background:var(--navy-700);
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex:none;
+}
+.hero-feature span{font-weight:700;font-size:.9rem}
+.hero-visual{
+  position:relative;background:var(--card);
+  border:1px solid var(--card-border);border-radius:24px;
+  padding:26px;min-height:380px;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  overflow:hidden;
+}
+.hero-photo-placeholder{
+  position:absolute;inset:0;
+  background:linear-gradient(160deg,var(--navy-600),var(--navy-800));
+}
+.hero-photo-placeholder img{width:100%;height:100%;object-fit:cover;opacity:.9}
+.hero-visual .card-float{
+  position:relative;z-index:2;background:rgba(7,13,26,.85);
+  border:1px solid var(--card-border);backdrop-filter:blur(6px);
+  border-radius:16px;padding:18px;
+}
+.hero-visual .card-float b{color:var(--gold);font-size:1.3rem}
+
+/* ---------- Trust bar ---------- */
+.trustbar{background:var(--navy-800);padding:22px 0;border-top:1px solid var(--card-border);border-bottom:1px solid var(--card-border)}
+.trustbar .container{display:flex;flex-wrap:wrap;justify-content:space-around;gap:20px;text-align:center}
+.trustbar .item{display:flex;flex-direction:column;gap:4px}
+.trustbar .item b{font-size:1.1rem;color:#fff}
+.trustbar .item span{font-size:.78rem;color:var(--ink-dim)}
+
+/* ---------- Fleet ---------- */
+.fleet-filter{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:40px}
+.fleet-filter button{
+  background:var(--navy-700);border:1px solid var(--card-border);color:var(--ink-dim);
+  padding:9px 18px;border-radius:999px;font-weight:600;font-size:.85rem;cursor:pointer;
+}
+.fleet-filter button.active{background:var(--blue-500);color:#fff;border-color:var(--blue-500)}
+.fleet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:24px}
+.car-card{
+  background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);
+  overflow:hidden;display:flex;flex-direction:column;transition:transform .2s, border-color .2s;
+}
+.car-card:hover{transform:translateY(-6px);border-color:var(--blue-400)}
+.car-photo{
+  height:150px;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--navy-600),var(--navy-800));
+}
+.car-photo img{width:100%;height:100%;object-fit:cover}
+.car-offer{
+  position:absolute;top:10px;inset-inline-start:10px;
+  background:var(--offer);color:#fff;font-size:.7rem;font-weight:800;
+  padding:5px 10px;border-radius:999px;text-transform:uppercase;
+}
+.car-body{padding:18px;display:flex;flex-direction:column;gap:12px;flex:1}
+.car-body h3{font-size:1rem}
+.car-price{font-size:1.5rem;color:var(--gold);font-weight:800}
+.car-price span{font-size:.8rem;color:var(--ink-dim);font-weight:600}
+.car-specs{display:flex;flex-wrap:wrap;gap:8px;font-size:.75rem;color:var(--ink-dim)}
+.car-specs span{background:var(--navy-700);padding:5px 9px;border-radius:8px}
+.car-card .btn{margin-top:auto;font-size:.85rem;padding:11px 20px}
+
+/* ---------- CTA banner ---------- */
+.cta-banner{
+  background:linear-gradient(120deg,var(--navy-700),var(--navy-800));
+  border-top:1px solid var(--card-border);border-bottom:1px solid var(--card-border);
+  padding:60px 0;text-align:center;
+}
+.cta-banner h2{font-size:clamp(1.5rem,3.4vw,2.1rem);margin-bottom:10px}
+.cta-banner p{color:var(--ink-dim);margin-bottom:26px}
+.cta-banner .btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+
+/* ---------- Why us ---------- */
+.why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px}
+.why-card{
+  background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);
+  padding:26px;
+}
+.why-icon{
+  width:50px;height:50px;border-radius:12px;background:var(--navy-700);
+  display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:16px;
+}
+.why-card h3{font-size:1.05rem;margin-bottom:8px}
+.why-card p{color:var(--ink-dim);font-size:.9rem}
+
+/* ---------- Cities ---------- */
+.cities-wrap{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+.city-chip{
+  background:var(--navy-700);border:1px solid var(--card-border);
+  padding:10px 20px;border-radius:999px;font-weight:600;font-size:.9rem;
+  display:flex;align-items:center;gap:8px;
+}
+
+/* ---------- Testimonials ---------- */
+.testi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.testi-card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:26px}
+.stars{color:var(--gold);letter-spacing:2px;margin-bottom:12px}
+.testi-card p.quote{color:var(--ink-dim);font-style:italic;margin-bottom:16px}
+.testi-who{display:flex;align-items:center;gap:12px}
+.testi-avatar{width:42px;height:42px;border-radius:50%;background:var(--navy-700);display:flex;align-items:center;justify-content:center;font-weight:800}
+.testi-who b{display:block;font-size:.9rem}
+.testi-who span{font-size:.78rem;color:var(--ink-dim)}
+
+/* ---------- Team ---------- */
+.team-wrap{display:flex;justify-content:center}
+.team-card{
+  background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);
+  padding:30px;text-align:center;max-width:280px;
+}
+.team-photo{
+  width:96px;height:96px;border-radius:50%;margin:0 auto 16px;
+  background:linear-gradient(135deg,var(--navy-600),var(--navy-800));
+  display:flex;align-items:center;justify-content:center;font-size:2.4rem;
+}
+/* TODO: replace .team-photo with a real <img src="team-member.jpg" alt="..."> */
+.team-card h3{font-size:1.05rem;margin-bottom:4px}
+.team-card span{color:var(--blue-400);font-weight:700;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase}
+
+/* ---------- FAQ ---------- */
+.faq-item{
+  background:var(--card);border:1px solid var(--card-border);border-radius:14px;
+  margin-bottom:14px;overflow:hidden;
+}
+.faq-q{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:18px 22px;cursor:pointer;font-weight:700;gap:12px;
+}
+.faq-q .plus{font-size:1.3rem;color:var(--blue-400);transition:transform .2s;flex:none}
+.faq-item.open .plus{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .25s ease}
+.faq-a p{padding:0 22px 18px;color:var(--ink-dim);font-size:.92rem}
+
+/* ---------- Contact ---------- */
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start}
+@media (max-width:860px){.contact-grid{grid-template-columns:1fr}}
+.contact-card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:30px}
+.contact-line{display:flex;gap:14px;align-items:flex-start;margin-bottom:20px}
+.contact-line .ic{
+  width:42px;height:42px;flex:none;border-radius:10px;background:var(--navy-700);
+  display:flex;align-items:center;justify-content:center;font-size:1.2rem;
+}
+.contact-line b{display:block;font-size:.75rem;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.map-embed{border-radius:var(--radius);overflow:hidden;border:1px solid var(--card-border);min-height:320px}
+.map-embed iframe{width:100%;height:100%;min-height:320px;border:0}
+
+/* ---------- Footer ---------- */
+footer{background:var(--navy-800);border-top:1px solid var(--card-border);padding:50px 0 24px}
+.footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:36px;margin-bottom:36px}
+@media (max-width:760px){.footer-grid{grid-template-columns:1fr}}
+.footer-grid h4{font-size:.95rem;margin-bottom:16px}
+.footer-grid p{color:var(--ink-dim);font-size:.88rem}
+.footer-grid ul li{margin-bottom:10px}
+.footer-grid ul a{color:var(--ink-dim);font-size:.88rem}
+.footer-grid ul a:hover{color:#fff}
+.footer-social{display:flex;gap:10px;margin-top:16px}
+.footer-social a{
+  width:38px;height:38px;border-radius:10px;background:var(--navy-700);
+  display:flex;align-items:center;justify-content:center;
+}
+.footer-bottom{
+  border-top:1px solid var(--card-border);padding-top:20px;
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  color:var(--ink-dim);font-size:.82rem;
+}
+
+/* ---------- Floating WhatsApp ---------- */
+.float-whatsapp{
+  position:fixed;bottom:22px;inset-inline-end:22px;z-index:200;
+  width:60px;height:60px;border-radius:50%;
+  background:#25d366;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 10px 25px rgba(37,211,102,.5);
+  animation:pulse 2.4s infinite;
+}
+.float-whatsapp svg{width:32px;height:32px;fill:#fff}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(37,211,102,.5)}
+  70%{box-shadow:0 0 0 16px rgba(37,211,102,0)}
+  100%{box-shadow:0 0 0 0 rgba(37,211,102,0)}
+}
+
+/* ---------- Unavailable car state ---------- */
+.car-card.is-unavailable{opacity:.55}
+.car-card.is-unavailable .car-photo{filter:grayscale(1)}
+.car-offer.is-unavailable-badge{background:#5b6478}
+.car-card .btn[disabled]{
+  background:var(--navy-700);color:var(--ink-dim);box-shadow:none;cursor:not-allowed;
+}
+.car-card .btn[disabled]:hover{transform:none}
+
+/* ---------- Booking modal ---------- */
+.modal-overlay{
+  position:fixed;inset:0;z-index:300;background:rgba(3,7,16,.75);
+  display:none;align-items:center;justify-content:center;padding:20px;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.open{display:flex}
+.modal-box{
+  background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);
+  padding:30px;max-width:460px;width:100%;max-height:90vh;overflow-y:auto;position:relative;
+}
+.modal-box-lg{max-width:620px}
+.modal-box h3{font-size:1.25rem;margin-bottom:6px}
+.modal-box p{color:var(--ink-dim);font-size:.9rem;margin-bottom:16px}
+.modal-car-select-label{
+  display:block;font-size:.75rem;font-weight:700;color:var(--blue-400);
+  text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px;padding-inline-end:36px;
+}
+.modal-car-select{
+  width:100%;background:var(--navy-900);border:1px solid var(--card-border);border-radius:10px;
+  padding:12px 14px;color:var(--gold);font-family:inherit;font-weight:700;font-size:1rem;
+  margin-bottom:18px;
+}
+.modal-car-select:focus{outline:none;border-color:var(--blue-400)}
+.modal-close{
+  position:absolute;top:16px;inset-inline-end:16px;background:var(--navy-700);border:none;color:var(--ink);
+  width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;z-index:2;
+}
+
+/* Tabs (Booking Form / Enquiry Form) */
+.modal-tabs{display:flex;gap:2px;margin:6px 0 20px;border-radius:12px;overflow:hidden;border:1px solid var(--card-border)}
+.modal-tab{
+  flex:1;background:var(--navy-900);border:none;color:var(--ink-dim);font-weight:700;
+  font-size:.88rem;padding:12px 10px;cursor:pointer;
+}
+.modal-tab.active{background:var(--blue-500);color:#fff}
+.modal-panel{display:none}
+.modal-panel.active{display:block}
+
+.modal-section-title{
+  font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;color:var(--blue-400);
+  margin:22px 0 4px;font-weight:800;
+}
+.modal-panel label{display:block;font-size:.8rem;font-weight:700;color:var(--ink-dim);margin:14px 0 6px}
+.modal-panel input, .modal-panel select, .modal-panel textarea{
+  width:100%;background:var(--navy-900);border:1px solid var(--card-border);border-radius:10px;
+  padding:11px 14px;color:var(--ink);font-family:inherit;font-size:.9rem;
+}
+.modal-panel input:focus, .modal-panel select:focus, .modal-panel textarea:focus{outline:none;border-color:var(--blue-400)}
+.file-picker{display:flex;gap:8px}
+.file-picker button{
+  flex:1;background:var(--navy-900);border:1px solid var(--card-border);border-radius:10px;
+  padding:10px 8px;color:var(--ink);font-family:inherit;font-size:.78rem;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.file-picker button:hover{border-color:var(--blue-400)}
+.file-chosen-name{display:block;font-size:.72rem;color:var(--ink-dim);margin-top:6px}
+.modal-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:520px){.modal-grid-2{grid-template-columns:1fr}}
+
+.modal-check-row{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:var(--navy-900);border:1px solid var(--card-border);border-radius:10px;
+  padding:10px 14px;margin-top:10px;font-size:.85rem;cursor:pointer;
+}
+.modal-check-row span:first-child{display:flex;align-items:center;gap:8px}
+.modal-check-row input[type="checkbox"]{width:auto}
+.modal-check-row b, .modal-check-row span:last-child{color:var(--gold);font-weight:700;white-space:nowrap}
+.modal-terms-row{background:transparent;border:none;padding:0;margin-top:18px;font-size:.8rem;color:var(--ink-dim)}
+.modal-terms-row a{color:var(--blue-400);text-decoration:underline}
+.modal-qty-fee{display:flex;align-items:center;gap:8px}
+.modal-qty-input{width:52px !important;padding:6px 8px !important;text-align:center;flex:none}
+.modal-washing-row{cursor:default}
+
+.modal-total-row{
+  display:flex;justify-content:space-between;align-items:center;
+  background:var(--navy-900);border:1px solid var(--card-border);border-radius:10px;
+  padding:14px 16px;margin-top:18px;font-weight:700;
+}
+.modal-total-row b{color:var(--gold);font-size:1.2rem}
+
+.modal-error{
+  display:none;color:#ff6b7a !important;font-size:.82rem;background:rgba(230,57,80,.1);
+  border:1px solid rgba(230,57,80,.3);border-radius:10px;padding:10px 12px;margin:14px 0 0;
+}
+.modal-error.show{display:block}
+.modal-actions{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
+.modal-actions .btn{flex:1}
+.modal-note{
+  font-size:.78rem;text-align:center;margin-top:14px;
+  background:var(--navy-700);border-radius:10px;padding:10px 12px;
+}
+
+/* ---------- RTL specific ---------- */
+html[dir="rtl"] .car-offer{inset-inline-start:auto;inset-inline-end:10px}
+html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
+
+.lang-hidden{display:none !important}
+</style>
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header>
+  <div class="nav-wrap">
+    <a href="#top" class="logo">
+      <div class="logo-badge"><img src="images/logo.webp" alt="Auto Fluchos Coches logo"></div>
+      <div class="logo-text">
+        AUTO FLUCHOS <span style="color:var(--blue-400)">COCHES</span>
+        <small data-i18n="logo_sub">CAR RENTAL TÉTOUAN — TANGIER</small>
+      </div>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#top" data-i18n="nav_home">Home</a>
+      <a href="#flotte" data-i18n="nav_fleet">Cars List</a>
+      <a href="#pourquoi" data-i18n="nav_why">About</a>
+      <a href="#avis" data-i18n="nav_reviews">Reviews</a>
+      <a href="#faq" data-i18n="nav_faq">FAQ</a>
+      <a href="#contact" data-i18n="nav_contact">Contact</a>
+    </nav>
+    <div class="nav-actions">
+      <div class="lang-switch" id="langSwitch">
+        <button data-lang="ar">AR</button>
+        <button data-lang="en" class="active">EN</button>
+        <button data-lang="fr">FR</button>
+        <button data-lang="es">ES</button>
+      </div>
+      <a href="tel:+212661304574" class="phone-pill">📞 <bdi dir="ltr">+212 661-304574</bdi></a>
+      <button class="burger" id="burgerBtn" aria-label="Menu">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- ================= HERO ================= -->
+<div id="top"></div>
+<section class="hero">
+  <div class="hero-bg-wrap">
+    <img class="hero-bg-img" src="images/hero-tetouan.webp" alt="Tétouan medina cityscape with the Rif mountains" loading="eager">
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="container hero-grid">
+    <div>
+      <div class="badge-row">
+        <span class="pill-badge" data-i18n="badge_know_us">GET TO KNOW US</span>
+      </div>
+      <h1 data-i18n="hero_title">Search, Book &amp; Rent Vehicle Easily</h1>
+      <p class="lead" data-i18n="hero_lead">Find your ideal vehicle in seconds. Browse, book, and hit the road — fast, effortless, and always reliable.</p>
+      <div class="hero-cta">
+        <a class="btn btn-blue" href="#flotte" data-i18n="cta_find_car">Find a Car</a>
+        <button type="button" class="btn btn-primary" id="heroBookBtn">
+          <svg class="ico-wa" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.31.65 4.47 1.78 6.31L4 29l7.86-1.74A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Zm0 21.72c-1.94 0-3.75-.55-5.28-1.5l-.38-.23-4.66 1.03 1.05-4.55-.25-.4A9.63 9.63 0 0 1 5.32 15c0-5.34 4.35-9.68 9.684-9.68S24.688 9.66 24.688 15 21.34 24.72 16.004 24.72Zm5.37-7.26c-.29-.15-1.73-.86-2-.95-.27-.1-.46-.15-.66.15-.2.29-.76.95-.93 1.14-.17.2-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.44-.86-.77-1.44-1.72-1.61-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.48.1-.2.05-.37-.02-.51-.07-.15-.66-1.6-.91-2.19-.24-.58-.48-.5-.66-.51-.17-.01-.37-.01-.56-.01s-.51.07-.78.37c-.27.29-1.02 1-1.02 2.43 0 1.44 1.05 2.83 1.2 3.02.15.2 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.61.7.22 1.34.19 1.84.11.56-.08 1.73-.7 1.98-1.38.24-.68.24-1.26.17-1.38-.07-.13-.26-.2-.55-.35Z"/></svg>
+          <span data-i18n="cta_whatsapp">Book on WhatsApp</span>
+        </button>
+      </div>
+      <div class="hero-features">
+        <div class="hero-feature"><div class="ico">⚡</div><span data-i18n="feat_easier">Easier &amp; Faster Bookings</span></div>
+        <div class="hero-feature"><div class="ico">📍</div><span data-i18n="feat_pickup">Too Many Pickup Locations</span></div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-photo-placeholder"><img src="images/sandero-stepway-auto.webp" alt="Dacia Sandero Stepway Automatic rental car"></div>
+      <div class="card-float">
+        <b><bdi dir="ltr">+212 661-304574</bdi></b>
+        <div style="color:var(--ink-dim);font-size:.85rem;margin-top:4px" data-i18n="hero_card_sub">Call anytime</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TRUST BAR (facts pulled from the real Google Business listing) ================= -->
+<div class="trustbar">
+  <div class="container">
+    <div class="item"><b>5.0 / 5 ⭐</b><span data-i18n="trust_google">Google rating (484 reviews)</span></div>
+    <div class="item"><b data-i18n="trust_open">Open 24/7</b></div>
+    <div class="item"><b data-i18n="trust_deposit">$300 / $500</b><span data-i18n="trust_deposit_sub">Reservation guarantee</span></div>
+    <div class="item"><b data-i18n="trust_age">25 years</b><span data-i18n="trust_age_sub">Minimum driver age</span></div>
+  </div>
+</div>
+
+<!-- ================= FLEET ================= -->
+<section id="flotte">
+  <div class="container">
+    <div class="section-eyebrow" data-i18n="fleet_eyebrow">Checkout our new cars</div>
+    <h2 class="section-title" data-i18n="fleet_title">Cars We're Offering for Rentals</h2>
+
+    <div class="fleet-filter" id="fleetFilter">
+      <button class="active" data-cat="all" data-i18n="filter_all">All</button>
+      <button data-cat="citadine" data-i18n="filter_city">City cars</button>
+      <button data-cat="berline" data-i18n="filter_sedan">Sedans</button>
+      <button data-cat="familiale" data-i18n="filter_family">7 Seats</button>
+    </div>
+
+    <div class="fleet-grid" id="fleetGrid"><!-- generated in JS --></div>
+  </div>
+</section>
+
+
+<!-- ================= CTA BANNER 1 ================= -->
+<div class="cta-banner">
+  <div class="container">
+    <h2 data-i18n="banner1_title">Easier &amp; Faster Bookings</h2>
+    <p data-i18n="banner1_sub">Search. Book. Drive. It's that simple.</p>
+    <div class="btns">
+      <a class="btn btn-blue" href="#flotte" data-i18n="cta_fleet">See our cars</a>
+    </div>
+  </div>
+</div>
+
+<!-- ================= WHY US (from the agency's own Google Business description) ================= -->
+<section id="pourquoi">
+  <div class="container">
+    <div class="section-eyebrow" data-i18n="why_eyebrow">About us</div>
+    <h2 class="section-title" data-i18n="why_title">Why choose Auto Fluchos Coches</h2>
+    <div class="why-grid">
+      <div class="why-card">
+        <div class="why-icon">🚙</div>
+        <h3 data-i18n="why1_title">Modern &amp; fully air-conditioned vehicles</h3>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">✈️</div>
+        <h3 data-i18n="why2_title">Airport, hotel &amp; city delivery service</h3>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">💰</div>
+        <h3 data-i18n="why3_title">Affordable rates with no hidden fees</h3>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">🛡️</div>
+        <h3 data-i18n="why4_title">Comprehensive insurance options</h3>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">💬</div>
+        <h3 data-i18n="why5_title">24/7 customer support</h3>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">⚡</div>
+        <h3 data-i18n="why6_title">Fast and easy booking process</h3>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CITIES (service area from the Google Business listing) ================= -->
+<section style="background:var(--navy-800)">
+  <div class="container">
+    <div class="section-eyebrow" data-i18n="cities_eyebrow">Service area</div>
+    <h2 class="section-title" data-i18n="cities_title">We travel with you across Northern &amp; Central Morocco</h2>
+    <div class="cities-wrap">
+      <span class="city-chip">📍 Tétouan</span>
+      <span class="city-chip">📍 Tangier</span>
+      <span class="city-chip">📍 Chefchaouen</span>
+      <span class="city-chip">📍 Rabat</span>
+      <span class="city-chip">📍 Casablanca</span>
+      <span class="city-chip">📍 Marrakech</span>
+      <span class="city-chip">📍 Agadir</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TESTIMONIALS (real reviews, verified on the business's Google listing) ================= -->
+<section id="avis">
+  <div class="container">
+    <div class="section-eyebrow" data-i18n="testi_eyebrow">Gallery</div>
+    <h2 class="section-title" data-i18n="testi_title">Trusted &amp; Reliable Car Rentals</h2>
+    <p class="section-sub" data-i18n="testi_sub">⭐ 5.0/5 — 484 reviews on Google</p>
+    <div class="testi-grid">
+      <div class="testi-card">
+        <div class="stars">★★★★★</div>
+        <p class="quote" data-i18n="testi1">"Very good car rental experience. The vehicle was clean and comfortable! Pick-up and return were quick and easy. The owner was available, professional, friendly and responsive throughout the rental. I recommend this rental without hesitation and will happily come back."</p>
+        <div class="testi-who">
+          <div class="testi-avatar">J</div>
+          <div><b>Jules Pesci</b><span data-i18n="testi1_role">Google review</span></div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="stars">★★★★★</div>
+        <p class="quote" data-i18n="testi2">"The car was in very good condition. The rental process was very quick and without any problems. This agency made our stay much easier by letting us return the car at Tangier airport for a small extra fee. We recommend without hesitation."</p>
+        <div class="testi-who">
+          <div class="testi-avatar">P</div>
+          <div><b>Pierre Faure</b><span data-i18n="testi2_role">Google review</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA BANNER 2 ================= -->
+<div class="cta-banner">
+  <div class="container">
+    <h2 data-i18n="banner2_title">Save Time &amp; Money with Top Rent Car Service in Town</h2>
+    <div class="btns">
+      <a class="btn btn-outline" href="#pourquoi" data-i18n="cta_discover">Discover More</a>
+      <a class="btn btn-blue" href="#flotte" data-i18n="cta_book_car">Book Your Car</a>
+    </div>
+  </div>
+</div>
+
+<!-- ================= TEAM ================= -->
+<section style="background:var(--navy-800)">
+  <div class="container">
+    <div class="section-eyebrow" data-i18n="team_eyebrow">Our expert people</div>
+    <h2 class="section-title" data-i18n="team_title">Meet Our Professional Team Members</h2>
+    <div class="team-wrap">
+      <div class="team-card">
+        <div class="team-photo">👤</div>
+        <h3>David Jhonson</h3>
+        <span data-i18n="team_role">Manager</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section id="faq">
+  <div class="container" style="max-width:820px">
+    <div class="section-eyebrow" data-i18n="faq_eyebrow">Frequently asked questions</div>
+    <h2 class="section-title" data-i18n="faq_title">Question &amp; Answers</h2>
+    <div id="faqList"></div>
+  </div>
+</section>
+
+<!-- ================= CONTACT ================= -->
+<section id="contact" style="background:var(--navy-800)">
+  <div class="container">
+    <div class="section-eyebrow" data-i18n="contact_eyebrow" style="margin-bottom:6px">Save big with our cheap car rental</div>
+    <h2 class="section-title" data-i18n="contact_title">Contact</h2>
+
+    <div class="contact-grid">
+      <div class="contact-card">
+        <div class="contact-line">
+          <div class="ic">📍</div>
+          <div><b data-i18n="contact_address_label">Address</b>N°30, Av. Bejaia, Tétouan 93000, Morocco</div>
+        </div>
+        <div class="contact-line">
+          <div class="ic">📞</div>
+          <div><b data-i18n="contact_phone_label">Phone</b><a href="tel:+212661304574"><bdi dir="ltr">+212 661-304574</bdi></a></div>
+        </div>
+        <div class="contact-line">
+          <div class="ic">✉️</div>
+          <div><b data-i18n="contact_email_label">Email</b><a href="mailto:Contact@autofluchoscoches.com">Contact@autofluchoscoches.com</a></div>
+        </div>
+        <div class="contact-line">
+          <div class="ic">🕐</div>
+          <div><b data-i18n="contact_hours_label">Hours</b><span data-i18n="contact_hours_value">Open 24/7</span></div>
+        </div>
+        <a class="btn btn-primary btn-block" target="_blank" rel="noopener" href="https://wa.me/212661304574?text=Hello%2C%20I%20would%20like%20to%20book%20a%20car.">
+          <svg class="ico-wa" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.31.65 4.47 1.78 6.31L4 29l7.86-1.74A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Zm0 21.72c-1.94 0-3.75-.55-5.28-1.5l-.38-.23-4.66 1.03 1.05-4.55-.25-.4A9.63 9.63 0 0 1 5.32 15c0-5.34 4.35-9.68 9.684-9.68S24.688 9.66 24.688 15 21.34 24.72 16.004 24.72Zm5.37-7.26c-.29-.15-1.73-.86-2-.95-.27-.1-.46-.15-.66.15-.2.29-.76.95-.93 1.14-.17.2-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.44-.86-.77-1.44-1.72-1.61-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.48.1-.2.05-.37-.02-.51-.07-.15-.66-1.6-.91-2.19-.24-.58-.48-.5-.66-.51-.17-.01-.37-.01-.56-.01s-.51.07-.78.37c-.27.29-1.02 1-1.02 2.43 0 1.44 1.05 2.83 1.2 3.02.15.2 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.61.7.22 1.34.19 1.84.11.56-.08 1.73-.7 1.98-1.38.24-.68.24-1.26.17-1.38-.07-.13-.26-.2-.55-.35Z"/></svg>
+          <span data-i18n="cta_whatsapp2">Chat on WhatsApp</span>
+        </a>
+        <div style="height:12px"></div>
+        <a class="btn btn-outline btn-block" target="_blank" rel="noopener" href="https://maps.app.goo.gl/3DxCa8stDgL3h3iq5" data-i18n="cta_directions">📍 Google Maps directions</a>
+      </div>
+
+      <div class="map-embed">
+        <iframe
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          src="https://www.google.com/maps?q=N%C2%B030%2C+Av.+Bejaia%2C+T%C3%A9touan+93000%2C+Maroc&output=embed"
+          title="Auto Fluchos Coches — Tétouan location">
+        </iframe>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="logo" style="margin-bottom:14px">
+          <div class="logo-badge"><img src="images/logo.webp" alt="Auto Fluchos Coches logo"></div>
+          <div class="logo-text">AUTO FLUCHOS <span style="color:var(--blue-400)">COCHES</span></div>
+        </div>
+        <div class="footer-social">
+          <!-- TODO: replace with the real social media links -->
+          <a href="https://www.tiktok.com/@auto.fluchos.cars" target="_blank" rel="noopener" aria-label="TikTok">🎵</a>
+          <a href="#" target="_blank" rel="noopener" aria-label="Instagram">📷</a>
+        </div>
+      </div>
+      <div>
+        <h4 data-i18n="footer_links">Quick links</h4>
+        <ul>
+          <li><a href="#pourquoi" data-i18n="footer_about">About Us</a></li>
+          <li><a href="#flotte" data-i18n="footer_newcars">New Cars</a></li>
+          <li><a href="#contact" data-i18n="nav_contact">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 data-i18n="nav_contact">Contact</h4>
+        <ul>
+          <li>📍 N°30, Av. Bejaia, Tétouan 93000</li>
+          <li>📞 <bdi dir="ltr">+212 661-304574</bdi></li>
+          <li>✉️ Contact@autofluchoscoches.com</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <span id="year"></span> <span data-i18n="footer_by">by</span> autofluchoscoches.com</span>
+    </div>
+  </div>
+</footer>
+
+<a class="float-whatsapp" target="_blank" rel="noopener" aria-label="WhatsApp us" href="https://wa.me/212661304574?text=Hello%2C%20I%20would%20like%20to%20book%20a%20car.">
+  <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.31.65 4.47 1.78 6.31L4 29l7.86-1.74A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Zm0 21.72c-1.94 0-3.75-.55-5.28-1.5l-.38-.23-4.66 1.03 1.05-4.55-.25-.4A9.63 9.63 0 0 1 5.32 15c0-5.34 4.35-9.68 9.684-9.68S24.688 9.66 24.688 15 21.34 24.72 16.004 24.72Zm5.37-7.26c-.29-.15-1.73-.86-2-.95-.27-.1-.46-.15-.66.15-.2.29-.76.95-.93 1.14-.17.2-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.44-.86-.77-1.44-1.72-1.61-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.48.1-.2.05-.37-.02-.51-.07-.15-.66-1.6-.91-2.19-.24-.58-.48-.5-.66-.51-.17-.01-.37-.01-.56-.01s-.51.07-.78.37c-.27.29-1.02 1-1.02 2.43 0 1.44 1.05 2.83 1.2 3.02.15.2 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.61.7.22 1.34.19 1.84.11.56-.08 1.73-.7 1.98-1.38.24-.68.24-1.26.17-1.38-.07-.13-.26-.2-.55-.35Z"/>
+  </svg>
+</a>
+
+<!-- ================= BOOKING MODAL ================= -->
+<div class="modal-overlay" id="bookingOverlay">
+  <div class="modal-box modal-box-lg">
+    <button class="modal-close" id="bookingClose" aria-label="Close">✕</button>
+    <label class="modal-car-select-label" data-i18n="modal_car_select_label">Selected vehicle (change anytime)</label>
+    <select id="modalCarSelect" class="modal-car-select"></select>
+
+    <div class="modal-tabs" id="modalTabs">
+      <button type="button" class="modal-tab active" data-tab="booking" data-i18n="tab_booking">Booking Form</button>
+      <button type="button" class="modal-tab" data-tab="enquiry" data-i18n="tab_enquiry">Enquiry Form</button>
+    </div>
+
+    <!-- ---- Booking Form (fields verified against the live original site's product page) ---- -->
+    <form id="bookingForm" class="modal-panel active" data-panel="booking">
+      <div class="modal-grid-2">
+        <div>
+          <label data-i18n="modal_pickup_label">Pick-up Date</label>
+          <input type="datetime-local" id="bkPickup" required>
+        </div>
+        <div>
+          <label data-i18n="modal_return_label">Drop-off Date</label>
+          <input type="datetime-local" id="bkReturn" required>
+        </div>
+      </div>
+
+      <label data-i18n="modal_quantity_label">Quantity</label>
+      <input type="number" id="bkQuantity" min="1" value="1" required>
+
+      <div class="modal-grid-2">
+        <div>
+          <label data-i18n="modal_license_label">Driving license</label>
+          <div class="file-picker" data-field="bkLicense">
+            <button type="button" data-action="camera">📷 <span data-i18n="file_take_photo">Take Photo</span></button>
+            <button type="button" data-action="upload">📁 <span data-i18n="file_upload">Upload File</span></button>
+            <input type="file" class="file-input-camera" accept="image/*" capture="environment" hidden>
+            <input type="file" class="file-input-upload" accept="image/*,.pdf" hidden>
+          </div>
+          <span class="file-chosen-name" data-i18n="file_none_chosen">No file chosen</span>
+        </div>
+        <div>
+          <label data-i18n="modal_passport_label">Passport</label>
+          <div class="file-picker" data-field="bkPassport">
+            <button type="button" data-action="camera">📷 <span data-i18n="file_take_photo">Take Photo</span></button>
+            <button type="button" data-action="upload">📁 <span data-i18n="file_upload">Upload File</span></button>
+            <input type="file" class="file-input-camera" accept="image/*" capture="environment" hidden>
+            <input type="file" class="file-input-upload" accept="image/*,.pdf" hidden>
+          </div>
+          <span class="file-chosen-name" data-i18n="file_none_chosen">No file chosen</span>
+        </div>
+      </div>
+
+      <label data-i18n="modal_license_years_label">Years of obtaining a driver's license</label>
+      <input type="number" id="bkLicenseYears" min="0" placeholder="2">
+
+      <label data-i18n="modal_name_label">Full Name</label>
+      <input type="text" id="bkName" required>
+      <label data-i18n="modal_phone_label">Phone Number</label>
+      <input type="tel" id="bkPhone" required>
+
+      <h4 class="modal-section-title" data-i18n="modal_resources_title">Resources</h4>
+      <label class="modal-check-row">
+        <span><input type="checkbox" id="bkSecondDriver"> <span data-i18n="res_second_driver">Second driver</span></span>
+        <span>€10.00 <span data-i18n="res_total">/ Total</span></span>
+      </label>
+      <label class="modal-check-row">
+        <span><input type="checkbox" id="bkBabySeat1chk"> <span data-i18n="res_baby_0_15">Baby seat Birth to 15 Months</span></span>
+        <span class="modal-qty-fee">
+          <input type="number" id="bkBabySeat1qty" min="1" value="1" class="modal-qty-input">
+          €10.00 <span data-i18n="res_total">/ Total</span>
+        </span>
+      </label>
+      <label class="modal-check-row">
+        <span><input type="checkbox" id="bkBabySeat2chk"> <span data-i18n="res_baby_1_4">Baby seat 1 to 4 years</span></span>
+        <span class="modal-qty-fee">
+          <input type="number" id="bkBabySeat2qty" min="1" value="1" class="modal-qty-input">
+          €10.00 <span data-i18n="res_total">/ Total</span>
+        </span>
+      </label>
+      <label class="modal-check-row">
+        <span><input type="checkbox" id="bkBabySeat3chk"> <span data-i18n="res_baby_4_12">Baby seat 4 to 12 years</span></span>
+        <span class="modal-qty-fee">
+          <input type="number" id="bkBabySeat3qty" min="1" value="1" class="modal-qty-input">
+          €10.00 <span data-i18n="res_total">/ Total</span>
+        </span>
+      </label>
+
+      <h4 class="modal-section-title" data-i18n="modal_services_title">Services</h4>
+      <div class="modal-grid-2">
+        <div>
+          <label data-i18n="modal_pickup_location_label">Pick-up Location</label>
+          <select id="bkPickupLoc" class="loc-select"></select>
+        </div>
+        <div>
+          <label data-i18n="modal_dropoff_location_label">Drop-off Location</label>
+          <select id="bkDropoffLoc" class="loc-select"></select>
+        </div>
+      </div>
+      <label data-i18n="modal_deposit_label">Deposit</label>
+      <select id="bkDeposit" class="deposit-select"></select>
+
+      <div class="modal-check-row modal-washing-row">
+        <span data-i18n="modal_washing_label">Car Washing</span>
+        <span>€5.00 <span data-i18n="washing_mandatory">(mandatory)</span></span>
+      </div>
+
+      <div class="modal-total-row">
+        <span data-i18n="modal_total_label">Estimated Total</span>
+        <b id="bkTotalDisplay">0.00 €</b>
+      </div>
+
+      <label class="modal-check-row modal-terms-row">
+        <span>
+          <input type="checkbox" id="bkTerms" required>
+          <span data-i18n="modal_terms_label">I have read and agree to the website</span>
+          <a href="#terms" id="bkTermsLink" data-i18n="modal_terms_link">terms and conditions</a> *
+        </span>
+      </label>
+
+      <p class="modal-error" id="bookingError" data-i18n="required_field">Please fill in all required fields.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" id="bookingCancel" data-i18n="modal_cancel">Cancel</button>
+        <button type="submit" class="btn btn-blue" data-i18n="modal_submit">Booking</button>
+      </div>
+    </form>
+
+    <!-- ---- Enquiry Form (same fields as the Booking Form on the original site, plus contact details) ---- -->
+    <form id="enquiryForm" class="modal-panel" data-panel="enquiry">
+      <label data-i18n="modal_name_label">Full Name</label>
+      <input type="text" id="eqName" required>
+      <label data-i18n="modal_email_label">Email</label>
+      <input type="email" id="eqEmail">
+      <label data-i18n="modal_phone_label">Phone</label>
+      <input type="tel" id="eqPhone" required>
+      <label data-i18n="modal_address_label">Address</label>
+      <input type="text" id="eqAddress">
+
+      <div class="modal-grid-2">
+        <div>
+          <label data-i18n="modal_pickup_label">Pick-up Date</label>
+          <input type="datetime-local" id="eqPickup">
+        </div>
+        <div>
+          <label data-i18n="modal_return_label">Drop-off Date</label>
+          <input type="datetime-local" id="eqReturn">
+        </div>
+      </div>
+      <label data-i18n="modal_quantity_label">Quantity</label>
+      <input type="number" id="eqQuantity" min="1" value="1">
+
+      <div class="modal-grid-2">
+        <div>
+          <label data-i18n="modal_license_label">Driving license</label>
+          <div class="file-picker" data-field="eqLicense">
+            <button type="button" data-action="camera">📷 <span data-i18n="file_take_photo">Take Photo</span></button>
+            <button type="button" data-action="upload">📁 <span data-i18n="file_upload">Upload File</span></button>
+            <input type="file" class="file-input-camera" accept="image/*" capture="environment" hidden>
+            <input type="file" class="file-input-upload" accept="image/*,.pdf" hidden>
+          </div>
+          <span class="file-chosen-name" data-i18n="file_none_chosen">No file chosen</span>
+        </div>
+        <div>
+          <label data-i18n="modal_passport_label">Passport</label>
+          <div class="file-picker" data-field="eqPassport">
+            <button type="button" data-action="camera">📷 <span data-i18n="file_take_photo">Take Photo</span></button>
+            <button type="button" data-action="upload">📁 <span data-i18n="file_upload">Upload File</span></button>
+            <input type="file" class="file-input-camera" accept="image/*" capture="environment" hidden>
+            <input type="file" class="file-input-upload" accept="image/*,.pdf" hidden>
+          </div>
+          <span class="file-chosen-name" data-i18n="file_none_chosen">No file chosen</span>
+        </div>
+      </div>
+      <label data-i18n="modal_license_years_label">Years of obtaining a driver's license</label>
+      <input type="number" id="eqLicenseYears" min="0" placeholder="2">
+
+      <h4 class="modal-section-title" data-i18n="modal_resources_title">Resources</h4>
+      <label class="modal-check-row">
+        <span><input type="checkbox" id="eqSecondDriver"> <span data-i18n="res_second_driver">Second driver</span></span>
+        <span>€10.00 <span data-i18n="res_total">/ Total</span></span>
+      </label>
+      <label class="modal-check-row">
+        <span><input type="checkbox" id="eqBabySeat1chk"> <span data-i18n="res_baby_0_15">Baby seat Birth to 15 Months</span></span>
+        <span class="modal-qty-fee">
+          <input type="number" id="eqBabySeat1qty" min="1" value="1" class="modal-qty-input">
+          €10.00 <span data-i18n="res_total">/ Total</span>
+        </span>
+      </label>
+      <label class="modal-check-row">
+        <span><input type="checkbox" id="eqBabySeat2chk"> <span data-i18n="res_baby_1_4">Baby seat 1 to 4 years</span></span>
+        <span class="modal-qty-fee">
+          <input type="number" id="eqBabySeat2qty" min="1" value="1" class="modal-qty-input">
+          €10.00 <span data-i18n="res_total">/ Total</span>
+        </span>
+      </label>
+      <label class="modal-check-row">
+        <span><input type="checkbox" id="eqBabySeat3chk"> <span data-i18n="res_baby_4_12">Baby seat 4 to 12 years</span></span>
+        <span class="modal-qty-fee">
+          <input type="number" id="eqBabySeat3qty" min="1" value="1" class="modal-qty-input">
+          €10.00 <span data-i18n="res_total">/ Total</span>
+        </span>
+      </label>
+
+      <h4 class="modal-section-title" data-i18n="modal_services_title">Services</h4>
+      <div class="modal-grid-2">
+        <div>
+          <label data-i18n="modal_pickup_location_label">Pick-up Location</label>
+          <select id="eqPickupLoc" class="loc-select"></select>
+        </div>
+        <div>
+          <label data-i18n="modal_dropoff_location_label">Drop-off Location</label>
+          <select id="eqDropoffLoc" class="loc-select"></select>
+        </div>
+      </div>
+      <label data-i18n="modal_deposit_label">Deposit</label>
+      <select id="eqDeposit" class="deposit-select"></select>
+
+      <div class="modal-check-row modal-washing-row">
+        <span data-i18n="modal_washing_label">Car Washing</span>
+        <span>€5.00 <span data-i18n="washing_mandatory">(mandatory)</span></span>
+      </div>
+
+      <label data-i18n="modal_extra_info_label">Extra Information</label>
+      <textarea id="eqExtra" rows="3"></textarea>
+
+      <label class="modal-check-row modal-terms-row">
+        <span>
+          <input type="checkbox" id="eqTerms" required>
+          <span data-i18n="modal_terms_label">I have read and agree to the website</span>
+          <a href="#terms" id="eqTermsLink" data-i18n="modal_terms_link">terms and conditions</a> *
+        </span>
+      </label>
+
+      <p class="modal-error" id="enquiryError" data-i18n="required_field">Please fill in all required fields.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" id="enquiryCancel" data-i18n="modal_cancel">Cancel</button>
+        <button type="submit" class="btn btn-blue" data-i18n="modal_send_enquiry">Send Enquiry</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Simple terms note — TODO: replace with the site's real General Conditions text -->
+<div class="modal-overlay" id="termsOverlay">
+  <div class="modal-box">
+    <button class="modal-close" id="termsClose" aria-label="Close">✕</button>
+    <h3 data-i18n="terms_title">General Conditions</h3>
+    <p data-i18n="terms_body">Minimum age 25. Minimum rental period 3 days. A deposit of $300 or $500 (depending on the vehicle) is required at pick-up. Please bring a valid driving license and passport/ID. Contact us on WhatsApp for the complete terms.</p>
+    <button type="button" class="btn btn-outline btn-block" id="termsCloseBtn" data-i18n="confirm_close">Close</button>
+  </div>
+</div>
+
+<!-- ================= CONFIRMATION MODAL ================= -->
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal-box">
+    <button class="modal-close" id="confirmClose" aria-label="Close">✕</button>
+    <h3 data-i18n="confirm_title">Booking Confirmed!</h3>
+    <p data-i18n="confirm_text">Your booking PDF has been downloaded. Choose how you want to send it to us:</p>
+    <div class="modal-actions" style="flex-direction:column">
+      <a class="btn btn-blue btn-block" id="confirmEmailBtn" href="#" data-i18n="confirm_email_btn">📧 Send via Email</a>
+      <a class="btn btn-primary btn-block" id="confirmWhatsappBtn" target="_blank" rel="noopener" href="#">
+        <svg class="ico-wa" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.31.65 4.47 1.78 6.31L4 29l7.86-1.74A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Zm0 21.72c-1.94 0-3.75-.55-5.28-1.5l-.38-.23-4.66 1.03 1.05-4.55-.25-.4A9.63 9.63 0 0 1 5.32 15c0-5.34 4.35-9.68 9.684-9.68S24.688 9.66 24.688 15 21.34 24.72 16.004 24.72Zm5.37-7.26c-.29-.15-1.73-.86-2-.95-.27-.1-.46-.15-.66.15-.2.29-.76.95-.93 1.14-.17.2-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.44-.86-.77-1.44-1.72-1.61-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.48.1-.2.05-.37-.02-.51-.07-.15-.66-1.6-.91-2.19-.24-.58-.48-.5-.66-.51-.17-.01-.37-.01-.56-.01s-.51.07-.78.37c-.27.29-1.02 1-1.02 2.43 0 1.44 1.05 2.83 1.2 3.02.15.2 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.61.7.22 1.34.19 1.84.11.56-.08 1.73-.7 1.98-1.38.24-.68.24-1.26.17-1.38-.07-.13-.26-.2-.55-.35Z"/></svg>
+        <span data-i18n="confirm_whatsapp_btn">Send via WhatsApp</span>
+      </a>
+    </div>
+    <p class="modal-note" data-i18n="confirm_attach_note">Please attach the downloaded PDF file to your message before sending.</p>
+    <button type="button" class="btn btn-outline btn-block" id="confirmCloseBtn" data-i18n="confirm_close">Close</button>
+  </div>
+</div>
+
+<!-- jsPDF: used only to generate the booking PDF client-side, no backend involved -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+/* =========================================================
+   0) BOOKING FORM DATA — pick-up/drop-off locations and deposit
+   options, verified against the live original site's product-page
+   booking form (fees kept identical; names/spelling cleaned up —
+   the original had typos and inconsistent spacing, e.g.
+   "Tetouan -MADINA(+€5)" and a deposit line with no spaces at all).
+   These are place names, so they are shown as-is in every language
+   rather than re-translated (matching the original, which did not
+   translate them either).
+========================================================= */
+const LOCATIONS = [
+  { label: 'Tétouan - Medina', fee: 5 },
+  { label: 'Tétouan - Saniat Airport', fee: 5 },
+  { label: 'Agency Office - Auto Fluchos Coches', fee: 0 },
+  { label: 'Bab Sebta (Ceuta Border)', fee: 10 },
+  { label: 'Port de Ksar Sghir', fee: 25 },
+  { label: 'Tangier TGV Train Station', fee: 20 },
+  { label: 'Tangier - Ibn Battouta Airport', fee: 25 },
+  { label: 'Tangier City Center', fee: 20 },
+  { label: 'Tangier Port Medina', fee: 20 },
+  { label: 'Hotel Delivery (Tétouan & surroundings)', fee: 10 },
+];
+const DEPOSITS = [
+  { amount: 500, surcharge: 0 },
+  { amount: 300, surcharge: 5 },
+  { amount: 0, surcharge: 10 },
+];
+const CAR_WASH_FEE = 5; // mandatory on the original site
+
+function locationOptionLabel(loc, dict){
+  return loc.fee > 0 ? `${loc.label} (+€${loc.fee})` : `${loc.label} (€0)`;
+}
+function depositOptionLabel(dep, dict){
+  if(dep.surcharge > 0) return `€${dep.amount} ${dict.deposit_refundable} (+€${dep.surcharge}${dict.deposit_per_day})`;
+  return `€${dep.amount} ${dict.deposit_refundable}`;
+}
+function populateLocationAndDepositSelects(dict){
+  document.querySelectorAll('select.loc-select').forEach(sel=>{
+    const prev = sel.value;
+    sel.innerHTML = LOCATIONS.map((loc, i) =>
+      `<option value="${i}">${locationOptionLabel(loc, dict)}</option>`).join('');
+    if(prev) sel.value = prev;
+  });
+  document.querySelectorAll('select.deposit-select').forEach(sel=>{
+    const prev = sel.value;
+    sel.innerHTML = DEPOSITS.map((dep, i) =>
+      `<option value="${i}">${depositOptionLabel(dep, dict)}</option>`).join('');
+    if(prev) sel.value = prev;
+  });
+}
+
+/* =========================================================
+   1) FLEET DATA
+   Same models/prices/specs as the original site. Duplicate stock
+   units that were listed as separate cars only because of a trailing
+   inventory number (e.g. "DACIA SANDERO (60)/(61)/(62)/(63)/(96)") have
+   been merged into one listing per real model/spec — this was flagged
+   in the SEO review as duplicate content and is the one deliberate change.
+========================================================= */
+/* NOTE: images/*.webp are AI-generated representative renders of each model
+   (the agency does not yet have real photos of its own fleet — see prior
+   conversation). Swap each imgSrc for a real photo of the actual vehicle
+   as soon as one is available; the <img alt="..."> text can stay as-is. */
+const CARS = [
+  {id:'sandero-stepway-auto', cat:'berline', imgSrc:'images/sandero-stepway-auto.webp', offer:'30€', price:30, name:'DACIA SANDERO STEPWAY AUTOMATIC', seats:5, gearKey:'auto', doors:4, fuelKey:'essence'},
+  {id:'sandero-stepway-extreme', cat:'citadine', imgSrc:'images/sandero-stepway-extreme.webp', offer:'30€', price:30, name:'DACIA SANDERO STEPWAY MANUAL EXTREME', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel'},
+  {id:'sandero', cat:'citadine', imgSrc:'images/sandero.webp', offer:'25€', price:25, name:'DACIA SANDERO', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel'},
+  {id:'jogger-7p', cat:'familiale', imgSrc:'images/jogger-7p.webp', offer:'40€', price:40, name:'DACIA JOGGER 7 PLACES MANUEL', seats:7, gearKey:'manual', doors:4, fuelKey:'diesel'},
+  {id:'lodgy-7p', cat:'familiale', imgSrc:'images/lodgy-7p.webp', offer:'40€', price:40, name:'DACIA LODGY 7 PLACES OR EQUIVALENT', seats:7, gearKey:'manual', doors:4, fuelKey:'diesel'},
+  {id:'clio5-manuel', cat:'berline', imgSrc:'images/clio5-manuel.webp', offer:'30€', price:30, name:'RENAULT CLIO 5 MANUEL', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel'},
+  {id:'clio5-auto', cat:'berline', imgSrc:'images/clio5-auto.webp', offer:'30€', price:30, name:'RENAULT CLIO 5 AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence'},
+  {id:'c3-aircross-hybride', cat:'berline', imgSrc:'images/c3-aircross-hybride.webp', offer:'50€', price:50, name:'CITROËN NEW C3 AIRCROSS AUTOMATIQUE HYBRIDE', seats:5, gearKey:'auto', doors:4, fuelKey:'hybride'},
+  {id:'c-elysee', cat:'citadine', imgSrc:'images/c-elysee.webp', offer:'25€', price:25, name:'CITROËN C-ELYSÉE OR EQUIVALENT', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel'},
+  {id:'opel-corsa', cat:'citadine', imgSrc:'images/opel-corsa.webp', offer:'30€', price:30, name:'OPEL CORSA MANUEL', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel'},
+  {id:'peugeot-301', cat:'citadine', imgSrc:'images/peugeot-301.webp', offer:'25€', price:25, name:'PEUGEOT 301 OR EQUIVALENT', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel'},
+  {id:'nissan-magnite', cat:'berline', imgSrc:'images/nissan-magnite.webp', offer:'35€', price:35, name:'NISSAN MAGNITE AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence'},
+];
+
+/* =========================================================
+   2) TRANSLATIONS — EN mirrors the original site's exact wording;
+      FR/ES/AR are faithful translations of that same content
+      (not rewritten marketing copy).
+========================================================= */
+const I18N = {
+  en:{
+    dir:'ltr', htmlLang:'en',
+    logo_sub:'CAR RENTAL TÉTOUAN — TANGIER',
+    nav_home:'Home', nav_fleet:'Cars List', nav_why:'About', nav_reviews:'Reviews', nav_faq:'FAQ', nav_contact:'Contact',
+    badge_know_us:'GET TO KNOW US',
+    hero_title:'Search, Book &amp; Rent Vehicle Easily',
+    hero_lead:'Find your ideal vehicle in seconds. Browse, book, and hit the road — fast, effortless, and always reliable.',
+    cta_find_car:'Find a Car', cta_whatsapp:'Book on WhatsApp', cta_fleet:'See our cars',
+    feat_easier:'Easier & Faster Bookings', feat_pickup:'Too Many Pickup Locations',
+    hero_card_sub:'Call anytime',
+    trust_google:'Google rating (484 reviews)', trust_open:'Open 24/7',
+    trust_deposit:'$300 / $500', trust_deposit_sub:'Reservation guarantee',
+    trust_age:'25 years', trust_age_sub:'Minimum driver age',
+    fleet_eyebrow:"Checkout our new cars", fleet_title:"Cars We're Offering for Rentals",
+    filter_all:'All', filter_city:'City cars', filter_sedan:'Sedans', filter_family:'7 Seats',
+    per_day:'/ Day', book_now:'BOOK NOW', seats:'Seats', doors:'Doors',
+    gear_manual:'Manual', gear_auto:'Automatic', fuel_essence:'Essence', fuel_diesel:'Diesel', fuel_hybride:'Hybride',
+    banner1_title:'Easier & Faster Bookings', banner1_sub:"Search. Book. Drive. It's that simple.",
+    why_eyebrow:'About us', why_title:'Why choose Auto Fluchos Coches',
+    why1_title:'Modern & fully air-conditioned vehicles',
+    why2_title:'Airport, hotel & city delivery service',
+    why3_title:'Affordable rates with no hidden fees',
+    why4_title:'Comprehensive insurance options',
+    why5_title:'24/7 customer support',
+    why6_title:'Fast and easy booking process',
+    cities_eyebrow:'Service area', cities_title:'We travel with you across Northern & Central Morocco',
+    testi_eyebrow:'Gallery', testi_title:'Trusted & Reliable Car Rentals',
+    testi_sub:'⭐ 5.0/5 — 484 reviews on Google',
+    testi1:'"Very good car rental experience. The vehicle was clean and comfortable! Pick-up and return were quick and easy. The owner was available, professional, friendly and responsive throughout the rental. I recommend this rental without hesitation and will happily come back."',
+    testi1_role:'Google review',
+    testi2:'"The car was in very good condition. The rental process was very quick and without any problems. This agency made our stay much easier by letting us return the car at Tangier airport for a small extra fee. We recommend without hesitation."',
+    testi2_role:'Google review',
+    banner2_title:'Save Time & Money with Top Rent Car Service in Town',
+    cta_discover:'Discover More', cta_book_car:'Book Your Car',
+    team_eyebrow:'Our expert people', team_title:'Meet Our Professional Team Members', team_role:'Manager',
+    faq_eyebrow:'Frequently asked questions', faq_title:'Question & Answers',
+    faq_items:[
+      ['What guarantees do you require for car reservations?','$300 or $500. Please contact us via WhatsApp for further inquiries.'],
+      ['What is the minimum age requirement to rent your car?','The minimum age requirement is 25 years old. Alternatively, please contact us via WhatsApp.'],
+      ['What is the minimum number of days for car rental?','3 days.']
+    ],
+    contact_eyebrow:'Save big with our cheap car rental', contact_title:'Contact',
+    contact_address_label:'Address', contact_phone_label:'Phone', contact_email_label:'Email',
+    contact_hours_label:'Hours', contact_hours_value:'Open 24/7',
+    cta_whatsapp2:'Chat on WhatsApp', cta_directions:'📍 Google Maps directions',
+    footer_links:'Quick links', footer_about:'About Us', footer_newcars:'New Cars', footer_by:'by',
+    modal_title:'Book This Car', modal_car_label:'Car', modal_car_select_label:'Selected vehicle (change anytime)', modal_name_label:'Full Name', modal_phone_label:'Phone Number',
+    modal_pickup_label:'Pick-up Date', modal_return_label:'Drop-off Date', modal_notes_label:'Notes (optional)',
+    modal_submit:'Generate Booking (PDF)', modal_cancel:'Cancel',
+    tab_booking:'Booking Form', tab_enquiry:'Enquiry Form',
+    modal_quantity_label:'Quantity', modal_license_years_label:"Years of obtaining a driver's license",
+    modal_license_label:'Driving license', modal_passport_label:'Passport',
+    file_take_photo:'Take Photo', file_upload:'Upload File', file_none_chosen:'No file chosen',
+    modal_services_title:'Services', modal_pickup_location_label:'Pick-up Location', modal_dropoff_location_label:'Drop-off Location',
+    loc_agency:'Tétouan Agency', loc_tangier_airport:'Tangier Airport', loc_tangier_city:'Tangier City',
+    loc_hotel:'Hotel Delivery', loc_chefchaouen:'Chefchaouen',
+    modal_deposit_label:'Deposit', modal_washing_label:'Car Washing', washing_no:'Not needed', washing_yes:'Include car washing',
+    washing_mandatory:'mandatory', deposit_refundable:'deposit (refundable)', deposit_per_day:'/day',
+    modal_address_label:'Address', modal_extra_info_label:'Extra Information',
+    modal_resources_title:'Resources', res_second_driver:'Second driver', res_baby_0_15:'Baby seat Birth to 15 Months',
+    res_baby_1_4:'Baby seat 1 to 4 years', res_baby_4_12:'Baby seat 4 to 12 years', res_total:'/ Total',
+    modal_total_label:'Estimated Total', modal_terms_label:'I have read and agree to the', modal_terms_link:'terms and conditions',
+    modal_email_label:'Email', modal_message_label:'Your Question', modal_send_enquiry:'Send Enquiry',
+    terms_title:'General Conditions',
+    terms_body:'Minimum age 25. Minimum rental period 3 days. A deposit of $300 or $500 (depending on the vehicle) is required at pick-up. Please bring a valid driving license and passport/ID. Contact us on WhatsApp for the complete terms.',
+    unavailable_badge:'Not Available', unavailable_btn:'Not Available',
+    required_field:'Please fill in all required fields.',
+    confirm_title:'Booking Confirmed!', confirm_text:'Your booking PDF has been downloaded. Choose how you want to send it to us:',
+    confirm_email_btn:'📧 Send via Email', confirm_whatsapp_btn:'Send via WhatsApp',
+    confirm_attach_note:'Please attach the downloaded PDF file to your message before sending.',
+    confirm_close:'Close',
+    pdf_title:'BOOKING CONFIRMATION', pdf_ref:'Booking Reference', pdf_date:'Date',
+    pdf_customer:'Customer', pdf_phone:'Phone', pdf_car:'Vehicle', pdf_price:'Price / Day',
+    pdf_pickup:'Pick-up Date', pdf_return:'Return Date', pdf_notes:'Notes',
+    pdf_deposit:'Deposit Required', pdf_deposit_value:'$300 or $500 depending on the vehicle',
+    pdf_footer:'Thank you for choosing Auto Fluchos Coches!',
+  },
+  fr:{
+    dir:'ltr', htmlLang:'fr',
+    logo_sub:'LOCATION DE VOITURE TÉTOUAN — TANGER',
+    nav_home:'Accueil', nav_fleet:'Liste des voitures', nav_why:'À propos', nav_reviews:'Avis', nav_faq:'FAQ', nav_contact:'Contact',
+    badge_know_us:'FAITES CONNAISSANCE',
+    hero_title:'Cherchez, Réservez &amp; Louez Facilement',
+    hero_lead:"Trouvez le véhicule idéal en quelques secondes. Parcourez, réservez et prenez la route — rapide, simple et toujours fiable.",
+    cta_find_car:'Trouver une voiture', cta_whatsapp:'Réserver sur WhatsApp', cta_fleet:'Voir nos voitures',
+    feat_easier:'Réservations plus faciles et rapides', feat_pickup:'De nombreux points de retrait',
+    hero_card_sub:'Appelez à tout moment',
+    trust_google:'Note Google (484 avis)', trust_open:'Ouvert 24h/24',
+    trust_deposit:'300$ / 500$', trust_deposit_sub:'Garantie de réservation',
+    trust_age:'25 ans', trust_age_sub:'Âge minimum du conducteur',
+    fleet_eyebrow:'Découvrez nos nouvelles voitures', fleet_title:'Les voitures que nous proposons à la location',
+    filter_all:'Toutes', filter_city:'Citadines', filter_sedan:'Berlines', filter_family:'7 Places',
+    per_day:'/ Jour', book_now:'RÉSERVER', seats:'Places', doors:'Portes',
+    gear_manual:'Manuelle', gear_auto:'Automatique', fuel_essence:'Essence', fuel_diesel:'Diesel', fuel_hybride:'Hybride',
+    banner1_title:'Réservations plus faciles et rapides', banner1_sub:"Cherchez. Réservez. Roulez. C'est aussi simple que ça.",
+    why_eyebrow:'À propos', why_title:'Pourquoi choisir Auto Fluchos Coches',
+    why1_title:'Véhicules modernes et entièrement climatisés',
+    why2_title:'Service de livraison aéroport, hôtel et ville',
+    why3_title:'Tarifs abordables sans frais cachés',
+    why4_title:"Options d'assurance complètes",
+    why5_title:'Support client 24h/24',
+    why6_title:'Processus de réservation rapide et simple',
+    cities_eyebrow:'Zone de service', cities_title:'Nous vous accompagnons dans tout le Nord et le Centre du Maroc',
+    testi_eyebrow:'Galerie', testi_title:'Location de voitures fiable et de confiance',
+    testi_sub:'⭐ 5.0/5 — 484 avis sur Google',
+    testi1:"« Très bonne expérience de location de voiture. Le véhicule était propre, confortable ! La prise en charge et le retour se sont faits facilement et rapidement. Le propriétaire a été disponible, professionnel, agréable et réactif tout au long de la location. Je recommande sans hésitation cette location et je reviendrai avec plaisir. »",
+    testi1_role:"Avis Google",
+    testi2:"« La voiture était en très bon état. La location s'est faite très rapidement et sans aucun problème. Cette agence nous a beaucoup facilité le séjour en nous permettant de rendre la voiture à l'aéroport de Tanger pour un supplément modique. Nous recommandons sans hésitation. »",
+    testi2_role:'Avis Google',
+    banner2_title:"Gagnez du temps et de l'argent avec le meilleur service de location de voiture de la ville",
+    cta_discover:'En savoir plus', cta_book_car:'Réservez votre voiture',
+    team_eyebrow:'Nos experts', team_title:'Rencontrez notre équipe professionnelle', team_role:'Gérant',
+    faq_eyebrow:'Questions fréquentes', faq_title:'Questions & Réponses',
+    faq_items:[
+      ['Quelles garanties demandez-vous pour les réservations de voiture ?','300$ ou 500$. Contactez-nous sur WhatsApp pour plus de renseignements.'],
+      ["Quel est l'âge minimum requis pour louer votre voiture ?","L'âge minimum requis est de 25 ans. Vous pouvez aussi nous contacter sur WhatsApp."],
+      ['Quelle est la durée minimale de location ?','3 jours.']
+    ],
+    contact_eyebrow:'Faites de bonnes économies avec notre location de voiture pas chère', contact_title:'Contact',
+    contact_address_label:'Adresse', contact_phone_label:'Téléphone', contact_email_label:'Email',
+    contact_hours_label:'Horaires', contact_hours_value:'Ouvert 24h/24',
+    cta_whatsapp2:'Discuter sur WhatsApp', cta_directions:'📍 Itinéraire Google Maps',
+    footer_links:'Liens rapides', footer_about:'À propos', footer_newcars:'Nouvelles voitures', footer_by:'par',
+    modal_title:'Réserver cette voiture', modal_car_label:'Voiture', modal_car_select_label:'Véhicule sélectionné (modifiable à tout moment)', modal_name_label:'Nom complet', modal_phone_label:'Numéro de téléphone',
+    modal_pickup_label:'Date de prise en charge', modal_return_label:'Date de retour', modal_notes_label:'Remarques (facultatif)',
+    modal_submit:'Générer la réservation (PDF)', modal_cancel:'Annuler',
+    tab_booking:'Formulaire de réservation', tab_enquiry:'Formulaire de demande',
+    modal_quantity_label:'Quantité', modal_license_years_label:"Années d'obtention du permis de conduire",
+    modal_license_label:'Permis de conduire', modal_passport_label:'Passeport',
+    file_take_photo:'Prendre une photo', file_upload:'Téléverser un fichier', file_none_chosen:'Aucun fichier choisi',
+    modal_services_title:'Services', modal_pickup_location_label:'Lieu de prise en charge', modal_dropoff_location_label:'Lieu de retour',
+    loc_agency:'Agence de Tétouan', loc_tangier_airport:'Aéroport de Tanger', loc_tangier_city:'Ville de Tanger',
+    loc_hotel:'Livraison à l\'hôtel', loc_chefchaouen:'Chefchaouen',
+    modal_deposit_label:'Caution', modal_washing_label:'Lavage de la voiture', washing_no:'Non nécessaire', washing_yes:'Inclure le lavage',
+    washing_mandatory:'obligatoire', deposit_refundable:'de caution (remboursable)', deposit_per_day:'/jour',
+    modal_address_label:'Adresse', modal_extra_info_label:'Informations complémentaires',
+    modal_resources_title:'Ressources', res_second_driver:'Deuxième conducteur', res_baby_0_15:'Siège bébé Naissance à 15 mois',
+    res_baby_1_4:'Siège enfant 1 à 4 ans', res_baby_4_12:'Siège enfant 4 à 12 ans', res_total:'/ Total',
+    modal_total_label:'Total estimé', modal_terms_label:"J'ai lu et j'accepte les", modal_terms_link:'conditions générales',
+    modal_email_label:'Email', modal_message_label:'Votre question', modal_send_enquiry:'Envoyer la demande',
+    terms_title:'Conditions générales',
+    terms_body:"Âge minimum 25 ans. Durée minimale de location 3 jours. Une caution de 300$ ou 500$ (selon le véhicule) est requise à la prise en charge. Merci d'apporter un permis de conduire et un passeport/pièce d'identité valides. Contactez-nous sur WhatsApp pour les conditions complètes.",
+    unavailable_badge:'Indisponible', unavailable_btn:'Indisponible',
+    required_field:'Merci de remplir tous les champs obligatoires.',
+    confirm_title:'Réservation confirmée !', confirm_text:'Votre PDF de réservation a été téléchargé. Choisissez comment nous l\'envoyer :',
+    confirm_email_btn:'📧 Envoyer par Email', confirm_whatsapp_btn:'Envoyer par WhatsApp',
+    confirm_attach_note:'Merci de joindre le fichier PDF téléchargé à votre message avant de l\'envoyer.',
+    confirm_close:'Fermer',
+    pdf_title:'CONFIRMATION DE RÉSERVATION', pdf_ref:'Référence de réservation', pdf_date:'Date',
+    pdf_customer:'Client', pdf_phone:'Téléphone', pdf_car:'Véhicule', pdf_price:'Prix / Jour',
+    pdf_pickup:'Date de prise en charge', pdf_return:'Date de retour', pdf_notes:'Remarques',
+    pdf_deposit:'Caution requise', pdf_deposit_value:'300$ ou 500$ selon le véhicule',
+    pdf_footer:'Merci d\'avoir choisi Auto Fluchos Coches !',
+  },
+  es:{
+    dir:'ltr', htmlLang:'es',
+    logo_sub:'ALQUILER DE COCHES TETUÁN — TÁNGER',
+    nav_home:'Inicio', nav_fleet:'Lista de coches', nav_why:'Sobre nosotros', nav_reviews:'Opiniones', nav_faq:'Preguntas', nav_contact:'Contacto',
+    badge_know_us:'CONÓZCANOS',
+    hero_title:'Busque, Reserve &amp; Alquile su Vehículo Fácilmente',
+    hero_lead:'Encuentre su vehículo ideal en segundos. Explore, reserve y póngase en marcha — rápido, sencillo y siempre fiable.',
+    cta_find_car:'Buscar un coche', cta_whatsapp:'Reservar por WhatsApp', cta_fleet:'Ver nuestros coches',
+    feat_easier:'Reservas más fáciles y rápidas', feat_pickup:'Muchos puntos de recogida',
+    hero_card_sub:'Llame en cualquier momento',
+    trust_google:'Valoración Google (484 reseñas)', trust_open:'Abierto 24h',
+    trust_deposit:'300$ / 500$', trust_deposit_sub:'Garantía de reserva',
+    trust_age:'25 años', trust_age_sub:'Edad mínima del conductor',
+    fleet_eyebrow:'Descubra nuestros coches nuevos', fleet_title:'Coches que ofrecemos en alquiler',
+    filter_all:'Todos', filter_city:'Urbanos', filter_sedan:'Berlinas', filter_family:'7 Plazas',
+    per_day:'/ Día', book_now:'RESERVAR', seats:'Plazas', doors:'Puertas',
+    gear_manual:'Manual', gear_auto:'Automático', fuel_essence:'Gasolina', fuel_diesel:'Diésel', fuel_hybride:'Híbrido',
+    banner1_title:'Reservas más fáciles y rápidas', banner1_sub:'Busque. Reserve. Conduzca. Así de sencillo.',
+    why_eyebrow:'Sobre nosotros', why_title:'Por qué elegir Auto Fluchos Coches',
+    why1_title:'Vehículos modernos y totalmente climatizados',
+    why2_title:'Servicio de entrega en aeropuerto, hotel y ciudad',
+    why3_title:'Tarifas asequibles sin cargos ocultos',
+    why4_title:'Opciones de seguro completas',
+    why5_title:'Atención al cliente 24/7',
+    why6_title:'Proceso de reserva rápido y sencillo',
+    cities_eyebrow:'Zona de servicio', cities_title:'Le acompañamos por todo el norte y centro de Marruecos',
+    testi_eyebrow:'Galería', testi_title:'Alquiler de coches fiable y de confianza',
+    testi_sub:'⭐ 5.0/5 — 484 reseñas en Google',
+    testi1:'"Muy buena experiencia de alquiler de coche. ¡El vehículo estaba limpio y cómodo! La recogida y la devolución fueron rápidas y sencillas. El propietario estuvo disponible, profesional, amable y receptivo durante todo el alquiler. Recomiendo este alquiler sin dudarlo y volveré con gusto."',
+    testi1_role:'Reseña de Google',
+    testi2:'"El coche estaba en muy buen estado. El proceso de alquiler fue muy rápido y sin ningún problema. Esta agencia nos facilitó mucho la estancia al permitirnos devolver el coche en el aeropuerto de Tánger por un pequeño suplemento. Lo recomendamos sin dudarlo."',
+    testi2_role:'Reseña de Google',
+    banner2_title:'Ahorre tiempo y dinero con el mejor servicio de alquiler de coches de la ciudad',
+    cta_discover:'Descubra más', cta_book_car:'Reserve su coche',
+    team_eyebrow:'Nuestro equipo experto', team_title:'Conozca a nuestro equipo profesional', team_role:'Gerente',
+    faq_eyebrow:'Preguntas frecuentes', faq_title:'Preguntas y Respuestas',
+    faq_items:[
+      ['¿Qué garantías piden para las reservas de coche?','300$ o 500$. Contáctenos por WhatsApp para más información.'],
+      ['¿Cuál es la edad mínima requerida para alquilar su coche?','La edad mínima requerida es de 25 años. También puede contactarnos por WhatsApp.'],
+      ['¿Cuál es la duración mínima del alquiler?','3 días.']
+    ],
+    contact_eyebrow:'Ahorre en grande con nuestro alquiler de coches económico', contact_title:'Contacto',
+    contact_address_label:'Dirección', contact_phone_label:'Teléfono', contact_email_label:'Correo',
+    contact_hours_label:'Horario', contact_hours_value:'Abierto 24h',
+    cta_whatsapp2:'Chatear por WhatsApp', cta_directions:'📍 Cómo llegar (Google Maps)',
+    footer_links:'Enlaces rápidos', footer_about:'Sobre nosotros', footer_newcars:'Coches nuevos', footer_by:'por',
+    modal_title:'Reservar este coche', modal_car_label:'Coche', modal_car_select_label:'Vehículo seleccionado (puede cambiarlo en cualquier momento)', modal_name_label:'Nombre completo', modal_phone_label:'Número de teléfono',
+    modal_pickup_label:'Fecha de recogida', modal_return_label:'Fecha de devolución', modal_notes_label:'Notas (opcional)',
+    modal_submit:'Generar reserva (PDF)', modal_cancel:'Cancelar',
+    tab_booking:'Formulario de reserva', tab_enquiry:'Formulario de consulta',
+    modal_quantity_label:'Cantidad', modal_license_years_label:'Años de obtención del carné de conducir',
+    modal_license_label:'Carné de conducir', modal_passport_label:'Pasaporte',
+    file_take_photo:'Tomar foto', file_upload:'Subir archivo', file_none_chosen:'Ningún archivo seleccionado',
+    modal_services_title:'Servicios', modal_pickup_location_label:'Lugar de recogida', modal_dropoff_location_label:'Lugar de devolución',
+    loc_agency:'Agencia de Tetuán', loc_tangier_airport:'Aeropuerto de Tánger', loc_tangier_city:'Ciudad de Tánger',
+    loc_hotel:'Entrega en el hotel', loc_chefchaouen:'Chefchaouen',
+    modal_deposit_label:'Depósito', modal_washing_label:'Lavado del coche', washing_no:'No necesario', washing_yes:'Incluir lavado',
+    washing_mandatory:'obligatorio', deposit_refundable:'de depósito (reembolsable)', deposit_per_day:'/día',
+    modal_address_label:'Dirección', modal_extra_info_label:'Información adicional',
+    modal_resources_title:'Recursos', res_second_driver:'Segundo conductor', res_baby_0_15:'Silla bebé Nacimiento a 15 meses',
+    res_baby_1_4:'Silla infantil 1 a 4 años', res_baby_4_12:'Silla infantil 4 a 12 años', res_total:'/ Total',
+    modal_total_label:'Total estimado', modal_terms_label:'He leído y acepto los', modal_terms_link:'términos y condiciones',
+    modal_email_label:'Correo', modal_message_label:'Su pregunta', modal_send_enquiry:'Enviar consulta',
+    terms_title:'Condiciones generales',
+    terms_body:'Edad mínima 25 años. Duración mínima del alquiler 3 días. Se requiere un depósito de 300$ o 500$ (según el vehículo) al recoger el coche. Traiga un carné de conducir y pasaporte/DNI válidos. Contáctenos por WhatsApp para las condiciones completas.',
+    unavailable_badge:'No disponible', unavailable_btn:'No disponible',
+    required_field:'Por favor complete todos los campos obligatorios.',
+    confirm_title:'¡Reserva confirmada!', confirm_text:'Su PDF de reserva se ha descargado. Elija cómo enviárnoslo:',
+    confirm_email_btn:'📧 Enviar por Email', confirm_whatsapp_btn:'Enviar por WhatsApp',
+    confirm_attach_note:'Por favor adjunte el archivo PDF descargado a su mensaje antes de enviarlo.',
+    confirm_close:'Cerrar',
+    pdf_title:'CONFIRMACIÓN DE RESERVA', pdf_ref:'Referencia de reserva', pdf_date:'Fecha',
+    pdf_customer:'Cliente', pdf_phone:'Teléfono', pdf_car:'Vehículo', pdf_price:'Precio / Día',
+    pdf_pickup:'Fecha de recogida', pdf_return:'Fecha de devolución', pdf_notes:'Notas',
+    pdf_deposit:'Depósito requerido', pdf_deposit_value:'300$ o 500$ según el vehículo',
+    pdf_footer:'¡Gracias por elegir Auto Fluchos Coches!',
+  },
+  ar:{
+    dir:'rtl', htmlLang:'ar',
+    logo_sub:'كراء السيارات تطوان — طنجة',
+    nav_home:'الرئيسية', nav_fleet:'لائحة السيارات', nav_why:'من نحن', nav_reviews:'آراء الزبناء', nav_faq:'الأسئلة الشائعة', nav_contact:'اتصل بنا',
+    badge_know_us:'تعرف علينا',
+    hero_title:'ابحث واحجز واكرِ سيارتك بكل سهولة',
+    hero_lead:'ابحث عن السيارة المناسبة لك في ثوانٍ. تصفح، احجز وانطلق — بسرعة وسهولة وموثوقية دائمة.',
+    cta_find_car:'ابحث عن سيارة', cta_whatsapp:'احجز عبر واتساب', cta_fleet:'شاهد سياراتنا',
+    feat_easier:'حجوزات أسهل وأسرع', feat_pickup:'نقط استلام متعددة',
+    hero_card_sub:'اتصل بنا في أي وقت',
+    trust_google:'تقييم غوغل (484 تقييم)', trust_open:'مفتوح 24/24',
+    trust_deposit:'300$ / 500$', trust_deposit_sub:'ضمان الحجز',
+    trust_age:'25 سنة', trust_age_sub:'السن الأدنى للسائق',
+    fleet_eyebrow:'اكتشف سياراتنا الجديدة', fleet_title:'السيارات المتوفرة للكراء',
+    filter_all:'الكل', filter_city:'اقتصادية', filter_sedan:'سيدان', filter_family:'7 مقاعد',
+    per_day:'/ اليوم', book_now:'احجز الآن', seats:'مقاعد', doors:'أبواب',
+    gear_manual:'يدوي', gear_auto:'أوتوماتيك', fuel_essence:'بنزين', fuel_diesel:'ديزل', fuel_hybride:'هجين',
+    banner1_title:'حجوزات أسهل وأسرع', banner1_sub:'ابحث. احجز. قُد سيارتك. بكل بساطة.',
+    why_eyebrow:'من نحن', why_title:'لماذا تختار Auto Fluchos Coches',
+    why1_title:'سيارات حديثة ومكيفة بالكامل',
+    why2_title:'خدمة توصيل للمطار والفندق والمدينة',
+    why3_title:'أسعار مناسبة بدون رسوم خفية',
+    why4_title:'خيارات تأمين شاملة',
+    why5_title:'دعم للزبناء على مدار الساعة',
+    why6_title:'إجراءات حجز سريعة وسهلة',
+    cities_eyebrow:'منطقة الخدمة', cities_title:'نرافقك في شمال ووسط المغرب',
+    testi_eyebrow:'المعرض', testi_title:'كراء سيارات موثوق وذو مصداقية',
+    testi_sub:'⭐ 5.0/5 — 484 تقييم على غوغل',
+    testi1:'"تجربة كراء سيارة ممتازة جداً. كانت السيارة نظيفة ومريحة! تم الاستلام والإرجاع بسهولة وسرعة. كان صاحب الوكالة متوفراً، محترفاً، لطيفاً ومتجاوباً طوال فترة الكراء. أنصح بهذا الكراء بدون تردد وسأعود بكل سرور."',
+    testi1_role:'تقييم غوغل',
+    testi2:'"كانت السيارة في حالة جيدة جداً. تمت عملية الكراء بسرعة كبيرة وبدون أي مشكلة. سهّلت علينا هذه الوكالة إقامتنا كثيراً من خلال السماح لنا بإرجاع السيارة في مطار طنجة مقابل رسوم بسيطة. ننصح بها بدون تردد."',
+    testi2_role:'تقييم غوغل',
+    banner2_title:'وفّر الوقت والمال مع أفضل خدمة كراء سيارات في المدينة',
+    cta_discover:'اكتشف المزيد', cta_book_car:'احجز سيارتك',
+    team_eyebrow:'فريقنا المتخصص', team_title:'تعرف على فريقنا المحترف', team_role:'مدير',
+    faq_eyebrow:'الأسئلة الشائعة', faq_title:'أسئلة وأجوبة',
+    faq_items:[
+      ['ما هي الضمانات المطلوبة لحجز السيارة؟','300$ أو 500$. تواصل معنا عبر واتساب لمزيد من المعلومات.'],
+      ['ما هو السن الأدنى المطلوب لكراء سيارتكم؟','السن الأدنى المطلوب هو 25 سنة. يمكنك أيضاً التواصل معنا عبر واتساب.'],
+      ['ما هي أقل مدة لكراء السيارة؟','3 أيام.']
+    ],
+    contact_eyebrow:'وفّر الكثير مع كراء السيارات الرخيص لدينا', contact_title:'اتصل بنا',
+    contact_address_label:'العنوان', contact_phone_label:'الهاتف', contact_email_label:'البريد الإلكتروني',
+    contact_hours_label:'أوقات العمل', contact_hours_value:'مفتوح 24/24',
+    cta_whatsapp2:'تواصل عبر واتساب', cta_directions:'📍 الاتجاهات عبر خرائط غوغل',
+    footer_links:'روابط سريعة', footer_about:'من نحن', footer_newcars:'سيارات جديدة', footer_by:'من طرف',
+    modal_title:'احجز هذه السيارة', modal_car_label:'السيارة', modal_car_select_label:'السيارة المختارة (يمكن تغييرها في أي وقت)', modal_name_label:'الاسم الكامل', modal_phone_label:'رقم الهاتف',
+    modal_pickup_label:'تاريخ الاستلام', modal_return_label:'تاريخ الإرجاع', modal_notes_label:'ملاحظات (اختياري)',
+    modal_submit:'إنشاء الحجز (PDF)', modal_cancel:'إلغاء',
+    tab_booking:'استمارة الحجز', tab_enquiry:'استمارة الاستفسار',
+    modal_quantity_label:'العدد', modal_license_years_label:'سنوات الحصول على رخصة السياقة',
+    modal_license_label:'رخصة السياقة', modal_passport_label:'جواز السفر',
+    file_take_photo:'التقط صورة', file_upload:'رفع ملف', file_none_chosen:'لم يتم اختيار أي ملف',
+    modal_services_title:'الخدمات', modal_pickup_location_label:'مكان الاستلام', modal_dropoff_location_label:'مكان الإرجاع',
+    loc_agency:'وكالة تطوان', loc_tangier_airport:'مطار طنجة', loc_tangier_city:'مدينة طنجة',
+    loc_hotel:'التوصيل للفندق', loc_chefchaouen:'شفشاون',
+    modal_deposit_label:'الضمان', modal_washing_label:'غسل السيارة', washing_no:'غير مطلوب', washing_yes:'شامل غسل السيارة',
+    washing_mandatory:'إجباري', deposit_refundable:'ضمان (قابل للاسترجاع)', deposit_per_day:'/اليوم',
+    modal_address_label:'العنوان', modal_extra_info_label:'معلومات إضافية',
+    modal_resources_title:'إضافات', res_second_driver:'سائق ثاني', res_baby_0_15:'مقعد طفل من الولادة إلى 15 شهر',
+    res_baby_1_4:'مقعد طفل من 1 إلى 4 سنوات', res_baby_4_12:'مقعد طفل من 4 إلى 12 سنة', res_total:'/ المجموع',
+    modal_total_label:'المجموع التقديري', modal_terms_label:'لقد قرأت ووافقت على', modal_terms_link:'الشروط والأحكام',
+    modal_email_label:'البريد الإلكتروني', modal_message_label:'سؤالك', modal_send_enquiry:'إرسال الاستفسار',
+    terms_title:'الشروط العامة',
+    terms_body:'السن الأدنى 25 سنة. أقل مدة للكراء 3 أيام. يتطلب ضمان بقيمة 300$ أو 500$ (حسب السيارة) عند الاستلام. يرجى إحضار رخصة سياقة وجواز سفر/بطاقة تعريف سارية المفعول. تواصل معنا عبر واتساب للشروط الكاملة.',
+    unavailable_badge:'غير متوفرة', unavailable_btn:'غير متوفرة',
+    required_field:'يرجى ملء جميع الحقول المطلوبة.',
+    confirm_title:'تم تأكيد الحجز!', confirm_text:'تم تحميل ملف PDF الخاص بحجزك. اختر طريقة إرساله لنا:',
+    confirm_email_btn:'📧 إرسال عبر البريد الإلكتروني', confirm_whatsapp_btn:'إرسال عبر واتساب',
+    confirm_attach_note:'يرجى إرفاق ملف PDF الذي تم تحميله برسالتك قبل الإرسال.',
+    confirm_close:'إغلاق',
+    pdf_title:'تأكيد الحجز', pdf_ref:'رقم الحجز', pdf_date:'التاريخ',
+    pdf_customer:'الزبون', pdf_phone:'الهاتف', pdf_car:'السيارة', pdf_price:'الثمن / اليوم',
+    pdf_pickup:'تاريخ الاستلام', pdf_return:'تاريخ الإرجاع', pdf_notes:'ملاحظات',
+    pdf_deposit:'الضمان المطلوب', pdf_deposit_value:'300$ أو 500$ حسب السيارة',
+    pdf_footer:'شكراً لاختياركم Auto Fluchos Coches!',
+  }
+};
+
+/* =========================================================
+   3) i18n ENGINE
+========================================================= */
+function getSavedLang(){
+  try { return localStorage.getItem('afc_lang'); }
+  catch(e){ return null; } /* localStorage can throw when the page is opened via file:// (e.g. Safari) */
+}
+function saveLang(lang){
+  try { localStorage.setItem('afc_lang', lang); }
+  catch(e){ /* ignore: not critical, just means the choice won't persist on reload */ }
+}
+let currentLang = getSavedLang() || 'en';
+
+function applyLang(lang){
+  const dict = I18N[lang];
+  if(!dict) return;
+  currentLang = lang;
+  saveLang(lang);
+  document.documentElement.lang = dict.htmlLang;
+  document.documentElement.dir = dict.dir;
+
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    if(dict[key] !== undefined){ el.innerHTML = dict[key]; }
+  });
+
+  document.querySelectorAll('#langSwitch button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+
+  renderFleet(dict, document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
+  renderFaq(dict);
+  populateLocationAndDepositSelects(dict);
+  if(typeof populateCarSelect === 'function') populateCarSelect(dict);
+  if(typeof updateTotal === 'function') updateTotal();
+}
+
+/* =========================================================
+   4) FLEET RENDERING
+   NOTE ON AVAILABILITY: "booked" cars are tracked in this browser's
+   localStorage only (key "afc_booked_cars"). There is no shared backend/
+   database, so a car marked unavailable here will NOT appear unavailable
+   to a visitor on a different device/browser. Making availability real
+   and shared across all visitors requires a small backend (e.g. a
+   Google Sheet, Firebase or Supabase) — see the TODO near BOOKED_CARS below.
+========================================================= */
+function getBookedCars(){
+  try { return JSON.parse(localStorage.getItem('afc_booked_cars') || '[]'); }
+  catch(e){ return []; }
+}
+function addBookedCar(carId){
+  try {
+    const list = getBookedCars();
+    if(!list.includes(carId)) list.push(carId);
+    localStorage.setItem('afc_booked_cars', JSON.stringify(list));
+  } catch(e){ /* ignore: booked state just won't persist */ }
+}
+
+function renderFleet(dict, cat){
+  const grid = document.getElementById('fleetGrid');
+  grid.innerHTML = '';
+  const booked = getBookedCars();
+  CARS.filter(c => cat === 'all' || c.cat === cat).forEach(c=>{
+    const gearLabel = c.gearKey === 'auto' ? dict.gear_auto : dict.gear_manual;
+    const fuelLabel = dict['fuel_' + c.fuelKey];
+    const isBooked = booked.includes(c.id);
+    const altText = `${c.name} rental car in Tétouan &amp; Tangier — ${c.seats} seats, ${gearLabel}, ${fuelLabel} — Auto Fluchos Coches`;
+    const card = document.createElement('div');
+    card.className = 'car-card' + (isBooked ? ' is-unavailable' : '');
+    card.innerHTML = `
+      <div class="car-photo">
+        <span class="car-offer${isBooked ? ' is-unavailable-badge' : ''}">${isBooked ? dict.unavailable_badge : c.offer}</span>
+        <img src="${c.imgSrc}" alt="${altText}" loading="lazy">
+      </div>
+      <div class="car-body">
+        <h3>${c.name}</h3>
+        <div class="car-price">${c.price}€ <span>${dict.per_day}</span></div>
+        <div class="car-specs">
+          <span>👥 ${c.seats} ${dict.seats}</span>
+          <span>⚙️ ${gearLabel}</span>
+          <span>🚪 ${c.doors} ${dict.doors}</span>
+          <span>⛽ ${fuelLabel}</span>
+        </div>
+        ${isBooked
+          ? `<button type="button" class="btn btn-block" disabled>🚫 ${dict.unavailable_btn}</button>`
+          : `<button type="button" class="btn btn-primary btn-block" data-book-id="${c.id}"><svg class="ico-wa" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.31.65 4.47 1.78 6.31L4 29l7.86-1.74A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Zm0 21.72c-1.94 0-3.75-.55-5.28-1.5l-.38-.23-4.66 1.03 1.05-4.55-.25-.4A9.63 9.63 0 0 1 5.32 15c0-5.34 4.35-9.68 9.684-9.68S24.688 9.66 24.688 15 21.34 24.72 16.004 24.72Zm5.37-7.26c-.29-.15-1.73-.86-2-.95-.27-.1-.46-.15-.66.15-.2.29-.76.95-.93 1.14-.17.2-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.44-.86-.77-1.44-1.72-1.61-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.48.1-.2.05-.37-.02-.51-.07-.15-.66-1.6-.91-2.19-.24-.58-.48-.5-.66-.51-.17-.01-.37-.01-.56-.01s-.51.07-.78.37c-.27.29-1.02 1-1.02 2.43 0 1.44 1.05 2.83 1.2 3.02.15.2 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.61.7.22 1.34.19 1.84.11.56-.08 1.73-.7 1.98-1.38.24-.68.24-1.26.17-1.38-.07-.13-.26-.2-.55-.35Z"/></svg> ${dict.book_now}</button>`}
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+document.getElementById('fleetFilter').addEventListener('click', e=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  document.querySelectorAll('#fleetFilter button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFleet(I18N[currentLang], btn.dataset.cat);
+});
+
+/* =========================================================
+   5) FAQ ACCORDION
+========================================================= */
+function renderFaq(dict){
+  const list = document.getElementById('faqList');
+  list.innerHTML = '';
+  dict.faq_items.forEach(([q,a])=>{
+    const item = document.createElement('div');
+    item.className = 'faq-item';
+    item.innerHTML = `
+      <div class="faq-q"><span>${q}</span><span class="plus">+</span></div>
+      <div class="faq-a"><p>${a}</p></div>`;
+    const qEl = item.querySelector('.faq-q');
+    const aEl = item.querySelector('.faq-a');
+    qEl.addEventListener('click', ()=>{
+      const isOpen = item.classList.contains('open');
+      list.querySelectorAll('.faq-item').forEach(i=>{
+        i.classList.remove('open');
+        i.querySelector('.faq-a').style.maxHeight = null;
+      });
+      if(!isOpen){
+        item.classList.add('open');
+        aEl.style.maxHeight = aEl.scrollHeight + 'px';
+      }
+    });
+    list.appendChild(item);
+  });
+}
+
+/* =========================================================
+   6) LANG SWITCH + MOBILE MENU + INIT
+========================================================= */
+document.getElementById('langSwitch').addEventListener('click', e=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  applyLang(btn.dataset.lang);
+});
+
+document.getElementById('burgerBtn').addEventListener('click', ()=>{
+  document.getElementById('navLinks').classList.toggle('open');
+});
+document.querySelectorAll('#navLinks a').forEach(a=>{
+  a.addEventListener('click', ()=> document.getElementById('navLinks').classList.remove('open'));
+});
+
+document.getElementById('year').textContent = new Date().getFullYear();
+
+/* =========================================================
+   7) BOOKING MODAL + PDF GENERATION
+   Flow (mirrors the original site's "Booking Form" / "Enquiry Form"
+   tabs and fields): click "Book Now" -> fill the detailed booking form
+   (dates, quantity, driving license & passport upload, years of licence,
+   pick-up/drop-off location, deposit, car washing, extra resources,
+   terms checkbox) -> a booking PDF is generated client-side (jsPDF) and
+   downloaded, with the uploaded license/passport images embedded when
+   possible -> the car is marked "unavailable" in this browser -> a
+   confirmation screen lets the customer choose to send the booking via
+   WhatsApp or Email (both open the customer's own app with the message
+   pre-filled; the customer attaches the downloaded PDF, since neither
+   wa.me links nor mailto: links can attach a file automatically).
+   The "Enquiry Form" tab is a lighter path for a simple question: it does
+   NOT generate a PDF and does NOT mark the car unavailable.
+========================================================= */
+let activeBookingCar = null;
+
+const bookingOverlay = document.getElementById('bookingOverlay');
+const confirmOverlay = document.getElementById('confirmOverlay');
+const termsOverlay = document.getElementById('termsOverlay');
+const bookingForm = document.getElementById('bookingForm');
+const enquiryForm = document.getElementById('enquiryForm');
+const bookingError = document.getElementById('bookingError');
+const enquiryError = document.getElementById('enquiryError');
+
+const RESOURCE_FEE = 10; // € per selected resource (second driver / baby seat) — matches the original site
+
+/* ---- License/Passport file pickers: "Take Photo" (opens the device camera directly on
+   mobile via the capture attribute) or "Upload File" (normal file/gallery picker). Each
+   field keeps the chosen File object in `selectedFiles`, since the two buttons write to
+   two different hidden <input type="file">s rather than one. ---- */
+const selectedFiles = {};
+function setupFilePicker(fieldKey){
+  const wrap = document.querySelector(`.file-picker[data-field="${fieldKey}"]`);
+  const nameEl = wrap.parentElement.querySelector('.file-chosen-name');
+  const cameraInput = wrap.querySelector('.file-input-camera');
+  const uploadInput = wrap.querySelector('.file-input-upload');
+  wrap.querySelector('[data-action="camera"]').addEventListener('click', () => cameraInput.click());
+  wrap.querySelector('[data-action="upload"]').addEventListener('click', () => uploadInput.click());
+  function handleChange(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    selectedFiles[fieldKey] = file;
+    nameEl.removeAttribute('data-i18n');
+    nameEl.textContent = file.name;
+  }
+  cameraInput.addEventListener('change', handleChange);
+  uploadInput.addEventListener('change', handleChange);
+}
+function resetFilePicker(fieldKey, dict){
+  delete selectedFiles[fieldKey];
+  const wrap = document.querySelector(`.file-picker[data-field="${fieldKey}"]`);
+  wrap.querySelector('.file-input-camera').value = '';
+  wrap.querySelector('.file-input-upload').value = '';
+  const nameEl = wrap.parentElement.querySelector('.file-chosen-name');
+  nameEl.setAttribute('data-i18n', 'file_none_chosen');
+  nameEl.textContent = dict.file_none_chosen;
+}
+['bkLicense','bkPassport','eqLicense','eqPassport'].forEach(setupFilePicker);
+
+function switchModalTab(tab){
+  document.querySelectorAll('.modal-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.modal-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === tab));
+}
+document.getElementById('modalTabs').addEventListener('click', e=>{
+  const btn = e.target.closest('.modal-tab');
+  if(!btn) return;
+  switchModalTab(btn.dataset.tab);
+});
+
+/* Lets the customer change their mind about which car they're booking without closing
+   the form: the <select> is populated with every car (booked ones shown but disabled)
+   and driving the total/PDF/WhatsApp text all read from `activeBookingCar`, so switching
+   the selection just re-points that reference — nothing else needs special-casing. */
+function populateCarSelect(dict){
+  const sel = document.getElementById('modalCarSelect');
+  const prev = sel.value;
+  const booked = getBookedCars();
+  sel.innerHTML = CARS.map(c=>{
+    const isBooked = booked.includes(c.id);
+    const label = `${c.name} — ${c.price}€${dict.per_day}${isBooked ? ' (' + dict.unavailable_badge + ')' : ''}`;
+    return `<option value="${c.id}" ${isBooked ? 'disabled' : ''}>${label}</option>`;
+  }).join('');
+  if(prev && CARS.some(c => c.id === prev)) sel.value = prev;
+}
+document.getElementById('modalCarSelect').addEventListener('change', e=>{
+  const car = CARS.find(c => c.id === e.target.value);
+  if(!car) return;
+  activeBookingCar = car;
+  updateTotal();
+});
+
+function openBookingModal(carId){
+  activeBookingCar = CARS.find(c => c.id === carId);
+  if(!activeBookingCar) return;
+  populateCarSelect(I18N[currentLang]);
+  document.getElementById('modalCarSelect').value = activeBookingCar.id;
+  bookingForm.reset();
+  enquiryForm.reset();
+  bookingError.classList.remove('show');
+  enquiryError.classList.remove('show');
+  ['bkLicense','bkPassport','eqLicense','eqPassport'].forEach(k => resetFilePicker(k, I18N[currentLang]));
+  switchModalTab('booking');
+  updateTotal();
+  bookingOverlay.classList.add('open');
+}
+function closeBookingModal(){ bookingOverlay.classList.remove('open'); }
+function closeConfirmModal(){ confirmOverlay.classList.remove('open'); }
+
+document.getElementById('fleetGrid').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-book-id]');
+  if(!btn) return;
+  openBookingModal(btn.dataset.bookId);
+});
+/* Hero CTA opens the booking form directly, pre-selected with the car shown in the hero photo */
+document.getElementById('heroBookBtn').addEventListener('click', ()=>{
+  openBookingModal('sandero-stepway-auto');
+});
+document.getElementById('bookingClose').addEventListener('click', closeBookingModal);
+document.getElementById('bookingCancel').addEventListener('click', closeBookingModal);
+document.getElementById('enquiryCancel').addEventListener('click', closeBookingModal);
+bookingOverlay.addEventListener('click', e=>{ if(e.target === bookingOverlay) closeBookingModal(); });
+document.getElementById('confirmClose').addEventListener('click', closeConfirmModal);
+document.getElementById('confirmCloseBtn').addEventListener('click', closeConfirmModal);
+confirmOverlay.addEventListener('click', e=>{ if(e.target === confirmOverlay) closeConfirmModal(); });
+
+function openTerms(e){ e.preventDefault(); termsOverlay.classList.add('open'); }
+document.getElementById('bkTermsLink').addEventListener('click', openTerms);
+document.getElementById('eqTermsLink').addEventListener('click', openTerms);
+document.getElementById('termsClose').addEventListener('click', ()=> termsOverlay.classList.remove('open'));
+document.getElementById('termsCloseBtn').addEventListener('click', ()=> termsOverlay.classList.remove('open'));
+termsOverlay.addEventListener('click', e=>{ if(e.target === termsOverlay) termsOverlay.classList.remove('open'); });
+
+/* ---- live price estimate (Booking Form only): days x price x quantity
+   + pick-up/drop-off location fees + deposit-based daily surcharge
+   + mandatory €5 car wash + resources (second driver + baby seats x qty) ---- */
+function computeDays(pickupId, returnId){
+  const p = document.getElementById(pickupId).value;
+  const r = document.getElementById(returnId).value;
+  if(!p || !r) return 1;
+  const diff = (new Date(r) - new Date(p)) / (1000 * 60 * 60 * 24);
+  return diff > 0 ? Math.ceil(diff) : 1;
+}
+function getResourcesBreakdown(prefix){
+  const dict = I18N[currentLang];
+  const list = [];
+  let fee = 0;
+  if(document.getElementById(prefix + 'SecondDriver').checked){
+    list.push(dict.res_second_driver);
+    fee += RESOURCE_FEE;
+  }
+  [['BabySeat1', 'res_baby_0_15'], ['BabySeat2', 'res_baby_1_4'], ['BabySeat3', 'res_baby_4_12']].forEach(([key, i18nKey])=>{
+    const chk = document.getElementById(prefix + key + 'chk');
+    if(chk && chk.checked){
+      const qty = Math.max(1, parseInt(document.getElementById(prefix + key + 'qty').value, 10) || 1);
+      list.push(`${dict[i18nKey]} x${qty}`);
+      fee += RESOURCE_FEE * qty;
+    }
+  });
+  return { text: list.join(', '), fee };
+}
+function updateTotal(){
+  if(!activeBookingCar) return;
+  const totalEl = document.getElementById('bkTotalDisplay');
+  if(!totalEl) return;
+  const days = computeDays('bkPickup', 'bkReturn');
+  const qty = Math.max(1, parseInt(document.getElementById('bkQuantity').value, 10) || 1);
+  const pickupLoc = LOCATIONS[document.getElementById('bkPickupLoc').value || 0];
+  const dropoffLoc = LOCATIONS[document.getElementById('bkDropoffLoc').value || 0];
+  const deposit = DEPOSITS[document.getElementById('bkDeposit').value || 0];
+  const resourcesFee = getResourcesBreakdown('bk').fee;
+
+  const total = (activeBookingCar.price * days * qty)
+    + pickupLoc.fee + dropoffLoc.fee
+    + (deposit.surcharge * days)
+    + CAR_WASH_FEE
+    + resourcesFee;
+
+  totalEl.textContent = total.toFixed(2) + ' €';
+}
+['bkPickup','bkReturn','bkQuantity','bkPickupLoc','bkDropoffLoc','bkDeposit',
+ 'bkSecondDriver','bkBabySeat1chk','bkBabySeat1qty','bkBabySeat2chk','bkBabySeat2qty','bkBabySeat3chk','bkBabySeat3qty'
+].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener('input', updateTotal);
+  el.addEventListener('change', updateTotal);
+});
+
+/* Reads a file as a base64 data URL (used to embed license/passport photos in the PDF) */
+function readFileAsDataUrl(file){
+  return new Promise((resolve)=>{
+    if(!file){ resolve(null); return; }
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function generateBookingPdf(dict, data){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFillColor(11, 23, 48);
+  doc.rect(0, 0, 210, 32, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(18);
+  doc.text('AUTO FLUCHOS COCHES', 14, 16);
+  doc.setFontSize(10);
+  doc.text('N°30, Av. Bejaia, Tétouan 93000, Morocco | +212 661-304574', 14, 24);
+
+  doc.setTextColor(20, 20, 20);
+  doc.setFontSize(14);
+  doc.text(dict.pdf_title, 14, 44);
+  doc.setDrawColor(200, 200, 200);
+  doc.line(14, 48, 196, 48);
+
+  const rows = [
+    [dict.pdf_ref, data.ref],
+    [dict.pdf_date, data.date],
+    [dict.pdf_customer, data.name],
+    [dict.pdf_phone, data.phone],
+    [dict.pdf_car, data.carName],
+    [dict.pdf_price, data.price],
+    [dict.pdf_pickup, data.pickup],
+    [dict.pdf_return, data.ret],
+    [dict.modal_quantity_label, data.quantity],
+    [dict.modal_pickup_location_label, data.pickupLoc],
+    [dict.modal_dropoff_location_label, data.dropoffLoc],
+    [dict.modal_deposit_label, data.deposit],
+    [dict.modal_washing_label, `€${CAR_WASH_FEE} (${dict.washing_mandatory})`],
+  ];
+  if(data.licenseYears) rows.push([dict.modal_license_years_label, data.licenseYears]);
+  if(data.resources) rows.push([dict.modal_resources_title, data.resources]);
+  if(data.address) rows.push([dict.modal_address_label, data.address]);
+  if(data.extra) rows.push([dict.modal_extra_info_label, data.extra]);
+  rows.push([dict.modal_total_label, data.total]);
+
+  let y = 60;
+  doc.setFontSize(10.5);
+  rows.forEach(([label, value])=>{
+    doc.setFont(undefined, 'bold');
+    doc.text(String(label) + ':', 14, y);
+    doc.setFont(undefined, 'normal');
+    const wrapped = doc.splitTextToSize(String(value), 110);
+    doc.text(wrapped, 82, y);
+    y += 7 * wrapped.length + 1;
+  });
+
+  y += 4;
+  doc.setDrawColor(200, 200, 200);
+  doc.line(14, y, 196, y);
+  y += 10;
+
+  // Embed license/passport thumbnails when the uploaded file is an image
+  const addDocImage = (label, dataUrl) => {
+    if(!dataUrl || !dataUrl.startsWith('data:image')) return;
+    if(y > 240){ doc.addPage(); y = 20; }
+    doc.setFontSize(10.5);
+    doc.setFont(undefined, 'bold');
+    doc.text(label, 14, y);
+    try { doc.addImage(dataUrl, 14, y + 4, 60, 40); } catch(e){ /* unsupported image format, skip silently */ }
+    y += 50;
+  };
+  addDocImage(dict.modal_license_label, data.licenseImg);
+  addDocImage(dict.modal_passport_label, data.passportImg);
+
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text(dict.pdf_footer, 14, 285);
+
+  return doc;
+}
+
+bookingForm.addEventListener('submit', async e=>{
+  e.preventDefault();
+  const dict = I18N[currentLang];
+  const name = document.getElementById('bkName').value.trim();
+  const phone = document.getElementById('bkPhone').value.trim();
+  const pickup = document.getElementById('bkPickup').value;
+  const ret = document.getElementById('bkReturn').value;
+  const termsChecked = document.getElementById('bkTerms').checked;
+
+  if(!name || !phone || !pickup || !ret || !termsChecked){
+    bookingError.classList.add('show');
+    return;
+  }
+  bookingError.classList.remove('show');
+
+  const quantity = Math.max(1, parseInt(document.getElementById('bkQuantity').value, 10) || 1);
+  const licenseYears = document.getElementById('bkLicenseYears').value.trim();
+  const pickupLocData = LOCATIONS[document.getElementById('bkPickupLoc').value || 0];
+  const dropoffLocData = LOCATIONS[document.getElementById('bkDropoffLoc').value || 0];
+  const depositData = DEPOSITS[document.getElementById('bkDeposit').value || 0];
+  const pickupLoc = locationOptionLabel(pickupLocData, dict);
+  const dropoffLoc = locationOptionLabel(dropoffLocData, dict);
+  const deposit = depositOptionLabel(depositData, dict);
+  const resources = getResourcesBreakdown('bk').text;
+  const total = document.getElementById('bkTotalDisplay').textContent;
+
+  const licenseFile = selectedFiles.bkLicense;
+  const passportFile = selectedFiles.bkPassport;
+  const [licenseImg, passportImg] = await Promise.all([
+    readFileAsDataUrl(licenseFile), readFileAsDataUrl(passportFile)
+  ]);
+
+  const ref = 'AFC-' + Date.now().toString().slice(-8);
+  const carPriceLabel = `${activeBookingCar.price}€${dict.per_day}`;
+
+  const pdfData = {
+    ref, date: new Date().toLocaleDateString(dict.htmlLang),
+    name, phone, carName: activeBookingCar.name, price: carPriceLabel,
+    pickup, ret, quantity, licenseYears, pickupLoc, dropoffLoc,
+    deposit, resources, total, licenseImg, passportImg,
+  };
+  const doc = await generateBookingPdf(dict, pdfData);
+  doc.save(`booking-${ref}.pdf`);
+
+  addBookedCar(activeBookingCar.id);
+  renderFleet(dict, document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
+
+  const summary = `${dict.pdf_title} ${ref}\n${dict.pdf_car}: ${activeBookingCar.name}\n${dict.pdf_customer}: ${name}\n${dict.pdf_phone}: ${phone}\n${dict.pdf_pickup}: ${pickup}\n${dict.pdf_return}: ${ret}\n${dict.modal_total_label}: ${total}`;
+
+  document.getElementById('confirmWhatsappBtn').href =
+    'https://wa.me/212661304574?text=' + encodeURIComponent(summary);
+  document.getElementById('confirmEmailBtn').href =
+    'mailto:Contact@autofluchoscoches.com?subject=' +
+    encodeURIComponent(`${dict.pdf_title} ${ref}`) +
+    '&body=' + encodeURIComponent(summary + '\n\n' + dict.confirm_attach_note);
+
+  closeBookingModal();
+  confirmOverlay.classList.add('open');
+});
+
+/* Enquiry Form: a lightweight question sent directly via WhatsApp — no PDF, no availability change,
+   matching the original site's "Enquiry Form" tab (a request, not a firm reservation). */
+enquiryForm.addEventListener('submit', e=>{
+  e.preventDefault();
+  const dict = I18N[currentLang];
+  const name = document.getElementById('eqName').value.trim();
+  const phone = document.getElementById('eqPhone').value.trim();
+  const email = document.getElementById('eqEmail').value.trim();
+  const address = document.getElementById('eqAddress').value.trim();
+  const pickup = document.getElementById('eqPickup').value;
+  const ret = document.getElementById('eqReturn').value;
+  const extra = document.getElementById('eqExtra').value.trim();
+  const termsChecked = document.getElementById('eqTerms').checked;
+
+  if(!name || !phone || !termsChecked){
+    enquiryError.classList.add('show');
+    return;
+  }
+  enquiryError.classList.remove('show');
+
+  const quantity = document.getElementById('eqQuantity').value;
+  const pickupLocData = LOCATIONS[document.getElementById('eqPickupLoc').value || 0];
+  const dropoffLocData = LOCATIONS[document.getElementById('eqDropoffLoc').value || 0];
+  const depositData = DEPOSITS[document.getElementById('eqDeposit').value || 0];
+  const resources = getResourcesBreakdown('eq').text;
+  const carLabel = activeBookingCar ? activeBookingCar.name : '';
+
+  let text = `${dict.tab_enquiry}\n${dict.pdf_car}: ${carLabel}\n${dict.pdf_customer}: ${name}\n${dict.pdf_phone}: ${phone}`;
+  if(email) text += `\n${dict.modal_email_label}: ${email}`;
+  if(address) text += `\n${dict.modal_address_label}: ${address}`;
+  if(pickup) text += `\n${dict.pdf_pickup}: ${pickup}`;
+  if(ret) text += `\n${dict.pdf_return}: ${ret}`;
+  text += `\n${dict.modal_quantity_label}: ${quantity}`;
+  text += `\n${dict.modal_pickup_location_label}: ${locationOptionLabel(pickupLocData, dict)}`;
+  text += `\n${dict.modal_dropoff_location_label}: ${locationOptionLabel(dropoffLocData, dict)}`;
+  text += `\n${dict.modal_deposit_label}: ${depositOptionLabel(depositData, dict)}`;
+  if(resources) text += `\n${dict.modal_resources_title}: ${resources}`;
+  if(extra) text += `\n${dict.modal_extra_info_label}: ${extra}`;
+
+  window.open('https://wa.me/212661304574?text=' + encodeURIComponent(text), '_blank');
+  closeBookingModal();
+});
+
+applyLang(currentLang);
+</script>
+
+</body>
+</html>
