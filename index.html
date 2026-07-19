@@ -28,6 +28,11 @@
      original site's template — replace with a real team member or remove the section.
   7. Testimonials are 2 real Google reviews (Jules Pesci, Pierre Faure), translated from
      the original French. Update periodically as new reviews come in.
+  8. IMPORTANT — car availability backend: set APPS_SCRIPT_URL (search for it in the
+     <script> below) to your deployed Google Apps Script Web App URL, so "Not Available"
+     is shared across every visitor instead of just the browser that booked. See
+     apps-script.gs.txt in this project for the script and step-by-step deploy guide.
+     Until this is set, availability only tracks per-browser (localStorage fallback).
 ============================================================= -->
 
 <title>Car Rental in Tétouan &amp; Tangier from €25/day | Auto Fluchos Coches</title>
@@ -474,6 +479,17 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
   display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
   color:var(--ink-dim);font-size:.82rem;
 }
+.admin-link{opacity:.55;transition:opacity .15s}
+.admin-link:hover{opacity:1;color:var(--blue-400)}
+
+.admin-booking-item{
+  display:flex;justify-content:space-between;align-items:center;gap:14px;
+  background:var(--navy-900);border:1px solid var(--card-border);border-radius:10px;
+  padding:14px 16px;margin-bottom:10px;font-size:.85rem;
+}
+.admin-booking-item b{display:block;margin-bottom:4px}
+.admin-booking-details{color:var(--ink-dim);font-size:.78rem;line-height:1.5}
+.admin-booking-item .btn{flex:none;padding:9px 16px;font-size:.8rem}
 
 /* ---------- Floating WhatsApp ---------- */
 .float-whatsapp{
@@ -904,6 +920,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
     </div>
     <div class="footer-bottom">
       <span>© <span id="year"></span> <span data-i18n="footer_by">by</span> autofluchoscoches.com</span>
+      <a href="#" id="adminLink" class="admin-link" data-i18n="admin_link_text">🔑 Admin</a>
     </div>
   </div>
 </footer>
@@ -1164,6 +1181,29 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
   </div>
 </div>
 
+<!-- ================= ADMIN PANEL (owner only — cancel a booking to free the car up again) ================= -->
+<div class="modal-overlay" id="adminOverlay">
+  <div class="modal-box modal-box-lg">
+    <button class="modal-close" id="adminClose" aria-label="Close">✕</button>
+    <h3 data-i18n="admin_title">Admin — Manage Bookings</h3>
+
+    <div id="adminLoginPanel">
+      <p data-i18n="admin_login_sub">Enter the admin password to view and cancel bookings.</p>
+      <label data-i18n="admin_password_label">Password</label>
+      <input type="password" id="adminPasswordInput">
+      <p class="modal-error" id="adminLoginError" data-i18n="admin_wrong_password">Incorrect password.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-blue btn-block" id="adminLoginBtn" data-i18n="admin_login_btn">Log in</button>
+      </div>
+    </div>
+
+    <div id="adminBookingsPanel" style="display:none">
+      <div id="adminBookingsList"></div>
+      <p id="adminEmptyMsg" data-i18n="admin_no_bookings" style="display:none">No active bookings.</p>
+    </div>
+  </div>
+</div>
+
 <!-- ================= CONFIRMATION MODAL ================= -->
 <div class="modal-overlay" id="confirmOverlay">
   <div class="modal-box">
@@ -1315,6 +1355,14 @@ const I18N = {
     contact_hours_label:'Hours', contact_hours_value:'Open 24/7',
     cta_whatsapp2:'Chat on WhatsApp', cta_directions:'📍 Google Maps directions',
     footer_links:'Quick links', footer_about:'About Us', footer_newcars:'New Cars', footer_by:'by',
+    admin_link_text:'🔑 Admin', admin_title:'Admin — Manage Bookings',
+    admin_login_sub:'Enter the admin password to view and cancel bookings.',
+    admin_password_label:'Password', admin_wrong_password:'Incorrect password.',
+    admin_login_btn:'Log in', admin_no_bookings:'No active bookings.',
+    admin_cancel_btn:'Cancel booking', admin_confirm_cancel:'Cancel this booking and make the car available again?',
+    admin_cancel_failed:'Could not cancel the booking. Please try again.',
+    admin_not_configured:'The booking backend is not configured yet.',
+    admin_network_error:'Network error. Please try again.',
     modal_title:'Book This Car', modal_car_label:'Car', modal_car_select_label:'Selected vehicle (change anytime)', modal_name_label:'Full Name', modal_phone_label:'Phone Number',
     modal_pickup_label:'Pick-up Date', modal_return_label:'Drop-off Date', modal_notes_label:'Notes (optional)',
     modal_submit:'Generate Booking (PDF)', modal_cancel:'Cancel',
@@ -1343,6 +1391,11 @@ const I18N = {
     pdf_title:'BOOKING CONFIRMATION', pdf_ref:'Booking Reference', pdf_date:'Date',
     pdf_customer:'Customer', pdf_phone:'Phone', pdf_car:'Vehicle', pdf_price:'Price / Day',
     pdf_pickup:'Pick-up Date', pdf_return:'Return Date', pdf_notes:'Notes',
+    pdf_doc_title:'Reservation', pdf_reservation_label:'Reservation:', pdf_reservation_date_label:'Reservation date:',
+    pdf_bill_to:'Bill to', pdf_col_thumbnail:'Thumbnail', pdf_col_product:'Product',
+    pdf_col_quantity:'Quantity', pdf_col_price:'Price', pdf_subtotal:'Subtotal:', pdf_total_row:'Total:',
+    pdf_payment_method:'Payment method:', pdf_payment_cash:'Cash on delivery',
+    pdf_washing_value:'Car wash',
     pdf_deposit:'Deposit Required', pdf_deposit_value:'$300 or $500 depending on the vehicle',
     pdf_footer:'Thank you for choosing Auto Fluchos Coches!',
   },
@@ -1392,6 +1445,14 @@ const I18N = {
     contact_hours_label:'Horaires', contact_hours_value:'Ouvert 24h/24',
     cta_whatsapp2:'Discuter sur WhatsApp', cta_directions:'📍 Itinéraire Google Maps',
     footer_links:'Liens rapides', footer_about:'À propos', footer_newcars:'Nouvelles voitures', footer_by:'par',
+    admin_link_text:'🔑 Admin', admin_title:'Admin — Gérer les réservations',
+    admin_login_sub:'Entrez le mot de passe admin pour voir et annuler les réservations.',
+    admin_password_label:'Mot de passe', admin_wrong_password:'Mot de passe incorrect.',
+    admin_login_btn:'Se connecter', admin_no_bookings:'Aucune réservation active.',
+    admin_cancel_btn:'Annuler la réservation', admin_confirm_cancel:'Annuler cette réservation et rendre la voiture disponible à nouveau ?',
+    admin_cancel_failed:"Impossible d'annuler la réservation. Veuillez réessayer.",
+    admin_not_configured:"Le backend de réservation n'est pas encore configuré.",
+    admin_network_error:'Erreur réseau. Veuillez réessayer.',
     modal_title:'Réserver cette voiture', modal_car_label:'Voiture', modal_car_select_label:'Véhicule sélectionné (modifiable à tout moment)', modal_name_label:'Nom complet', modal_phone_label:'Numéro de téléphone',
     modal_pickup_label:'Date de prise en charge', modal_return_label:'Date de retour', modal_notes_label:'Remarques (facultatif)',
     modal_submit:'Générer la réservation (PDF)', modal_cancel:'Annuler',
@@ -1420,6 +1481,11 @@ const I18N = {
     pdf_title:'CONFIRMATION DE RÉSERVATION', pdf_ref:'Référence de réservation', pdf_date:'Date',
     pdf_customer:'Client', pdf_phone:'Téléphone', pdf_car:'Véhicule', pdf_price:'Prix / Jour',
     pdf_pickup:'Date de prise en charge', pdf_return:'Date de retour', pdf_notes:'Remarques',
+    pdf_doc_title:'Réservation', pdf_reservation_label:'Réservation :', pdf_reservation_date_label:'Date de réservation :',
+    pdf_bill_to:'Facturé à', pdf_col_thumbnail:'Photo', pdf_col_product:'Produit',
+    pdf_col_quantity:'Quantité', pdf_col_price:'Prix', pdf_subtotal:'Sous-total :', pdf_total_row:'Total :',
+    pdf_payment_method:'Mode de paiement :', pdf_payment_cash:'Paiement à la livraison',
+    pdf_washing_value:'Lavage de la voiture',
     pdf_deposit:'Caution requise', pdf_deposit_value:'300$ ou 500$ selon le véhicule',
     pdf_footer:'Merci d\'avoir choisi Auto Fluchos Coches !',
   },
@@ -1469,6 +1535,14 @@ const I18N = {
     contact_hours_label:'Horario', contact_hours_value:'Abierto 24h',
     cta_whatsapp2:'Chatear por WhatsApp', cta_directions:'📍 Cómo llegar (Google Maps)',
     footer_links:'Enlaces rápidos', footer_about:'Sobre nosotros', footer_newcars:'Coches nuevos', footer_by:'por',
+    admin_link_text:'🔑 Admin', admin_title:'Admin — Gestionar reservas',
+    admin_login_sub:'Introduzca la contraseña de administrador para ver y cancelar reservas.',
+    admin_password_label:'Contraseña', admin_wrong_password:'Contraseña incorrecta.',
+    admin_login_btn:'Iniciar sesión', admin_no_bookings:'No hay reservas activas.',
+    admin_cancel_btn:'Cancelar reserva', admin_confirm_cancel:'¿Cancelar esta reserva y volver a poner el coche disponible?',
+    admin_cancel_failed:'No se pudo cancelar la reserva. Inténtelo de nuevo.',
+    admin_not_configured:'El backend de reservas aún no está configurado.',
+    admin_network_error:'Error de red. Inténtelo de nuevo.',
     modal_title:'Reservar este coche', modal_car_label:'Coche', modal_car_select_label:'Vehículo seleccionado (puede cambiarlo en cualquier momento)', modal_name_label:'Nombre completo', modal_phone_label:'Número de teléfono',
     modal_pickup_label:'Fecha de recogida', modal_return_label:'Fecha de devolución', modal_notes_label:'Notas (opcional)',
     modal_submit:'Generar reserva (PDF)', modal_cancel:'Cancelar',
@@ -1497,6 +1571,11 @@ const I18N = {
     pdf_title:'CONFIRMACIÓN DE RESERVA', pdf_ref:'Referencia de reserva', pdf_date:'Fecha',
     pdf_customer:'Cliente', pdf_phone:'Teléfono', pdf_car:'Vehículo', pdf_price:'Precio / Día',
     pdf_pickup:'Fecha de recogida', pdf_return:'Fecha de devolución', pdf_notes:'Notas',
+    pdf_doc_title:'Reserva', pdf_reservation_label:'Reserva:', pdf_reservation_date_label:'Fecha de reserva:',
+    pdf_bill_to:'Facturar a', pdf_col_thumbnail:'Foto', pdf_col_product:'Producto',
+    pdf_col_quantity:'Cantidad', pdf_col_price:'Precio', pdf_subtotal:'Subtotal:', pdf_total_row:'Total:',
+    pdf_payment_method:'Método de pago:', pdf_payment_cash:'Pago contra entrega',
+    pdf_washing_value:'Lavado del coche',
     pdf_deposit:'Depósito requerido', pdf_deposit_value:'300$ o 500$ según el vehículo',
     pdf_footer:'¡Gracias por elegir Auto Fluchos Coches!',
   },
@@ -1546,6 +1625,14 @@ const I18N = {
     contact_hours_label:'أوقات العمل', contact_hours_value:'مفتوح 24/24',
     cta_whatsapp2:'تواصل عبر واتساب', cta_directions:'📍 الاتجاهات عبر خرائط غوغل',
     footer_links:'روابط سريعة', footer_about:'من نحن', footer_newcars:'سيارات جديدة', footer_by:'من طرف',
+    admin_link_text:'🔑 الإدارة', admin_title:'الإدارة — تسيير الحجوزات',
+    admin_login_sub:'أدخل كلمة سر الإدارة لعرض وإلغاء الحجوزات.',
+    admin_password_label:'كلمة السر', admin_wrong_password:'كلمة السر غير صحيحة.',
+    admin_login_btn:'تسجيل الدخول', admin_no_bookings:'لا توجد حجوزات نشطة.',
+    admin_cancel_btn:'إلغاء الحجز', admin_confirm_cancel:'هل تريد إلغاء هذا الحجز وجعل السيارة متوفرة من جديد؟',
+    admin_cancel_failed:'تعذّر إلغاء الحجز. حاول مرة أخرى.',
+    admin_not_configured:'لم يتم إعداد نظام الحجوزات بعد.',
+    admin_network_error:'خطأ في الاتصال. حاول مرة أخرى.',
     modal_title:'احجز هذه السيارة', modal_car_label:'السيارة', modal_car_select_label:'السيارة المختارة (يمكن تغييرها في أي وقت)', modal_name_label:'الاسم الكامل', modal_phone_label:'رقم الهاتف',
     modal_pickup_label:'تاريخ الاستلام', modal_return_label:'تاريخ الإرجاع', modal_notes_label:'ملاحظات (اختياري)',
     modal_submit:'إنشاء الحجز (PDF)', modal_cancel:'إلغاء',
@@ -1573,6 +1660,11 @@ const I18N = {
     confirm_close:'إغلاق',
     pdf_title:'تأكيد الحجز', pdf_ref:'رقم الحجز', pdf_date:'التاريخ',
     pdf_customer:'الزبون', pdf_phone:'الهاتف', pdf_car:'السيارة', pdf_price:'الثمن / اليوم',
+    pdf_doc_title:'Reservation', pdf_reservation_label:'Reservation:', pdf_reservation_date_label:'Reservation date:',
+    pdf_bill_to:'Bill to', pdf_col_thumbnail:'Thumbnail', pdf_col_product:'Product',
+    pdf_col_quantity:'Quantity', pdf_col_price:'Price', pdf_subtotal:'Subtotal:', pdf_total_row:'Total:',
+    pdf_payment_method:'Payment method:', pdf_payment_cash:'Cash on delivery',
+    pdf_washing_value:'Car wash',
     pdf_pickup:'تاريخ الاستلام', pdf_return:'تاريخ الإرجاع', pdf_notes:'ملاحظات',
     pdf_deposit:'الضمان المطلوب', pdf_deposit_value:'300$ أو 500$ حسب السيارة',
     pdf_footer:'شكراً لاختياركم Auto Fluchos Coches!',
@@ -1618,23 +1710,55 @@ function applyLang(lang){
 
 /* =========================================================
    4) FLEET RENDERING
-   NOTE ON AVAILABILITY: "booked" cars are tracked in this browser's
-   localStorage only (key "afc_booked_cars"). There is no shared backend/
-   database, so a car marked unavailable here will NOT appear unavailable
-   to a visitor on a different device/browser. Making availability real
-   and shared across all visitors requires a small backend (e.g. a
-   Google Sheet, Firebase or Supabase) — see the TODO near BOOKED_CARS below.
+   AVAILABILITY BACKEND: booked cars are tracked in a Google Sheet via a
+   Google Apps Script Web App (see apps-script.gs.txt in this project for
+   the script to deploy). This makes "unavailable" real and shared across
+   every visitor, not just the browser that made the booking.
+
+   TODO: replace APPS_SCRIPT_URL below with your deployed Web App URL
+   (see the deployment steps in apps-script.gs.txt). Until you do, the
+   placeholder value below makes every fetch() fail silently and the site
+   automatically falls back to this-browser-only localStorage tracking —
+   the site still works, it just won't be shared between visitors yet.
 ========================================================= */
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxKZk3f58C67EZArO4uLRSu7chg3soBBgIBQYNOq3-NXUkoZ0--82S5NgS7ccWbiuOi/exec';
+
+let remoteBookedCars = null; // null until the first successful fetch; then the shared source of truth
+
+async function fetchBookedCars(){
+  if(APPS_SCRIPT_URL.startsWith('PASTE_')) return; // not deployed yet — stay on local fallback
+  try {
+    const res = await fetch(APPS_SCRIPT_URL);
+    const data = await res.json();
+    remoteBookedCars = Array.isArray(data.bookedCars) ? data.bookedCars : [];
+  } catch(e){
+    remoteBookedCars = null; // offline or backend unreachable — fall back to local-only for this visit
+  }
+}
+
 function getBookedCars(){
+  if(remoteBookedCars !== null) return remoteBookedCars;
   try { return JSON.parse(localStorage.getItem('afc_booked_cars') || '[]'); }
   catch(e){ return []; }
 }
-function addBookedCar(carId){
+
+async function addBookedCar(carId, details){
   try {
-    const list = getBookedCars();
+    const list = JSON.parse(localStorage.getItem('afc_booked_cars') || '[]');
     if(!list.includes(carId)) list.push(carId);
     localStorage.setItem('afc_booked_cars', JSON.stringify(list));
-  } catch(e){ /* ignore: booked state just won't persist */ }
+  } catch(e){ /* ignore: local fallback just won't persist */ }
+
+  if(remoteBookedCars !== null && !remoteBookedCars.includes(carId)) remoteBookedCars.push(carId);
+
+  if(APPS_SCRIPT_URL.startsWith('PASTE_')) return; // not deployed yet
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'}, // avoids a CORS preflight against Apps Script
+      body: JSON.stringify({ carId, ...details }),
+    });
+  } catch(e){ /* offline or backend unreachable — the local mark above still works for this device */ }
 }
 
 function renderFleet(dict, cat){
@@ -1821,19 +1945,29 @@ document.getElementById('modalCarSelect').addEventListener('change', e=>{
   updateTotal();
 });
 
-function openBookingModal(carId){
+async function openBookingModal(carId){
   activeBookingCar = CARS.find(c => c.id === carId);
   if(!activeBookingCar) return;
-  populateCarSelect(I18N[currentLang]);
-  document.getElementById('modalCarSelect').value = activeBookingCar.id;
   bookingForm.reset();
   enquiryForm.reset();
   bookingError.classList.remove('show');
   enquiryError.classList.remove('show');
   ['bkLicense','bkPassport','eqLicense','eqPassport'].forEach(k => resetFilePicker(k, I18N[currentLang]));
   switchModalTab('booking');
-  updateTotal();
   bookingOverlay.classList.add('open');
+
+  // Refresh availability from the shared backend before letting the customer pick a car,
+  // so a car someone else just booked shows as unavailable here too.
+  await fetchBookedCars();
+  renderFleet(I18N[currentLang], document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
+  if(getBookedCars().includes(activeBookingCar.id)){
+    // the car this button was for just got booked by someone else — bump to the first free one
+    const fallback = CARS.find(c => !getBookedCars().includes(c.id));
+    if(fallback) activeBookingCar = fallback;
+  }
+  populateCarSelect(I18N[currentLang]);
+  document.getElementById('modalCarSelect').value = activeBookingCar.id;
+  updateTotal();
 }
 function closeBookingModal(){ bookingOverlay.classList.remove('open'); }
 function closeConfirmModal(){ confirmOverlay.classList.remove('open'); }
@@ -1861,6 +1995,130 @@ document.getElementById('eqTermsLink').addEventListener('click', openTerms);
 document.getElementById('termsClose').addEventListener('click', ()=> termsOverlay.classList.remove('open'));
 document.getElementById('termsCloseBtn').addEventListener('click', ()=> termsOverlay.classList.remove('open'));
 termsOverlay.addEventListener('click', e=>{ if(e.target === termsOverlay) termsOverlay.classList.remove('open'); });
+
+/* =========================================================
+   ADMIN PANEL — password-protected booking cancellation.
+   The password is checked server-side (in the Apps Script), not just in
+   this JS, so it can't be bypassed by reading the page source. Once
+   logged in for this page load, the password is kept in memory (not
+   persisted) to avoid re-typing it for every cancel click.
+========================================================= */
+const adminOverlay = document.getElementById('adminOverlay');
+let adminPassword = null;
+
+function openAdminModal(){
+  document.getElementById('adminPasswordInput').value = '';
+  document.getElementById('adminLoginError').classList.remove('show');
+  document.getElementById('adminLoginPanel').style.display = 'block';
+  document.getElementById('adminBookingsPanel').style.display = 'none';
+  adminOverlay.classList.add('open');
+  if(adminPassword) loadAdminBookings();
+}
+function closeAdminModal(){ adminOverlay.classList.remove('open'); }
+
+document.getElementById('adminLink').addEventListener('click', e=>{ e.preventDefault(); openAdminModal(); });
+document.getElementById('adminClose').addEventListener('click', closeAdminModal);
+adminOverlay.addEventListener('click', e=>{ if(e.target === adminOverlay) closeAdminModal(); });
+
+function showAdminLoginError(text){
+  const el = document.getElementById('adminLoginError');
+  if(text) el.textContent = text;
+  el.classList.add('show');
+}
+
+async function loadAdminBookings(){
+  const dict = I18N[currentLang];
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=admin&password=${encodeURIComponent(adminPassword)}`);
+    const data = await res.json();
+    if(!data.success){
+      adminPassword = null;
+      showAdminLoginError(dict.admin_wrong_password);
+      document.getElementById('adminLoginPanel').style.display = 'block';
+      document.getElementById('adminBookingsPanel').style.display = 'none';
+      return;
+    }
+    renderAdminBookings(data.bookings);
+    document.getElementById('adminLoginPanel').style.display = 'none';
+    document.getElementById('adminBookingsPanel').style.display = 'block';
+  } catch(e){
+    showAdminLoginError(dict.admin_network_error);
+  }
+}
+
+function renderAdminBookings(bookings){
+  const dict = I18N[currentLang];
+  const list = document.getElementById('adminBookingsList');
+  const emptyMsg = document.getElementById('adminEmptyMsg');
+  list.innerHTML = '';
+  if(!bookings.length){
+    emptyMsg.style.display = 'block';
+    return;
+  }
+  emptyMsg.style.display = 'none';
+  bookings.forEach(b=>{
+    const item = document.createElement('div');
+    item.className = 'admin-booking-item';
+    item.innerHTML = `
+      <div>
+        <b>${b.carName}</b>
+        <div class="admin-booking-details">${b.customerName} · ${b.phone}<br>${b.pickup} → ${b.ret} · ${b.ref}</div>
+      </div>
+      <button type="button" class="btn btn-outline" data-row="${b.row}" data-carid="${b.carId}">${dict.admin_cancel_btn}</button>`;
+    list.appendChild(item);
+  });
+}
+
+document.getElementById('adminLoginBtn').addEventListener('click', async ()=>{
+  const dict = I18N[currentLang];
+  const pwd = document.getElementById('adminPasswordInput').value;
+  document.getElementById('adminLoginError').classList.remove('show');
+  if(APPS_SCRIPT_URL.startsWith('PASTE_')){
+    showAdminLoginError(dict.admin_not_configured);
+    return;
+  }
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=admin&password=${encodeURIComponent(pwd)}`);
+    const data = await res.json();
+    if(!data.success){
+      showAdminLoginError(dict.admin_wrong_password);
+      return;
+    }
+    adminPassword = pwd;
+    renderAdminBookings(data.bookings);
+    document.getElementById('adminLoginPanel').style.display = 'none';
+    document.getElementById('adminBookingsPanel').style.display = 'block';
+  } catch(e){
+    showAdminLoginError(dict.admin_network_error);
+  }
+});
+
+document.getElementById('adminBookingsList').addEventListener('click', async e=>{
+  const btn = e.target.closest('button[data-row]');
+  if(!btn) return;
+  const dict = I18N[currentLang];
+  if(!confirm(dict.admin_confirm_cancel)) return;
+  btn.disabled = true;
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action: 'cancel', password: adminPassword, row: btn.dataset.row }),
+    });
+    const data = await res.json();
+    if(data.success){
+      if(remoteBookedCars) remoteBookedCars = remoteBookedCars.filter(id => id !== btn.dataset.carid);
+      renderFleet(dict, document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
+      loadAdminBookings();
+    } else {
+      alert(dict.admin_cancel_failed);
+      btn.disabled = false;
+    }
+  } catch(e){
+    alert(dict.admin_cancel_failed);
+    btn.disabled = false;
+  }
+});
 
 /* ---- live price estimate (Booking Form only): days x price x quantity
    + pick-up/drop-off location fees + deposit-based daily surcharge
@@ -1928,77 +2186,176 @@ function readFileAsDataUrl(file){
   });
 }
 
+/* Converts a same-origin image URL (webp/png/jpg) to a PNG data URL via canvas —
+   jsPDF's addImage() needs PNG/JPEG, so the site's .webp assets go through this first. */
+function imageUrlToPngDataUrl(url){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      } catch(e){ resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
+function formatDateTimeForPdf(value, locale){
+  if(!value) return '';
+  const d = new Date(value);
+  if(isNaN(d)) return value;
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return `${dd}-${mm}-${d.getFullYear()} ${hh}:${mi}`;
+}
+
+/* Reservation PDF, styled to match the original site's invoice-style booking
+   document: logo + business info, centered "Reservation" title, bill-to block,
+   a blue product table (car thumbnail + bulleted details), and blue
+   Subtotal/Total/Payment bars.
+   TODO: this business's real RC / Patente / ICE registration numbers were not
+   available when this was built — add a footer line with them once you have
+   them (search "legal footer" below). Never invent these numbers. */
 async function generateBookingPdf(dict, data){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
+  const pageW = 210;
+  const marginX = 14;
+  const rightX = 196;
+  const BLUE = [31, 111, 235];
+  const DARK = [20, 20, 20];
+  const GRAY = [100, 100, 100];
 
-  doc.setFillColor(11, 23, 48);
-  doc.rect(0, 0, 210, 32, 'F');
+  // ---- Header: logo + business info (left), title (center), bill-to (right) ----
+  if(data.logoImg){
+    try { doc.addImage(data.logoImg, 'PNG', marginX, 10, 24, 24); } catch(e){}
+  }
+  doc.setTextColor(...DARK);
+  doc.setFontSize(11);
+  doc.setFont(undefined, 'bold');
+  doc.text('autofluchoscoches.com', marginX, 40);
+  doc.setFont(undefined, 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...GRAY);
+  doc.text('Phone: +212 661-304574', marginX, 46);
+  doc.text('Contact@autofluchoscoches.com', marginX, 51);
+  doc.text('https://autofluchoscoches.com', marginX, 56);
+
+  doc.setTextColor(...DARK);
+  doc.setFontSize(22);
+  doc.setFont(undefined, 'bold');
+  doc.text(dict.pdf_doc_title, pageW / 2, 26, { align: 'center' });
+
+  let ry = 14;
+  doc.setFontSize(9.5);
+  // Draws "Label value" right-flush against rightX, with the label in bold and
+  // the value in normal weight (jsPDF can't mix weights within one text() call).
+  const labelValueRight = (label, value) => {
+    doc.setFont(undefined, 'normal');
+    const valueText = ' ' + value;
+    const valueW = doc.getTextWidth(valueText);
+    doc.text(valueText, rightX, ry, { align: 'right' });
+    doc.setFont(undefined, 'bold');
+    doc.text(label, rightX - valueW, ry, { align: 'right' });
+    ry += 5;
+  };
+  labelValueRight(dict.pdf_reservation_label, '#' + data.ref);
+  labelValueRight(dict.pdf_reservation_date_label, data.date);
+  doc.setFont(undefined, 'bold');
+  doc.text(dict.pdf_bill_to, rightX, ry, { align: 'right' }); ry += 5;
+  doc.setFont(undefined, 'normal');
+  doc.text(data.name, rightX, ry, { align: 'right' }); ry += 5;
+  doc.text(data.phone, rightX, ry, { align: 'right' }); ry += 5;
+
+  doc.setDrawColor(...BLUE);
+  doc.setLineWidth(0.6);
+  doc.line(marginX, 62, rightX, 62);
+
+  // ---- Table header ----
+  let y = 70;
+  doc.setFillColor(...BLUE);
+  doc.rect(marginX, y, rightX - marginX, 8, 'F');
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(18);
-  doc.text('AUTO FLUCHOS COCHES', 14, 16);
-  doc.setFontSize(10);
-  doc.text('N°30, Av. Bejaia, Tétouan 93000, Morocco | +212 661-304574', 14, 24);
+  doc.setFontSize(9.5);
+  doc.setFont(undefined, 'bold');
+  doc.text(dict.pdf_col_thumbnail, marginX + 2, y + 5.5);
+  doc.text(dict.pdf_col_product, marginX + 38, y + 5.5);
+  doc.text(dict.pdf_col_quantity, 152, y + 5.5);
+  doc.text(dict.pdf_col_price, 174, y + 5.5);
+  y += 8;
+  const rowTop = y;
 
-  doc.setTextColor(20, 20, 20);
-  doc.setFontSize(14);
-  doc.text(dict.pdf_title, 14, 44);
-  doc.setDrawColor(200, 200, 200);
-  doc.line(14, 48, 196, 48);
+  // ---- Table body: thumbnail + bulleted product details ----
+  if(data.carImg){
+    try { doc.addImage(data.carImg, 'PNG', marginX + 1, y + 3, 32, 22); } catch(e){}
+  }
+  let py = y + 6;
+  const productX = marginX + 38;
+  doc.setTextColor(...DARK);
+  doc.setFontSize(10.5);
+  doc.setFont(undefined, 'bold');
+  doc.text(data.carName, productX, py);
+  py += 6;
 
-  const rows = [
-    [dict.pdf_ref, data.ref],
-    [dict.pdf_date, data.date],
-    [dict.pdf_customer, data.name],
-    [dict.pdf_phone, data.phone],
-    [dict.pdf_car, data.carName],
-    [dict.pdf_price, data.price],
+  const bullets = [
     [dict.pdf_pickup, data.pickup],
     [dict.pdf_return, data.ret],
-    [dict.modal_quantity_label, data.quantity],
-    [dict.modal_pickup_location_label, data.pickupLoc],
-    [dict.modal_dropoff_location_label, data.dropoffLoc],
-    [dict.modal_deposit_label, data.deposit],
-    [dict.modal_washing_label, `€${CAR_WASH_FEE} (${dict.washing_mandatory})`],
+    [dict.modal_quantity_label, String(data.quantity)],
   ];
-  if(data.licenseYears) rows.push([dict.modal_license_years_label, data.licenseYears]);
-  if(data.resources) rows.push([dict.modal_resources_title, data.resources]);
-  if(data.address) rows.push([dict.modal_address_label, data.address]);
-  if(data.extra) rows.push([dict.modal_extra_info_label, data.extra]);
-  rows.push([dict.modal_total_label, data.total]);
+  if(data.licenseFileName) bullets.push([dict.modal_license_label, data.licenseFileName]);
+  if(data.passportFileName) bullets.push([dict.modal_passport_label, data.passportFileName]);
+  if(data.licenseYears) bullets.push([dict.modal_license_years_label, String(data.licenseYears)]);
+  bullets.push([dict.modal_pickup_location_label, data.pickupLoc]);
+  bullets.push([dict.modal_dropoff_location_label, data.dropoffLoc]);
+  bullets.push([dict.modal_deposit_label, data.deposit]);
+  bullets.push([dict.modal_washing_label, dict.pdf_washing_value]);
+  if(data.resources) bullets.push([dict.modal_resources_title, data.resources]);
 
-  let y = 60;
-  doc.setFontSize(10.5);
-  rows.forEach(([label, value])=>{
+  doc.setFontSize(9.5);
+  bullets.forEach(([label, value])=>{
     doc.setFont(undefined, 'bold');
-    doc.text(String(label) + ':', 14, y);
+    doc.text('• ' + label + ':', productX, py);
+    py += 4.6;
     doc.setFont(undefined, 'normal');
-    const wrapped = doc.splitTextToSize(String(value), 110);
-    doc.text(wrapped, 82, y);
-    y += 7 * wrapped.length + 1;
+    const wrapped = doc.splitTextToSize(String(value), 95);
+    doc.text(wrapped, productX, py);
+    py += 4.6 * wrapped.length;
   });
 
-  y += 4;
-  doc.setDrawColor(200, 200, 200);
-  doc.line(14, y, 196, y);
-  y += 10;
-
-  // Embed license/passport thumbnails when the uploaded file is an image
-  const addDocImage = (label, dataUrl) => {
-    if(!dataUrl || !dataUrl.startsWith('data:image')) return;
-    if(y > 240){ doc.addPage(); y = 20; }
-    doc.setFontSize(10.5);
-    doc.setFont(undefined, 'bold');
-    doc.text(label, 14, y);
-    try { doc.addImage(dataUrl, 14, y + 4, 60, 40); } catch(e){ /* unsupported image format, skip silently */ }
-    y += 50;
-  };
-  addDocImage(dict.modal_license_label, data.licenseImg);
-  addDocImage(dict.modal_passport_label, data.passportImg);
-
+  const rowBottom = Math.max(py + 2, rowTop + 30);
+  doc.setTextColor(...DARK);
   doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.text(dict.pdf_footer, 14, 285);
+  doc.setFont(undefined, 'normal');
+  doc.text(String(data.quantity), 154, rowTop + 6);
+  doc.text(data.total, 174, rowTop + 6);
+
+  doc.setDrawColor(210, 210, 210);
+  doc.line(marginX, rowBottom, rightX, rowBottom);
+  y = rowBottom;
+
+  // ---- Subtotal / Total / Payment bars ----
+  const bar = (label, value) => {
+    doc.setFillColor(...BLUE);
+    doc.rect(marginX, y, rightX - marginX, 9, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    doc.text(label, marginX + 3, y + 6);
+    doc.text(String(value), rightX - 3, y + 6, { align: 'right' });
+    y += 9;
+  };
+  bar(dict.pdf_subtotal, data.total);
+  bar(dict.pdf_total_row, data.total);
+  bar(dict.pdf_payment_method, dict.pdf_payment_cash);
+
+  // ---- legal footer: intentionally left blank — see TODO above the function ----
 
   return doc;
 }
@@ -2031,23 +2388,26 @@ bookingForm.addEventListener('submit', async e=>{
 
   const licenseFile = selectedFiles.bkLicense;
   const passportFile = selectedFiles.bkPassport;
-  const [licenseImg, passportImg] = await Promise.all([
-    readFileAsDataUrl(licenseFile), readFileAsDataUrl(passportFile)
+  const [carImg, logoImg] = await Promise.all([
+    imageUrlToPngDataUrl(activeBookingCar.imgSrc), imageUrlToPngDataUrl('images/logo.webp')
   ]);
 
   const ref = 'AFC-' + Date.now().toString().slice(-8);
-  const carPriceLabel = `${activeBookingCar.price}€${dict.per_day}`;
 
   const pdfData = {
-    ref, date: new Date().toLocaleDateString(dict.htmlLang),
-    name, phone, carName: activeBookingCar.name, price: carPriceLabel,
-    pickup, ret, quantity, licenseYears, pickupLoc, dropoffLoc,
-    deposit, resources, total, licenseImg, passportImg,
+    ref, date: new Date().toLocaleDateString(dict.htmlLang, { year: 'numeric', month: 'long', day: 'numeric' }),
+    name, phone, carName: activeBookingCar.name,
+    pickup: formatDateTimeForPdf(pickup, dict.htmlLang), ret: formatDateTimeForPdf(ret, dict.htmlLang),
+    quantity, licenseYears, pickupLoc, dropoffLoc, deposit, resources, total,
+    licenseFileName: licenseFile?.name || '', passportFileName: passportFile?.name || '',
+    carImg, logoImg,
   };
   const doc = await generateBookingPdf(dict, pdfData);
   doc.save(`booking-${ref}.pdf`);
 
-  addBookedCar(activeBookingCar.id);
+  await addBookedCar(activeBookingCar.id, {
+    ref, carName: activeBookingCar.name, customerName: name, phone, pickup, ret,
+  });
   renderFleet(dict, document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
 
   const summary = `${dict.pdf_title} ${ref}\n${dict.pdf_car}: ${activeBookingCar.name}\n${dict.pdf_customer}: ${name}\n${dict.pdf_phone}: ${phone}\n${dict.pdf_pickup}: ${pickup}\n${dict.pdf_return}: ${ret}\n${dict.modal_total_label}: ${total}`;
@@ -2107,6 +2467,12 @@ enquiryForm.addEventListener('submit', e=>{
 });
 
 applyLang(currentLang);
+
+// Load the shared availability list from the backend, then re-render with real data
+// once it arrives (the page still works instantly off local/no data while this resolves).
+fetchBookedCars().then(()=>{
+  renderFleet(I18N[currentLang], document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
+});
 </script>
 
 </body>

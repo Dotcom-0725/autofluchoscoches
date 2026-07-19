@@ -1,0 +1,154 @@
+/* ============================================================
+   AUTO FLUCHOS COCHES — Shared car availability backend
+   (Google Apps Script Web App, backed by a Google Sheet)
+
+   WHAT THIS DOES
+   Keeps a real, shared list of which cars are currently booked, so
+   "Not Available" shows up for every visitor, not just the browser
+   that made the booking. Also powers the site's admin panel, which lets
+   the agency owner cancel a booking (freeing the car up again) directly
+   from the website instead of opening the Google Sheet by hand.
+
+   HOW TO DEPLOY (takes about 3 minutes, everything is free):
+
+   1. Go to https://sheets.google.com and create a new blank spreadsheet.
+      Name it whatever you like, e.g. "Auto Fluchos Coches - Bookings".
+
+   2. In that sheet, go to the menu: Extensions > Apps Script.
+      This opens the Apps Script editor, already linked to this sheet.
+
+   3. Delete anything in the default "Code.gs" file, and paste in the ENTIRE
+      contents of this file (apps-script.gs.txt) instead.
+
+   4. Change ADMIN_PASSWORD below to whatever password you want the agency
+      owner to use to cancel bookings from the site's admin panel.
+
+   5. Click the "Save" icon (or Ctrl+S / Cmd+S).
+
+   6. Click "Deploy" (top right) > "New deployment".
+      - Click the gear icon next to "Select type" and choose "Web app".
+      - Description: anything, e.g. "Booking availability API".
+      - Execute as: "Me" (your Google account).
+      - Who has access: "Anyone".
+        (This does NOT expose your Google account or Drive — it only runs
+        the functions below, which just read/write car booking rows.)
+      - Click "Deploy".
+      - Google may ask you to authorize the script the first time — click
+        through "Advanced" > "Go to (project name) (unsafe)" if you see a
+        warning screen; this is expected for your own scripts and is safe.
+
+   7. Copy the "Web app URL" it gives you (ends with /exec).
+
+   8. Open index.html, find this line near the top of the <script> block:
+         const APPS_SCRIPT_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+      and replace the placeholder with the URL you just copied. Save the file.
+
+   That's it — the site will now read/write car availability from this sheet.
+   A "Bookings" tab is created automatically the first time someone books.
+
+   IF YOU EVER CHANGE THIS SCRIPT (including just the password): you must
+   create a "New deployment" again (Deploy > Manage deployments > edit the
+   existing deployment > "New version" > Deploy) for changes to take effect
+   — saving alone does not update the live Web App URL's behavior.
+============================================================ */
+
+const SHEET_NAME = 'Bookings';
+
+// Change this to your own password — this is what protects the admin
+// panel's "cancel booking" action on the website. Keep it simple but not
+// guessable by a random visitor.
+const ADMIN_PASSWORD = 'fluchos2026';
+
+function doGet(e) {
+  const sheet = getSheet_();
+  const rows = sheet.getDataRange().getValues();
+
+  // Admin view: full booking details, only if the correct password is
+  // supplied as a URL parameter (?action=admin&password=...).
+  if (e.parameter.action === 'admin') {
+    if (e.parameter.password !== ADMIN_PASSWORD) {
+      return jsonResponse_({ success: false, error: 'Wrong password' });
+    }
+    const bookings = [];
+    for (let i = 1; i < rows.length; i++) {
+      if (!rows[i][0]) continue;
+      bookings.push({
+        row: i + 1, // 1-indexed sheet row, used to target the exact row on cancel
+        carId: rows[i][0],
+        carName: rows[i][1],
+        customerName: rows[i][2],
+        phone: rows[i][3],
+        pickup: rows[i][4],
+        ret: rows[i][5],
+        ref: rows[i][6],
+        bookedAt: rows[i][7],
+      });
+    }
+    return jsonResponse_({ success: true, bookings: bookings });
+  }
+
+  // Public view: just which car IDs are currently booked (no password needed —
+  // this is what every visitor's browser checks before showing "Not Available").
+  const bookedCars = [];
+  for (let i = 1; i < rows.length; i++) {
+    const carId = rows[i][0];
+    if (carId) bookedCars.push(carId);
+  }
+  return jsonResponse_({ bookedCars: bookedCars });
+}
+
+function doPost(e) {
+  const body = JSON.parse(e.postData.contents);
+
+  // Admin action: cancel a booking (delete its row), freeing the car up again.
+  if (body.action === 'cancel') {
+    if (body.password !== ADMIN_PASSWORD) {
+      return jsonResponse_({ success: false, error: 'Wrong password' });
+    }
+    if (!body.row) {
+      return jsonResponse_({ success: false, error: 'Missing row' });
+    }
+    const sheet = getSheet_();
+    sheet.deleteRow(body.row);
+    return jsonResponse_({ success: true });
+  }
+
+  // Default action: record a new booking.
+  if (!body.carId) {
+    return jsonResponse_({ success: false, error: 'Missing carId' });
+  }
+  const sheet = getSheet_();
+  sheet.appendRow([
+    body.carId,
+    body.carName || '',
+    body.customerName || '',
+    body.phone || '',
+    body.pickup || '',
+    body.ret || '',
+    body.ref || '',
+    new Date(),
+  ]);
+  return jsonResponse_({ success: true });
+}
+
+function getSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    sheet.appendRow(['car_id', 'car_name', 'customer_name', 'phone', 'pickup_date', 'return_date', 'reference', 'booked_at']);
+  }
+  return sheet;
+}
+
+function jsonResponse_(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ------------------------------------------------------------
+   You can still free up a car manually if you ever prefer to: open the
+   Google Sheet, go to the "Bookings" tab, and delete that row — same
+   effect as using the website's admin panel "Cancel booking" button.
+------------------------------------------------------------ */
