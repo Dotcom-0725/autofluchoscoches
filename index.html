@@ -244,17 +244,27 @@ header{
 }
 .burger{display:none;background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer}
 
+.lang-switch-mobile{display:none}
+
 @media (max-width:1080px){
   .nav-links{
     position:fixed;top:70px;left:0;right:0;
     background:var(--navy-800);
-    flex-direction:column;padding:24px;gap:18px;
+    flex-direction:column;align-items:stretch;padding:24px;gap:18px;
     transform:translateY(-150%);opacity:0;
     transition:all .25s ease;border-bottom:1px solid var(--card-border);
   }
   .nav-links.open{transform:translateY(0);opacity:1}
   .phone-pill{display:none}
   .burger{display:block}
+  .nav-actions .lang-switch{display:none}
+  .lang-switch-mobile{display:flex;justify-content:center;order:-1;padding-bottom:14px;margin-bottom:4px;border-bottom:1px solid var(--card-border)}
+}
+
+@media (max-width:480px){
+  .logo{font-size:1rem;gap:8px}
+  .logo-badge{width:36px;height:36px}
+  .logo-text small{font-size:.56rem;letter-spacing:.06em}
 }
 
 /* ---------- Hero ---------- */
@@ -602,6 +612,12 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       </div>
     </a>
     <nav class="nav-links" id="navLinks">
+      <div class="lang-switch lang-switch-mobile lang-switch-group">
+        <button data-lang="ar">AR</button>
+        <button data-lang="en" class="active">EN</button>
+        <button data-lang="fr">FR</button>
+        <button data-lang="es">ES</button>
+      </div>
       <a href="#top" data-i18n="nav_home">Home</a>
       <a href="#flotte" data-i18n="nav_fleet">Cars List</a>
       <a href="#pourquoi" data-i18n="nav_why">About</a>
@@ -610,7 +626,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       <a href="#contact" data-i18n="nav_contact">Contact</a>
     </nav>
     <div class="nav-actions">
-      <div class="lang-switch" id="langSwitch">
+      <div class="lang-switch lang-switch-group" id="langSwitch">
         <button data-lang="ar">AR</button>
         <button data-lang="en" class="active">EN</button>
         <button data-lang="fr">FR</button>
@@ -1589,7 +1605,7 @@ function applyLang(lang){
     if(dict[key] !== undefined){ el.innerHTML = dict[key]; }
   });
 
-  document.querySelectorAll('#langSwitch button').forEach(b=>{
+  document.querySelectorAll('.lang-switch-group button').forEach(b=>{
     b.classList.toggle('active', b.dataset.lang === lang);
   });
 
@@ -1694,10 +1710,13 @@ function renderFaq(dict){
 /* =========================================================
    6) LANG SWITCH + MOBILE MENU + INIT
 ========================================================= */
-document.getElementById('langSwitch').addEventListener('click', e=>{
-  const btn = e.target.closest('button');
-  if(!btn) return;
-  applyLang(btn.dataset.lang);
+document.querySelectorAll('.lang-switch-group').forEach(group=>{
+  group.addEventListener('click', e=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    applyLang(btn.dataset.lang);
+    document.getElementById('navLinks').classList.remove('open');
+  });
 });
 
 document.getElementById('burgerBtn').addEventListener('click', ()=>{
