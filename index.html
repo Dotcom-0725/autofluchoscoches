@@ -1498,7 +1498,11 @@ function populateLocationAndDepositSelects(dict){
    the previous single-unit-per-model behavior) until the agency provides
    real per-model counts — bump the number here once they do, no other
    code changes needed, the booking engine already supports N > 1. */
-const CARS = [
+/* This array is now just the OFFLINE FALLBACK, used only if the Apps Script
+   backend is unreachable. The real fleet is managed from the admin dashboard
+   (admin.html) and lives in the "Cars" sheet tab — loadCarsFromBackend()
+   below replaces the contents of this array with that live data on page load. */
+let CARS = [
   {id:'clio5-auto', cat:'berline', imgSrc:'images/clio5-auto.webp', offer:'30€', price:30, name:'RENAULT CLIO 5 AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', stock:2},
   {id:'clio5-manuel', cat:'berline', imgSrc:'images/clio5-manuel.webp', offer:'30€', price:30, name:'RENAULT CLIO 5 MANUEL', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:2},
   {id:'opel-corsa', cat:'citadine', imgSrc:'images/opel-corsa.webp', offer:'30€', price:30, name:'OPEL CORSA MANUEL', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:1},
@@ -1534,6 +1538,42 @@ function carMatchesCategory(c, catKey){
     case 'economy': return c.price <= 25;
     default: return true;
   }
+}
+
+/* Replaces the hardcoded fallback CARS array above with the live catalog
+   from the Cars sheet (managed via admin.html). If the backend is
+   unreachable, the fallback array just stays in place — the site keeps
+   working, it just won't reflect the latest admin edits until it's back. */
+async function loadCarsFromBackend(){
+  try {
+    const res = await fetch(APPS_SCRIPT_URL + '?action=cars');
+    const data = await res.json();
+    if(data && Array.isArray(data.cars) && data.cars.length > 0){
+      CARS = data.cars;
+    }
+  } catch(e) { /* offline or backend unreachable — the fallback array above still works */ }
+}
+
+/* SEO meta overrides set from admin.html's Settings > SEO screen. Only applies
+   fields that are actually set — an empty Settings sheet changes nothing, so
+   the meta tags already in <head> stay as the real defaults. */
+async function loadSeoSettings(){
+  try {
+    const res = await fetch(APPS_SCRIPT_URL + '?action=settings');
+    const data = await res.json();
+    const settings = (data && data.settings) || {};
+    if(settings.meta_title){
+      document.title = settings.meta_title;
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if(ogTitle) ogTitle.setAttribute('content', settings.meta_title);
+    }
+    if(settings.meta_description){
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if(metaDesc) metaDesc.setAttribute('content', settings.meta_description);
+      const ogDesc = document.querySelector('meta[property="og:description"]');
+      if(ogDesc) ogDesc.setAttribute('content', settings.meta_description);
+    }
+  } catch(e) { /* offline or backend unreachable — the static meta tags in <head> still apply */ }
 }
 
 /* =========================================================
@@ -3146,7 +3186,15 @@ document.querySelectorAll('.currency-switch-group button').forEach(b=>{
 fetchBookedCars().then(()=>{
   renderFleet(I18N[currentLang], document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
 });
+// Same pattern for the fleet catalog itself: paint instantly off the fallback array,
+// then swap in the live admin-managed catalog once it arrives.
+loadCarsFromBackend().then(()=>{
+  populateBrandSelect();
+  renderFleet(I18N[currentLang], document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
+  if(typeof populateCarSelect === 'function') populateCarSelect(I18N[currentLang]);
+});
 fetchSeasonalPeriods();
+loadSeoSettings();
 </script>
 
 </body>

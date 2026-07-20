@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard — Auto Fluchos Coches</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f7f9; --sidebar:#14161a; --sidebar-text:#a7acb8; --sidebar-text-active:#fff;
+  --card:#ffffff; --card-border:#e5e7eb; --ink:#14161a; --ink-dim:#6b7280;
+  --accent:#1f6feb; --accent-dim:rgba(31,111,235,.1); --gold:#c8860d;
+  --danger:#e5484d; --success:#12a150; --warn:#c8860d;
+  --radius:10px; --font:'Inter',sans-serif;
+  --shadow:0 1px 2px rgba(20,24,43,.04), 0 1px 6px rgba(20,24,43,.04);
+}
+:root[data-theme="dark"]{
+  --bg:#0b0d10; --sidebar:#0b0d10; --sidebar-text:#8b92a3; --sidebar-text-active:#fff;
+  --card:#15181d; --card-border:#262b33; --ink:#eef1f6; --ink-dim:#8b92a3;
+  --accent:#3b82f6; --accent-dim:rgba(59,130,246,.15);
+  --shadow:0 1px 2px rgba(0,0,0,.3);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b0d10; --sidebar:#0b0d10; --sidebar-text:#8b92a3; --sidebar-text-active:#fff;
+    --card:#15181d; --card-border:#262b33; --ink:#eef1f6; --ink-dim:#8b92a3;
+    --accent:#3b82f6; --accent-dim:rgba(59,130,246,.15);
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:.85rem}
+
+/* ---- Login screen ---- */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.login-card{background:var(--card);border:1px solid var(--card-border);border-radius:16px;padding:40px;width:360px;box-shadow:var(--shadow)}
+.login-card h1{font-size:1.3rem;margin:0 0 4px}
+.login-card p{color:var(--ink-dim);font-size:.85rem;margin:0 0 24px}
+.login-card input{width:100%;padding:11px 14px;border-radius:9px;border:1px solid var(--card-border);background:var(--bg);color:var(--ink);margin-bottom:14px}
+.login-card button{width:100%;padding:11px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-weight:700}
+.login-error{color:var(--danger);font-size:.8rem;margin:-6px 0 12px;display:none}
+.login-error.show{display:block}
+
+/* ---- App shell ---- */
+#app{display:none;min-height:100vh}
+#app.ready{display:flex}
+.sidebar{width:230px;flex:0 0 230px;background:var(--sidebar);min-height:100vh;display:flex;flex-direction:column;padding:20px 0}
+.sidebar-brand{padding:0 20px 20px;font-weight:800;color:#fff;font-size:1.05rem;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:12px}
+.sidebar-brand small{display:block;font-weight:500;font-size:.68rem;color:var(--sidebar-text);margin-top:2px}
+.nav-list{list-style:none;margin:0;padding:0;flex:1;overflow-y:auto}
+.nav-list li button{
+  width:100%;text-align:left;background:none;border:none;color:var(--sidebar-text);
+  padding:10px 20px;font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:10px;
+}
+.nav-list li button:hover{color:#fff}
+.nav-list li button.active{color:var(--sidebar-text-active);background:rgba(255,255,255,.06);border-inline-start:3px solid var(--accent)}
+.sidebar-footer{padding:14px 20px 0;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:8px}
+.role-badge{font-size:.68rem;font-weight:700;color:#fff;background:var(--accent);display:inline-block;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em;width:fit-content}
+.sidebar-footer button{background:none;border:1px solid rgba(255,255,255,.15);color:var(--sidebar-text);border-radius:8px;padding:7px 10px;font-size:.78rem;font-weight:600}
+.sidebar-footer button:hover{color:#fff}
+
+main{flex:1;min-width:0;padding:28px 34px;max-width:100%}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.topbar h2{margin:0;font-size:1.35rem}
+.topbar .sub{color:var(--ink-dim);font-size:.82rem;margin-top:2px}
+
+.card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card + .card{margin-top:20px}
+.card-pad{padding:20px 22px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:24px}
+.kpi{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.kpi .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-dim);font-weight:700}
+.kpi .value{font-size:1.7rem;font-weight:800;margin-top:6px}
+.kpi .sub{font-size:.76rem;color:var(--ink-dim);margin-top:4px}
+
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+th{text-align:left;color:var(--ink-dim);font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;padding:10px 14px;border-bottom:1px solid var(--card-border)}
+td{padding:11px 14px;border-bottom:1px solid var(--card-border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.table-wrap{overflow-x:auto}
+
+.btn{border:none;border-radius:8px;padding:9px 16px;font-weight:700;font-size:.8rem;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-outline{background:transparent;border:1px solid var(--card-border);color:var(--ink)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{padding:6px 11px;font-size:.74rem;border-radius:7px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.7rem;font-weight:700}
+.pill-blue{background:var(--accent-dim);color:var(--accent)}
+.pill-green{background:rgba(18,161,80,.12);color:var(--success)}
+.pill-red{background:rgba(229,72,77,.12);color:var(--danger)}
+.pill-gray{background:rgba(107,114,128,.12);color:var(--ink-dim)}
+
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.field label{font-size:.72rem;font-weight:700;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.03em}
+.field input,.field select,.field textarea{padding:9px 12px;border-radius:8px;border:1px solid var(--card-border);background:var(--bg);color:var(--ink)}
+.field-check{flex-direction:row;align-items:center;gap:8px}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(10,12,16,.5);display:none;align-items:center;justify-content:center;z-index:500;padding:20px}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--card);border-radius:14px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;padding:26px}
+.modal-box h3{margin:0 0 18px}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
+
+.empty-state{text-align:center;padding:50px 20px;color:var(--ink-dim)}
+.section-note{background:var(--accent-dim);color:var(--accent);border-radius:8px;padding:10px 14px;font-size:.78rem;margin-bottom:16px}
+.section-note.warn{background:rgba(200,134,13,.12);color:var(--warn)}
+.toolbar-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.tag-row{display:flex;gap:6px;flex-wrap:wrap}
+.tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--card-border)}
+.tabs button{background:none;border:none;padding:9px 4px;margin-inline-end:20px;font-weight:700;color:var(--ink-dim);border-bottom:2px solid transparent;font-size:.82rem}
+.tabs button.active{color:var(--accent);border-color:var(--accent)}
+.thumb{width:56px;height:40px;object-fit:cover;border-radius:6px;background:var(--bg)}
+.drag-handle{cursor:grab;color:var(--ink-dim)}
+tr.dragging{opacity:.4}
+.toast{position:fixed;bottom:20px;inset-inline-end:20px;background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:9px;font-size:.82rem;font-weight:600;z-index:900;box-shadow:var(--shadow)}
+@media (max-width:900px){
+  .sidebar{position:fixed;z-index:200;transform:translateX(-100%);transition:transform .2s}
+  .sidebar.open{transform:translateX(0)}
+  main{padding:20px}
+  .field-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <form class="login-card" id="loginForm">
+    <h1>Auto Fluchos Coches</h1>
+    <p>Admin Dashboard — sign in with your admin password.</p>
+    <input type="password" id="loginPassword" placeholder="Password" autofocus required>
+    <p class="login-error" id="loginError">Wrong password.</p>
+    <button type="submit">Sign in</button>
+  </form>
+</div>
+
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">AUTO FLUCHOS <span style="color:#5b9bff">COCHES</span><small>ADMIN DASHBOARD</small></div>
+    <ul class="nav-list" id="navList"></ul>
+    <div class="sidebar-footer">
+      <span class="role-badge" id="roleBadge">—</span>
+      <button type="button" id="darkModeToggle">🌙 Dark mode</button>
+      <button type="button" id="logoutBtn">Log out</button>
+    </div>
+  </aside>
+  <main>
+    <div class="topbar">
+      <div>
+        <h2 id="pageTitle">Dashboard</h2>
+        <div class="sub" id="pageSub"></div>
+      </div>
+      <a href="index.html" class="btn btn-outline" target="_blank">View live site ↗</a>
+    </div>
+    <div id="viewRoot"></div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box" id="modalBox"></div>
+</div>
+
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxKZk3f58C67EZArO4uLRSu7chg3soBBglBQYNOq3-NXUkoZ0--82S5NgS7ccWbiuOi/exec';
+
+const state = { password: null, role: null, cars: [], bookings: [], seasons: [], settings: {}, activityLog: [] };
+
+const NAV = [
+  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+  { id: 'fleet', label: 'Fleet Management', icon: '🚗' },
+  { id: 'inventory', label: 'Inventory', icon: '📦' },
+  { id: 'reservations', label: 'Reservations', icon: '📋' },
+  { id: 'calendar', label: 'Calendar', icon: '📅' },
+  { id: 'customers', label: 'Customers', icon: '👥' },
+  { id: 'pricing', label: 'Pricing', icon: '💶' },
+  { id: 'categories', label: 'Categories', icon: '🏷️' },
+  { id: 'reports', label: 'Reports', icon: '📈' },
+  { id: 'notifications', label: 'Notifications', icon: '🔔' },
+  { id: 'settings', label: 'Settings', icon: '⚙️' },
+];
+const EDITOR_ROLES = ['super_admin', 'manager'];
+let currentView = 'dashboard';
+
+/* ---------------- API helpers ---------------- */
+async function apiGet(params){
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(APPS_SCRIPT_URL + '?' + qs);
+  return res.json();
+}
+async function apiPost(body){
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(Object.assign({ password: state.password }, body)),
+  });
+  return res.json();
+}
+function toast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2600);
+}
+function isEditor(){ return EDITOR_ROLES.includes(state.role); }
+function fmtDate(v){
+  if(!v) return '—';
+  const d = new Date(v);
+  if(isNaN(d)) return String(v).slice(0,16).replace('T',' ');
+  return d.toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function csvDownload(filename, rows){
+  if(!rows.length){ toast('Nothing to export'); return; }
+  const cols = Object.keys(rows[0]);
+  const esc = v => `"${String(v==null?'':v).replace(/"/g,'""')}"`;
+  const csv = [cols.join(','), ...rows.map(r => cols.map(c => esc(r[c])).join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+}
+function jsonDownload(filename, obj){
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+}
+function openModal(html){
+  document.getElementById('modalBox').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
+document.getElementById('modalOverlay').addEventListener('click', e=>{
+  if(e.target.id === 'modalOverlay') closeModal();
+});
+
+/* ---------------- Auth ---------------- */
+document.getElementById('loginForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const password = document.getElementById('loginPassword').value;
+  const data = await apiGetAdmin(password);
+  if(!data || !data.success){
+    document.getElementById('loginError').classList.add('show');
+    return;
+  }
+  state.password = password;
+  applyAdminData(data);
+  try { sessionStorage.setItem('afc_admin_pw', password); } catch(e){}
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').classList.add('ready');
+  buildSidebar();
+  navigate('dashboard');
+});
+async function apiGetAdmin(password){
+  try { return await apiGet({ action: 'admin', password }); }
+  catch(e){ return null; }
+}
+function applyAdminData(data){
+  state.role = data.role;
+  state.cars = data.cars || [];
+  state.bookings = data.bookings || [];
+  state.seasons = data.seasons || [];
+  state.settings = data.settings || {};
+  state.activityLog = data.activityLog || [];
+}
+document.getElementById('logoutBtn').addEventListener('click', ()=>{
+  try { sessionStorage.removeItem('afc_admin_pw'); } catch(e){}
+  location.reload();
+});
+
+/* Auto-login if a password is already stored in this tab's session */
+(async ()=>{
+  let saved = null;
+  try { saved = sessionStorage.getItem('afc_admin_pw'); } catch(e){}
+  if(!saved) return;
+  const data = await apiGetAdmin(saved);
+  if(data && data.success){
+    state.password = saved;
+    applyAdminData(data);
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').classList.add('ready');
+    buildSidebar();
+    navigate('dashboard');
+  }
+})();
+
+async function refreshAdminData(){
+  const data = await apiGetAdmin(state.password);
+  if(data && data.success) applyAdminData(data);
+}
+
+/* ---------------- Dark mode ---------------- */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  try { localStorage.setItem('afc_admin_theme', t); } catch(e){}
+}
+(function initTheme(){
+  let saved = null;
+  try { saved = localStorage.getItem('afc_admin_theme'); } catch(e){}
+  if(saved) applyTheme(saved);
+})();
+document.getElementById('darkModeToggle').addEventListener('click', ()=>{
+  const current = document.documentElement.getAttribute('data-theme') ||
+    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+});
+
+/* ---------------- Sidebar / navigation ---------------- */
+function buildSidebar(){
+  const list = document.getElementById('navList');
+  list.innerHTML = NAV.map(n => `<li><button data-view="${n.id}">${n.icon} ${n.label}</button></li>`).join('');
+  list.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=> navigate(b.dataset.view));
+  });
+  document.getElementById('roleBadge').textContent = state.role.replace('_',' ');
+}
+const VIEW_TITLES = {
+  dashboard: ['Dashboard', 'Overview of your rental business'],
+  fleet: ['Fleet Management', 'Create, edit and manage your vehicles'],
+  inventory: ['Inventory', 'Stock levels per vehicle model'],
+  reservations: ['Reservations', 'All bookings — website and manual'],
+  calendar: ['Calendar', 'Bookings by date'],
+  customers: ['Customers', 'Built from your booking history'],
+  pricing: ['Pricing', 'Seasonal pricing and currency'],
+  categories: ['Categories', 'Fleet filter tags'],
+  reports: ['Reports', 'Bookings, revenue, occupancy'],
+  notifications: ['Notifications', 'How you get notified of new bookings'],
+  settings: ['Settings', 'SEO, roles, activity log, backups'],
+};
+function navigate(view){
+  currentView = view;
+  document.querySelectorAll('#navList button').forEach(b=>b.classList.toggle('active', b.dataset.view === view));
+  const [title, sub] = VIEW_TITLES[view];
+  document.getElementById('pageTitle').textContent = title;
+  document.getElementById('pageSub').textContent = sub;
+  const renderers = {
+    dashboard: renderDashboard, fleet: renderFleet, inventory: renderInventory,
+    reservations: renderReservations, calendar: renderCalendar, customers: renderCustomers,
+    pricing: renderPricing, categories: renderCategories, reports: renderReports,
+    notifications: renderNotifications, settings: renderSettings,
+  };
+  (renderers[view] || renderDashboard)();
+}
+
+/* ---------------- Shared helpers ---------------- */
+function bookingStatus(b){
+  const now = new Date();
+  const ret = new Date(b.ret);
+  const pickup = new Date(b.pickup);
+  if(ret < now) return { label: 'Overdue', cls: 'pill-red' };
+  if(pickup <= now && now <= ret) return { label: 'Active', cls: 'pill-green' };
+  return { label: 'Upcoming', cls: 'pill-blue' };
+}
+function carById(id){ return state.cars.find(c => c.id === id); }
+function remainingStock(car){
+  const booked = state.bookings.filter(b => b.carId === car.id).length;
+  return Math.max(0, (Number(car.stock) || 1) - booked);
+}
+
+/* ================= DASHBOARD ================= */
+function renderDashboard(){
+  const totalCars = state.cars.length;
+  const totalStock = state.cars.reduce((s,c)=> s + (Number(c.stock)||1), 0);
+  const activeBookings = state.bookings.length;
+  const revenue = state.bookings.reduce((s,b)=> s + (parseFloat(b.total) || 0), 0);
+  const occupancy = totalStock > 0 ? Math.round((activeBookings / totalStock) * 100) : 0;
+  const popularity = {};
+  state.bookings.forEach(b => { popularity[b.carId] = (popularity[b.carId]||0) + 1; });
+  const popularId = Object.keys(popularity).sort((a,b)=>popularity[b]-popularity[a])[0];
+  const popularCar = popularId ? carById(popularId) : null;
+
+  const upcoming = [...state.bookings].sort((a,b)=> new Date(a.pickup) - new Date(b.pickup)).slice(0, 6);
+
+  document.getElementById('viewRoot').innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi"><div class="label">Active bookings</div><div class="value">${activeBookings}</div><div class="sub">across ${totalCars} models</div></div>
+      <div class="kpi"><div class="label">Estimated revenue</div><div class="value">€${revenue.toFixed(0)}</div><div class="sub">sum of active booking totals</div></div>
+      <div class="kpi"><div class="label">Fleet occupancy</div><div class="value">${occupancy}%</div><div class="sub">${activeBookings} of ${totalStock} units booked</div></div>
+      <div class="kpi"><div class="label">Most popular car</div><div class="value" style="font-size:1.05rem">${popularCar ? popularCar.name : '—'}</div><div class="sub">${popularId ? popularity[popularId] + ' bookings' : 'No bookings yet'}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-pad">
+        <div class="toolbar-row"><b>Upcoming pickups &amp; returns</b></div>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Customer</th><th>Vehicle</th><th>Pickup</th><th>Return</th><th>Status</th><th>Source</th></tr></thead>
+          <tbody>
+            ${upcoming.length ? upcoming.map(b=>{
+              const st = bookingStatus(b);
+              return `<tr><td>${b.customerName||'—'}</td><td>${b.carName||'—'}</td><td>${fmtDate(b.pickup)}</td><td>${fmtDate(b.ret)}</td><td><span class="pill ${st.cls}">${st.label}</span></td><td><span class="pill pill-gray">${b.source||'website'}</span></td></tr>`;
+            }).join('') : `<tr><td colspan="6" class="empty-state">No bookings yet.</td></tr>`}
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ================= FLEET MANAGEMENT ================= */
+function renderFleet(){
+  const root = document.getElementById('viewRoot');
+  root.innerHTML = `
+    <div class="toolbar-row">
+      <div class="tag-row">
+        ${isEditor() ? `<label class="btn btn-outline btn-sm">📁 Bulk upload (CSV)<input type="file" id="bulkCsvInput" accept=".csv" hidden></label>` : ''}
+        <button class="btn btn-outline btn-sm" id="exportFleetCsv">⬇ Export CSV</button>
+      </div>
+      ${isEditor() ? `<button class="btn btn-primary" id="newCarBtn">+ New vehicle</button>` : ''}
+    </div>
+    ${isEditor() ? `<div class="section-note">Drag rows by the ⠿ handle to set manual sort order (this controls the order cars appear on the live site).</div>` : ''}
+    <div class="card"><div class="table-wrap">
+      <table>
+        <thead><tr>${isEditor() ? '<th></th>' : ''}<th>Photo</th><th>Name</th><th>Price/day</th><th>Specs</th><th>Stock</th><th>Available now</th>${isEditor() ? '<th>Actions</th>' : ''}</tr></thead>
+        <tbody id="fleetTableBody"></tbody>
+      </table>
+    </div></div>
+  `;
+  renderFleetRows();
+  if(isEditor()){
+    document.getElementById('newCarBtn').addEventListener('click', ()=> openCarModal(null));
+    document.getElementById('bulkCsvInput').addEventListener('change', handleBulkCsv);
+  }
+  document.getElementById('exportFleetCsv').addEventListener('click', ()=>{
+    csvDownload('fleet.csv', state.cars.map(c => ({...c, body: (c.body||[]).join(',')})));
+  });
+}
+function renderFleetRows(){
+  const tbody = document.getElementById('fleetTableBody');
+  const sorted = [...state.cars].sort((a,b)=> (a.sortOrder??0) - (b.sortOrder??0));
+  tbody.innerHTML = sorted.map(c => `
+    <tr data-id="${c.id}" ${isEditor() ? 'draggable="true"' : ''}>
+      ${isEditor() ? `<td class="drag-handle">⠿</td>` : ''}
+      <td>${c.imgSrc ? `<img class="thumb" src="${c.imgSrc}">` : '—'}</td>
+      <td><b>${c.name}</b><br><span style="color:var(--ink-dim);font-size:.75rem">${c.id}</span></td>
+      <td>€${c.price}</td>
+      <td>${c.seats} seats · ${c.gearKey === 'auto' ? 'Automatic' : 'Manual'} · ${c.fuelKey}</td>
+      <td>${c.stock}</td>
+      <td>${remainingStock(c)}</td>
+      ${isEditor() ? `<td class="tag-row">
+        <button class="btn btn-outline btn-sm" data-edit="${c.id}">Edit</button>
+        <button class="btn btn-outline btn-sm" data-dup="${c.id}">Duplicate</button>
+        <button class="btn btn-danger btn-sm" data-del="${c.id}">Delete</button>
+      </td>` : ''}
+    </tr>
+  `).join('') || `<tr><td colspan="8" class="empty-state">No vehicles yet.</td></tr>`;
+
+  tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', ()=> openCarModal(carById(b.dataset.edit))));
+  tbody.querySelectorAll('[data-dup]').forEach(b => b.addEventListener('click', async ()=>{
+    const r = await apiPost({ action: 'duplicateCar', id: b.dataset.dup });
+    if(r.success){ toast('Vehicle duplicated'); await refreshAdminData(); renderFleetRows(); }
+    else toast(r.error || 'Failed');
+  }));
+  tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async ()=>{
+    if(!confirm('Delete this vehicle? This cannot be undone.')) return;
+    const r = await apiPost({ action: 'deleteCar', id: b.dataset.del });
+    if(r.success){ toast('Vehicle deleted'); await refreshAdminData(); renderFleetRows(); }
+    else toast(r.error || 'Failed');
+  }));
+
+  if(isEditor()){
+    let dragId = null;
+    tbody.querySelectorAll('tr').forEach(row=>{
+      row.addEventListener('dragstart', ()=>{ dragId = row.dataset.id; row.classList.add('dragging'); });
+      row.addEventListener('dragend', ()=> row.classList.remove('dragging'));
+      row.addEventListener('dragover', e => e.preventDefault());
+      row.addEventListener('drop', async ()=>{
+        if(!dragId || dragId === row.dataset.id) return;
+        const ids = sorted.map(c=>c.id);
+        const from = ids.indexOf(dragId), to = ids.indexOf(row.dataset.id);
+        ids.splice(to, 0, ids.splice(from, 1)[0]);
+        const updates = ids.map((id, i) => ({ ...carById(id), sortOrder: i }));
+        for(const car of updates) await apiPost({ action: 'saveCar', car });
+        toast('Order updated');
+        await refreshAdminData();
+        renderFleetRows();
+      });
+    });
+  }
+}
+async function handleBulkCsv(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const text = await file.text();
+  const [headerLine, ...lines] = text.trim().split('\n');
+  const cols = headerLine.split(',').map(s=>s.trim());
+  let count = 0;
+  for(const line of lines){
+    if(!line.trim()) continue;
+    const vals = line.split(',').map(s=>s.trim().replace(/^"|"$/g,''));
+    const car = {};
+    cols.forEach((c,i)=> car[c] = vals[i]);
+    if(car.body) car.body = car.body.split('|').filter(Boolean);
+    if(!car.id || !car.name) continue;
+    await apiPost({ action: 'saveCar', car });
+    count++;
+  }
+  toast(`Imported ${count} vehicles`);
+  await refreshAdminData();
+  renderFleetRows();
+}
+function fileToWebpDataUrl(file, maxWidth){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = () => { img.onload = () => {
+      const scale = Math.min(1, maxWidth / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale; canvas.height = img.height * scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/webp', 0.75));
+    }; img.onerror = reject; img.src = reader.result; };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+function openCarModal(car){
+  const isNew = !car;
+  car = car || { id:'', name:'', price:30, seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', body:[], stock:1, imgSrc:'', cat:'citadine' };
+  openModal(`
+    <h3>${isNew ? 'New vehicle' : 'Edit vehicle'}</h3>
+    <div class="field-grid">
+      <div class="field"><label>Name</label><input id="cfName" value="${car.name}"></div>
+      <div class="field"><label>ID (unique, no spaces)</label><input id="cfId" value="${car.id}" ${isNew ? '' : 'disabled'}></div>
+      <div class="field"><label>Price / day (€)</label><input id="cfPrice" type="number" value="${car.price}"></div>
+      <div class="field"><label>Stock (units owned)</label><input id="cfStock" type="number" min="0" value="${car.stock}"></div>
+      <div class="field"><label>Seats</label><input id="cfSeats" type="number" value="${car.seats}"></div>
+      <div class="field"><label>Doors</label><input id="cfDoors" type="number" value="${car.doors}"></div>
+      <div class="field"><label>Gearbox</label><select id="cfGear"><option value="manual" ${car.gearKey==='manual'?'selected':''}>Manual</option><option value="auto" ${car.gearKey==='auto'?'selected':''}>Automatic</option></select></div>
+      <div class="field"><label>Fuel</label><select id="cfFuel">
+        <option value="diesel" ${car.fuelKey==='diesel'?'selected':''}>Diesel</option>
+        <option value="essence" ${car.fuelKey==='essence'?'selected':''}>Petrol</option>
+        <option value="hybride" ${car.fuelKey==='hybride'?'selected':''}>Hybrid</option>
+      </select></div>
+      <div class="field field-check"><input type="checkbox" id="cfSuv" ${(car.body||[]).includes('suv')?'checked':''}><label style="text-transform:none">SUV tag</label></div>
+      <div class="field field-check"><input type="checkbox" id="cfLuxury" ${(car.body||[]).includes('luxury')?'checked':''}><label style="text-transform:none">Luxury tag</label></div>
+    </div>
+    <div class="field"><label>Photo</label>
+      <input id="cfImgSrc" value="${car.imgSrc}" placeholder="images/your-photo.webp or auto-filled by upload below">
+      <input type="file" id="cfImgUpload" accept="image/*" style="margin-top:6px">
+      <span style="font-size:.72rem;color:var(--ink-dim)">Uploading converts the photo to a compressed inline WebP automatically. For a full-resolution photo instead, upload it to the images/ folder yourself and paste its path above.</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="cfCancel">Cancel</button>
+      <button class="btn btn-primary" id="cfSave">Save vehicle</button>
+    </div>
+  `);
+  document.getElementById('cfCancel').addEventListener('click', closeModal);
+  document.getElementById('cfImgUpload').addEventListener('change', async e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    toast('Converting photo…');
+    const dataUrl = await fileToWebpDataUrl(file, 640);
+    document.getElementById('cfImgSrc').value = dataUrl;
+    toast('Photo ready — click Save to apply');
+  });
+  document.getElementById('cfSave').addEventListener('click', async ()=>{
+    const id = isNew ? document.getElementById('cfId').value.trim().toLowerCase().replace(/[^a-z0-9-]+/g,'-') : car.id;
+    if(!id){ toast('ID is required'); return; }
+    const body = [];
+    if(document.getElementById('cfSuv').checked) body.push('suv');
+    if(document.getElementById('cfLuxury').checked) body.push('luxury');
+    const payload = {
+      id, name: document.getElementById('cfName').value.trim(),
+      price: Number(document.getElementById('cfPrice').value) || 0,
+      stock: Number(document.getElementById('cfStock').value) || 1,
+      seats: Number(document.getElementById('cfSeats').value) || 5,
+      doors: Number(document.getElementById('cfDoors').value) || 4,
+      gearKey: document.getElementById('cfGear').value,
+      fuelKey: document.getElementById('cfFuel').value,
+      body, cat: car.cat || 'citadine',
+      imgSrc: document.getElementById('cfImgSrc').value.trim(),
+      offer: (Number(document.getElementById('cfPrice').value) || 0) + '€',
+      sortOrder: car.sortOrder,
+    };
+    if(!payload.name){ toast('Name is required'); return; }
+    const r = await apiPost({ action: 'saveCar', car: payload });
+    if(r.success){ toast('Vehicle saved'); closeModal(); await refreshAdminData(); if(currentView==='fleet') renderFleetRows(); }
+    else toast(r.error || 'Failed to save');
+  });
+}
+
+/* ================= INVENTORY ================= */
+function renderInventory(){
+  const root = document.getElementById('viewRoot');
+  root.innerHTML = `
+    <div class="card"><div class="table-wrap">
+      <table>
+        <thead><tr><th>Vehicle</th><th>Total stock</th><th>Currently booked</th><th>Available now</th>${isEditor() ? '<th>Adjust</th>' : ''}</tr></thead>
+        <tbody>
+          ${state.cars.map(c => {
+            const booked = state.bookings.filter(b=>b.carId===c.id).length;
+            return `<tr>
+              <td><b>${c.name}</b></td>
+              <td>${c.stock}</td>
+              <td>${booked}</td>
+              <td><span class="pill ${remainingStock(c) > 0 ? 'pill-green' : 'pill-red'}">${remainingStock(c)}</span></td>
+              ${isEditor() ? `<td class="tag-row">
+                <button class="btn btn-outline btn-sm" data-stock-minus="${c.id}">−</button>
+                <button class="btn btn-outline btn-sm" data-stock-plus="${c.id}">+</button>
+              </td>` : ''}
+            </tr>`;
+          }).join('') || `<tr><td colspan="5" class="empty-state">No vehicles yet.</td></tr>`}
+        </tbody>
+      </table>
+    </div></div>
+  `;
+  if(isEditor()){
+    root.querySelectorAll('[data-stock-plus]').forEach(b => b.addEventListener('click', ()=> adjustStock(b.dataset.stockPlus, 1)));
+    root.querySelectorAll('[data-stock-minus]').forEach(b => b.addEventListener('click', ()=> adjustStock(b.dataset.stockMinus, -1)));
+  }
+}
+async function adjustStock(id, delta){
+  const car = carById(id);
+  const newStock = Math.max(0, (Number(car.stock)||0) + delta);
+  const r = await apiPost({ action: 'saveCar', car: { ...car, stock: newStock } });
+  if(r.success){ await refreshAdminData(); renderInventory(); }
+}
+
+/* ================= RESERVATIONS ================= */
+function renderReservations(){
+  const root = document.getElementById('viewRoot');
+  root.innerHTML = `
+    <div class="toolbar-row">
+      <div></div>
+      <button class="btn btn-primary" id="newBookingBtn">+ Manual reservation</button>
+    </div>
+    <div class="section-note">Manual reservations (phone, office, walk-in) use the same booking engine as the website — inventory updates automatically and overbooking is prevented.</div>
+    <div class="card"><div class="table-wrap">
+      <table>
+        <thead><tr><th>Ref</th><th>Customer</th><th>Phone</th><th>Vehicle</th><th>Pickup</th><th>Return</th><th>Total</th><th>Source</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="reservationsBody"></tbody>
+      </table>
+    </div></div>
+  `;
+  renderReservationsRows();
+  document.getElementById('newBookingBtn').addEventListener('click', openManualBookingModal);
+}
+function renderReservationsRows(){
+  const tbody = document.getElementById('reservationsBody');
+  const sorted = [...state.bookings].sort((a,b)=> new Date(a.pickup) - new Date(b.pickup));
+  tbody.innerHTML = sorted.map(b=>{
+    const st = bookingStatus(b);
+    return `<tr>
+      <td>${b.ref||'—'}</td><td>${b.customerName||'—'}</td><td>${b.phone||'—'}</td><td>${b.carName||'—'}</td>
+      <td>${fmtDate(b.pickup)}</td><td>${fmtDate(b.ret)}</td><td>${b.total||'—'}</td>
+      <td><span class="pill pill-gray">${b.source||'website'}</span></td>
+      <td><span class="pill ${st.cls}">${st.label}</span></td>
+      <td><button class="btn btn-danger btn-sm" data-cancel="${b.row}">Cancel</button></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="10" class="empty-state">No reservations yet.</td></tr>`;
+  tbody.querySelectorAll('[data-cancel]').forEach(btn => btn.addEventListener('click', async ()=>{
+    if(!confirm('Cancel this booking and free up the vehicle?')) return;
+    const r = await apiPost({ action: 'cancel', row: btn.dataset.cancel });
+    if(r.success){ toast('Booking cancelled'); await refreshAdminData(); renderReservationsRows(); }
+    else toast(r.error || 'Failed');
+  }));
+}
+function openManualBookingModal(){
+  openModal(`
+    <h3>New manual reservation</h3>
+    <div class="field"><label>Source</label><select id="mbSource">
+      <option value="phone">Phone booking</option><option value="office">Office booking</option><option value="walkin">Walk-in customer</option>
+    </select></div>
+    <div class="field"><label>Vehicle</label><select id="mbCar">
+      ${state.cars.map(c=> `<option value="${c.id}" ${remainingStock(c)<=0 ? 'disabled' : ''}>${c.name} — ${remainingStock(c)} available</option>`).join('')}
+    </select></div>
+    <div class="field-grid">
+      <div class="field"><label>Customer name</label><input id="mbName" required></div>
+      <div class="field"><label>Phone</label><input id="mbPhone" required></div>
+      <div class="field"><label>Pickup</label><input type="datetime-local" id="mbPickup" required></div>
+      <div class="field"><label>Return</label><input type="datetime-local" id="mbReturn" required></div>
+    </div>
+    <div class="field"><label>Total (€, optional)</label><input id="mbTotal" type="number"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="mbCancel">Cancel</button>
+      <button class="btn btn-primary" id="mbSave">Create reservation</button>
+    </div>
+  `);
+  document.getElementById('mbCancel').addEventListener('click', closeModal);
+  document.getElementById('mbSave').addEventListener('click', async ()=>{
+    const carId = document.getElementById('mbCar').value;
+    const car = carById(carId);
+    const name = document.getElementById('mbName').value.trim();
+    const phone = document.getElementById('mbPhone').value.trim();
+    const pickup = document.getElementById('mbPickup').value;
+    const ret = document.getElementById('mbReturn').value;
+    if(!car || !name || !phone || !pickup || !ret){ toast('Please fill in all required fields'); return; }
+    const ref = 'AFC-M-' + Date.now().toString().slice(-8);
+    const r = await apiPost({
+      carId, carName: car.name, customerName: name, phone, pickup, ret, ref,
+      stock: car.stock, total: document.getElementById('mbTotal').value || '',
+      source: document.getElementById('mbSource').value, adminPassword: state.password,
+    });
+    if(r.success){ toast('Reservation created'); closeModal(); await refreshAdminData(); if(currentView==='reservations') renderReservationsRows(); }
+    else toast(r.error === 'sold_out' ? 'No stock left for this vehicle' : (r.error || 'Failed'));
+  });
+}
+
+/* ================= CALENDAR ================= */
+let calMode = 'month';
+let calDate = new Date();
+function renderCalendar(){
+  const root = document.getElementById('viewRoot');
+  root.innerHTML = `
+    <div class="toolbar-row">
+      <div class="tabs" style="margin:0;border:none">
+        <button data-mode="month" class="${calMode==='month'?'active':''}">Monthly</button>
+        <button data-mode="week" class="${calMode==='week'?'active':''}">Weekly</button>
+        <button data-mode="day" class="${calMode==='day'?'active':''}">Daily</button>
+      </div>
+      <div class="tag-row">
+        <button class="btn btn-outline btn-sm" id="calPrev">← Prev</button>
+        <button class="btn btn-outline btn-sm" id="calToday">Today</button>
+        <button class="btn btn-outline btn-sm" id="calNext">Next →</button>
+      </div>
+    </div>
+    <div class="card card-pad" id="calBody"></div>
+  `;
+  root.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', ()=>{ calMode = b.dataset.mode; renderCalendar(); }));
+  document.getElementById('calPrev').addEventListener('click', ()=> shiftCal(-1));
+  document.getElementById('calNext').addEventListener('click', ()=> shiftCal(1));
+  document.getElementById('calToday').addEventListener('click', ()=>{ calDate = new Date(); renderCalendarBody(); });
+  renderCalendarBody();
+}
+function shiftCal(dir){
+  const d = new Date(calDate);
+  if(calMode==='month') d.setMonth(d.getMonth()+dir);
+  else if(calMode==='week') d.setDate(d.getDate()+7*dir);
+  else d.setDate(d.getDate()+dir);
+  calDate = d;
+  renderCalendarBody();
+}
+function bookingsOn(day){
+  return state.bookings.filter(b=>{
+    const p = new Date(b.pickup), r = new Date(b.ret);
+    return day >= new Date(p.getFullYear(),p.getMonth(),p.getDate()) && day <= new Date(r.getFullYear(),r.getMonth(),r.getDate());
+  });
+}
+function dayCellHtml(day){
+  const items = bookingsOn(day);
+  const isToday = day.toDateString() === new Date().toDateString();
+  return `<div style="border:1px solid var(--card-border);border-radius:8px;min-height:90px;padding:6px;${isToday?'background:var(--accent-dim)':''}">
+    <div style="font-size:.72rem;font-weight:700;color:var(--ink-dim);margin-bottom:4px">${day.getDate()}</div>
+    ${items.slice(0,3).map(b=>{
+      const st = bookingStatus(b);
+      return `<div class="pill ${st.cls}" style="display:block;margin-bottom:3px;font-size:.66rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.customerName||'—'} · ${b.carName||''}</div>`;
+    }).join('')}
+    ${items.length>3 ? `<div style="font-size:.68rem;color:var(--ink-dim)">+${items.length-3} more</div>` : ''}
+  </div>`;
+}
+function renderCalendarBody(){
+  const el = document.getElementById('calBody');
+  if(calMode === 'month'){
+    const first = new Date(calDate.getFullYear(), calDate.getMonth(), 1);
+    const startOffset = first.getDay();
+    const daysInMonth = new Date(calDate.getFullYear(), calDate.getMonth()+1, 0).getDate();
+    let cells = '';
+    for(let i=0;i<startOffset;i++) cells += `<div></div>`;
+    for(let d=1; d<=daysInMonth; d++) cells += dayCellHtml(new Date(calDate.getFullYear(), calDate.getMonth(), d));
+    el.innerHTML = `<h4 style="margin-top:0">${calDate.toLocaleString('en-GB',{month:'long',year:'numeric'})}</h4>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">${cells}</div>`;
+  } else if(calMode === 'week'){
+    const start = new Date(calDate); start.setDate(start.getDate() - start.getDay());
+    let cells = '';
+    for(let i=0;i<7;i++){ const d = new Date(start); d.setDate(start.getDate()+i); cells += dayCellHtml(d); }
+    el.innerHTML = `<h4 style="margin-top:0">Week of ${start.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</h4>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">${cells}</div>`;
+  } else {
+    const items = bookingsOn(calDate);
+    el.innerHTML = `<h4 style="margin-top:0">${calDate.toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</h4>
+      ${items.length ? items.map(b=>{
+        const st = bookingStatus(b);
+        return `<div class="card-pad" style="border:1px solid var(--card-border);border-radius:8px;margin-bottom:8px"><b>${b.customerName}</b> — ${b.carName} <span class="pill ${st.cls}">${st.label}</span><br><span style="color:var(--ink-dim);font-size:.78rem">${fmtDate(b.pickup)} → ${fmtDate(b.ret)}</span></div>`;
+      }).join('') : `<div class="empty-state">No bookings this day.</div>`}`;
+  }
+}
+
+/* ================= CUSTOMERS ================= */
+function renderCustomers(){
+  const byPhone = {};
+  state.bookings.forEach(b=>{
+    const key = b.phone || b.customerName || 'unknown';
+    if(!byPhone[key]) byPhone[key] = { name: b.customerName, phone: b.phone, bookings: 0, lastDate: b.pickup };
+    byPhone[key].bookings++;
+    if(new Date(b.pickup) > new Date(byPhone[key].lastDate)) byPhone[key].lastDate = b.pickup;
+  });
+  const customers = Object.values(byPhone).sort((a,b)=> b.bookings - a.bookings);
+  document.getElementById('viewRoot').innerHTML = `
+    <div class="section-note">Customers are derived from your booking history (grouped by phone number) — there's no separate customer database yet.</div>
+    <div class="card"><div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Phone</th><th># Bookings</th><th>Last booking</th></tr></thead>
+        <tbody>
+          ${customers.map(c => `<tr><td>${c.name||'—'}</td><td>${c.phone||'—'}</td><td>${c.bookings}</td><td>${fmtDate(c.lastDate)}</td></tr>`).join('')
+            || `<tr><td colspan="4" class="empty-state">No customers yet.</td></tr>`}
+        </tbody>
+      </table>
+    </div></div>
+  `;
+}
+
+/* ================= PRICING ================= */
+function renderPricing(){
+  const root = document.getElementById('viewRoot');
+  root.innerHTML = `
+    <div class="tabs">
+      <button data-tab="seasonal" class="active">Seasonal &amp; special periods</button>
+      <button data-tab="currency">Currency</button>
+    </div>
+    <div id="pricingTabBody"></div>
+  `;
+  root.querySelectorAll('[data-tab]').forEach(b=> b.addEventListener('click', ()=>{
+    root.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    renderPricingTab(b.dataset.tab);
+  }));
+  renderPricingTab('seasonal');
+}
+function renderPricingTab(tab){
+  const el = document.getElementById('pricingTabBody');
+  if(tab === 'seasonal'){
+    el.innerHTML = `
+      <div class="section-note">Covers Summer, Holidays, Christmas, weekend surcharges or any special event — each period applies a % or fixed € adjustment to every car's daily price automatically when the pickup date falls inside it.</div>
+      ${isEditor() ? `<div class="card card-pad" style="margin-bottom:20px">
+        <b>Add a pricing period</b>
+        <div class="field-grid" style="margin-top:12px">
+          <div class="field"><label>Name</label><input id="spName" placeholder="Summer, Christmas, Weekend…"></div>
+          <div class="field"><label>Type</label><select id="spType"><option value="percent">% increase</option><option value="fixed">Fixed € / day</option></select></div>
+          <div class="field"><label>Start date</label><input type="date" id="spStart"></div>
+          <div class="field"><label>End date</label><input type="date" id="spEnd"></div>
+          <div class="field"><label>Value</label><input type="number" id="spValue" placeholder="e.g. 20"></div>
+        </div>
+        <button class="btn btn-primary" id="spAdd">Add period</button>
+      </div>` : ''}
+      <div class="card"><div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Start</th><th>End</th><th>Adjustment</th>${isEditor() ? '<th></th>' : ''}</tr></thead>
+          <tbody>
+            ${state.seasons.map(s => `<tr><td>${s.name}</td><td>${s.start}</td><td>${s.end}</td><td>${s.type==='fixed' ? '+€'+s.value+'/day' : '+'+s.value+'%'}</td>
+              ${isEditor() ? `<td><button class="btn btn-danger btn-sm" data-del-season="${s.row}">Delete</button></td>` : ''}</tr>`).join('')
+              || `<tr><td colspan="5" class="empty-state">No pricing periods yet.</td></tr>`}
+          </tbody>
+        </table>
+      </div></div>
+    `;
+    if(isEditor()){
+      document.getElementById('spAdd').addEventListener('click', async ()=>{
+        const name = document.getElementById('spName').value.trim();
+        const start = document.getElementById('spStart').value;
+        const end = document.getElementById('spEnd').value;
+        const value = document.getElementById('spValue').value;
+        const type = document.getElementById('spType').value;
+        if(!name || !start || !end || !value){ toast('Fill in all fields'); return; }
+        const r = await apiPost({ action: 'addSeason', name, start, end, value, type });
+        if(r.success){ toast('Period added'); await refreshAdminData(); renderPricingTab('seasonal'); }
+        else toast(r.error || 'Failed');
+      });
+      el.querySelectorAll('[data-del-season]').forEach(b => b.addEventListener('click', async ()=>{
+        const r = await apiPost({ action: 'deleteSeason', row: b.dataset.delSeason });
+        if(r.success){ toast('Period removed'); await refreshAdminData(); renderPricingTab('seasonal'); }
+      }));
+    }
+  } else {
+    el.innerHTML = `
+      <div class="card card-pad">
+        <b>Live exchange rates</b>
+        <p style="color:var(--ink-dim);font-size:.82rem">The website converts EUR prices to MAD/USD live using <code>frankfurter.app</code> (free, no API key). Booking totals and the PDF invoice always stay in EUR — the agency's real transaction currency.</p>
+        <div id="fxRates" style="font-size:1.1rem;font-weight:700;margin-top:10px">Loading rates…</div>
+      </div>
+    `;
+    fetch('https://api.frankfurter.app/latest?from=EUR&to=MAD,USD').then(r=>r.json()).then(d=>{
+      document.getElementById('fxRates').textContent = `1 EUR = ${d.rates.MAD} MAD = ${d.rates.USD} USD`;
+    }).catch(()=>{ document.getElementById('fxRates').textContent = 'Rates unavailable right now (offline?).'; });
+  }
+}
+
+/* ================= CATEGORIES ================= */
+function renderCategories(){
+  const fixedCats = [
+    ['All Cars', 'Always matches'], ['Petrol & Hybrid', 'fuelKey = essence or hybride'], ['Diesel', 'fuelKey = diesel'],
+    ['Manual', 'gearKey = manual'], ['Automatic', 'gearKey = auto'], ['SUV', "'suv' tag on the vehicle"],
+    ['7 Seats', 'seats = 7'], ['Luxury', "'luxury' tag on the vehicle"], ['Economy', 'price ≤ 25€/day'],
+  ];
+  document.getElementById('viewRoot').innerHTML = `
+    <div class="section-note">The 9 fleet filters on the live site are computed automatically from each vehicle's specs — there's no separate category list to manage. "SUV" and "Luxury" are the only two manually-assigned tags (edit them per vehicle from Fleet Management).</div>
+    <div class="card"><div class="table-wrap">
+      <table><thead><tr><th>Category</th><th>How it's matched</th></tr></thead>
+      <tbody>${fixedCats.map(([n,d])=>`<tr><td><b>${n}</b></td><td style="color:var(--ink-dim)">${d}</td></tr>`).join('')}</tbody></table>
+    </div></div>
+  `;
+}
+
+/* ================= REPORTS ================= */
+function renderReports(){
+  const revenue = state.bookings.reduce((s,b)=> s + (parseFloat(b.total) || 0), 0);
+  const bySource = {};
+  state.bookings.forEach(b => { bySource[b.source||'website'] = (bySource[b.source||'website']||0) + 1; });
+  const popularity = {};
+  state.bookings.forEach(b => { popularity[b.carId] = (popularity[b.carId]||0) + 1; });
+  const popularSorted = Object.entries(popularity).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  document.getElementById('viewRoot').innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi"><div class="label">Total bookings</div><div class="value">${state.bookings.length}</div></div>
+      <div class="kpi"><div class="label">Revenue (active)</div><div class="value">€${revenue.toFixed(0)}</div></div>
+      <div class="kpi"><div class="label">Fleet models</div><div class="value">${state.cars.length}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-pad">
+        <div class="toolbar-row"><b>Most popular vehicles</b>
+          <div class="tag-row">
+            <button class="btn btn-outline btn-sm" id="exportBookingsCsv">⬇ Bookings CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Vehicle</th><th>Bookings</th></tr></thead>
+          <tbody>${popularSorted.map(([id,count])=>{ const c = carById(id); return `<tr><td>${c ? c.name : id}</td><td>${count}</td></tr>`; }).join('') || `<tr><td colspan="2" class="empty-state">No data yet.</td></tr>`}</tbody>
+        </table></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-pad">
+        <b>Bookings by source</b>
+        <div class="table-wrap" style="margin-top:12px"><table>
+          <thead><tr><th>Source</th><th>Count</th></tr></thead>
+          <tbody>${Object.entries(bySource).map(([s,c])=>`<tr><td>${s}</td><td>${c}</td></tr>`).join('') || `<tr><td colspan="2" class="empty-state">No data yet.</td></tr>`}</tbody>
+        </table></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('exportBookingsCsv').addEventListener('click', ()=> csvDownload('bookings.csv', state.bookings));
+}
+
+/* ================= NOTIFICATIONS ================= */
+function renderNotifications(){
+  document.getElementById('viewRoot').innerHTML = `
+    <div class="card card-pad">
+      <div class="toolbar-row"><b>Email</b><span class="pill pill-green">Active</span></div>
+      <p style="color:var(--ink-dim);font-size:.83rem">Every new booking (website or manual) automatically sends a confirmation email to <b>${state.settings.notification_email || 'the agency inbox'}</b> via the booking backend. No setup needed.</p>
+    </div>
+    <div class="card card-pad">
+      <div class="toolbar-row"><b>WhatsApp</b><span class="pill pill-green">Ready</span></div>
+      <p style="color:var(--ink-dim);font-size:.83rem">The website's booking confirmation and every "Book Now" button already deep-link to WhatsApp with a pre-filled message — no extra setup needed on your side.</p>
+    </div>
+    <div class="card card-pad">
+      <div class="toolbar-row"><b>Push notifications</b><span class="pill pill-red">Not available</span></div>
+      <p style="color:var(--ink-dim);font-size:.83rem">Browser push notifications need a push server and a service worker running on the live site — that infrastructure isn't set up yet. Email + WhatsApp cover new-booking alerts in the meantime.</p>
+    </div>
+  `;
+}
+
+/* ================= SETTINGS ================= */
+function renderSettings(){
+  const root = document.getElementById('viewRoot');
+  root.innerHTML = `
+    <div class="tabs">
+      <button data-stab="seo" class="active">SEO</button>
+      <button data-stab="roles">Admin roles</button>
+      <button data-stab="log">Activity log</button>
+      <button data-stab="backup">Backups</button>
+    </div>
+    <div id="settingsTabBody"></div>
+  `;
+  root.querySelectorAll('[data-stab]').forEach(b=> b.addEventListener('click', ()=>{
+    root.querySelectorAll('[data-stab]').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    renderSettingsTab(b.dataset.stab);
+  }));
+  renderSettingsTab('seo');
+}
+function renderSettingsTab(tab){
+  const el = document.getElementById('settingsTabBody');
+  if(tab === 'seo'){
+    el.innerHTML = `
+      <div class="section-note">These override the meta title/description the live site shows to Google and social previews — applied at runtime, no code changes needed.</div>
+      <div class="card card-pad">
+        <div class="field"><label>Meta title</label><input id="seoTitle" value="${state.settings.meta_title||''}" placeholder="Leave blank to keep the site's default title"></div>
+        <div class="field"><label>Meta description</label><textarea id="seoDesc" rows="3" placeholder="Leave blank to keep the site's default description">${state.settings.meta_description||''}</textarea></div>
+        <div class="field"><label>Schema.org business type</label><input value="AutoRental" disabled>
+          <span style="font-size:.72rem;color:var(--ink-dim)">Structured data is defined in index.html's JSON-LD block — edit the code directly for structural changes (this dashboard only overrides the title/description text).</span>
+        </div>
+        ${isEditor() ? `<button class="btn btn-primary" id="seoSave">Save SEO settings</button>` : ''}
+      </div>
+    `;
+    if(isEditor()){
+      document.getElementById('seoSave').addEventListener('click', async ()=>{
+        await apiPost({ action:'saveSetting', key:'meta_title', value: document.getElementById('seoTitle').value });
+        await apiPost({ action:'saveSetting', key:'meta_description', value: document.getElementById('seoDesc').value });
+        toast('SEO settings saved');
+        await refreshAdminData();
+      });
+    }
+  } else if(tab === 'roles'){
+    el.innerHTML = `
+      <div class="section-note warn">Passwords are set in the Apps Script code (ADMIN_ROLES), not editable from here — change them in the backend if needed, then redeploy.</div>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Role</th><th>Can do</th></tr></thead>
+        <tbody>
+          <tr><td><span class="pill pill-blue">Super Admin</span></td><td>Full access to every module, including Settings and roles.</td></tr>
+          <tr><td><span class="pill pill-blue">Manager</span></td><td>Everything except Settings (SEO/roles/backups).</td></tr>
+          <tr><td><span class="pill pill-gray">Employee</span></td><td>View-only + Reservations, Calendar and Customers; can create manual bookings but cannot edit fleet/pricing/settings.</td></tr>
+        </tbody>
+      </table></div></div>
+    `;
+  } else if(tab === 'log'){
+    el.innerHTML = `
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>When</th><th>Role</th><th>Action</th><th>Details</th></tr></thead>
+        <tbody>${state.activityLog.map(l=>`<tr><td>${fmtDate(l.timestamp)}</td><td><span class="pill pill-gray">${l.role}</span></td><td>${l.action}</td><td>${l.details||''}</td></tr>`).join('')
+          || `<tr><td colspan="4" class="empty-state">No activity recorded yet.</td></tr>`}</tbody>
+      </table></div></div>
+    `;
+  } else {
+    el.innerHTML = `
+      <div class="section-note">One-click exports of your current data — a simple, reliable stand-in for scheduled server backups.</div>
+      <div class="card card-pad tag-row">
+        <button class="btn btn-outline" id="bkCars">⬇ Export Cars (CSV)</button>
+        <button class="btn btn-outline" id="bkBookings">⬇ Export Bookings (CSV)</button>
+        <button class="btn btn-outline" id="bkSeasons">⬇ Export Seasons (CSV)</button>
+        <button class="btn btn-primary" id="bkAll">⬇ Full backup (JSON)</button>
+      </div>
+    `;
+    document.getElementById('bkCars').addEventListener('click', ()=> csvDownload('cars-backup.csv', state.cars.map(c=>({...c, body:(c.body||[]).join(',')}))));
+    document.getElementById('bkBookings').addEventListener('click', ()=> csvDownload('bookings-backup.csv', state.bookings));
+    document.getElementById('bkSeasons').addEventListener('click', ()=> csvDownload('seasons-backup.csv', state.seasons));
+    document.getElementById('bkAll').addEventListener('click', ()=> jsonDownload('afc-full-backup-' + new Date().toISOString().slice(0,10) + '.json', state));
+  }
+}
+</script>
+</body>
+</html>
