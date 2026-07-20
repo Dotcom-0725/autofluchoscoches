@@ -1,142 +1,461 @@
 /* ============================================================
-   AUTO FLUCHOS COCHES — Shared car availability backend
+   AUTO FLUCHOS COCHES — Booking engine + Admin Dashboard backend
    (Google Apps Script Web App, backed by a Google Sheet)
 
-   WHAT THIS DOES
-   Keeps a real, shared list of which cars are currently booked, so
-   "Not Available" shows up for every visitor, not just the browser
-   that made the booking. Also powers the site's admin panel, which lets
-   the agency owner cancel a booking (freeing the car up again) directly
-   from the website instead of opening the Google Sheet by hand.
+   WHAT THIS DOES (v4 — adds the admin dashboard's data layer)
+   - Everything from v3 (stock-aware inventory, overbooking prevention,
+     auto-expiry, seasonal pricing, automatic confirmation email).
+   - Fleet data (the car catalog) now lives in a "Cars" sheet tab instead
+     of being hardcoded in index.html, so the new admin dashboard
+     (admin.html) can actually create/edit/delete/duplicate vehicles.
+   - Three admin passwords mapped to roles (Super Admin / Manager /
+     Employee) — Employee can view bookings/calendar/customers and create
+     manual reservations, but cannot edit fleet/pricing/settings.
+   - "Settings" sheet stores SEO meta title/description overrides that
+     index.html applies at runtime.
+   - "ActivityLog" sheet records every mutating admin action (who did
+     what, when) for the dashboard's Activity Logs screen.
 
-   HOW TO DEPLOY (takes about 3 minutes, everything is free):
-
-   1. Go to https://sheets.google.com and create a new blank spreadsheet.
-      Name it whatever you like, e.g. "Auto Fluchos Coches - Bookings".
-
-   2. In that sheet, go to the menu: Extensions > Apps Script.
-      This opens the Apps Script editor, already linked to this sheet.
-
-   3. Delete anything in the default "Code.gs" file, and paste in the ENTIRE
-      contents of this file (apps-script.gs.txt) instead.
-
-   4. Change ADMIN_PASSWORD below to whatever password you want the agency
-      owner to use to cancel bookings from the site's admin panel.
-
-   5. Click the "Save" icon (or Ctrl+S / Cmd+S).
-
-   6. Click "Deploy" (top right) > "New deployment".
-      - Click the gear icon next to "Select type" and choose "Web app".
-      - Description: anything, e.g. "Booking availability API".
-      - Execute as: "Me" (your Google account).
-      - Who has access: "Anyone".
-        (This does NOT expose your Google account or Drive — it only runs
-        the functions below, which just read/write car booking rows.)
-      - Click "Deploy".
-      - Google may ask you to authorize the script the first time — click
-        through "Advanced" > "Go to (project name) (unsafe)" if you see a
-        warning screen; this is expected for your own scripts and is safe.
-
-   7. Copy the "Web app URL" it gives you (ends with /exec).
-
-   8. Open index.html, find this line near the top of the <script> block:
-         const APPS_SCRIPT_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
-      and replace the placeholder with the URL you just copied. Save the file.
-
-   That's it — the site will now read/write car availability from this sheet.
-   A "Bookings" tab is created automatically the first time someone books.
-
-   IF YOU EVER CHANGE THIS SCRIPT (including just the password): you must
-   create a "New deployment" again (Deploy > Manage deployments > edit the
-   existing deployment > "New version" > Deploy) for changes to take effect
-   — saving alone does not update the live Web App URL's behavior.
+   HOW TO DEPLOY / UPDATE:
+   1. Open the "Auto Fluchos Coches - Bookings" spreadsheet.
+   2. Extensions > Apps Script.
+   3. Replace Code.gs with the ENTIRE contents of this file.
+   4. Change the passwords in ADMIN_ROLES below if you want different ones.
+   5. Save (Ctrl+S).
+   6. Deploy > Manage deployments > edit (pencil) > Version: "New version" > Deploy.
+      The Web App URL stays the same — no change needed in index.html/admin.html.
+   7. "Cars", "Settings" and "ActivityLog" sheet tabs are created automatically
+      the first time they're needed. The FIRST time you deploy this version,
+      the "Cars" sheet will be empty — run the one-time function
+      `seedCarsFromLaunchData` once from the Apps Script editor (select it in
+      the function dropdown next to "Exécuter" and click Run) to populate it
+      with the fleet that was previously hardcoded in index.html. After that
+      first seed, manage cars from the admin dashboard instead.
+   8. The autoExpireBookings trigger from v3 keeps working unchanged.
 ============================================================ */
 
-const SHEET_NAME = 'Bookings';
+const BOOKINGS_SHEET_NAME = 'Bookings';
+const SEASONS_SHEET_NAME = 'Seasons';
+const CARS_SHEET_NAME = 'Cars';
+const SETTINGS_SHEET_NAME = 'Settings';
+const ACTIVITY_SHEET_NAME = 'ActivityLog';
 
-// Change this to your own password — this is what protects the admin
-// panel's "cancel booking" action on the website. Keep it simple but not
-// guessable by a random visitor.
-const ADMIN_PASSWORD = 'fluchos2026';
+// Three passwords, three roles. Employee = view + manual reservations only.
+// Manager = everything except Settings/roles. Super Admin = everything.
+const ADMIN_ROLES = {
+  'fluchos2026': 'super_admin',
+  'manager2026': 'manager',
+  'employee2026': 'employee',
+};
+const EDITOR_ROLES = ['super_admin', 'manager']; // allowed to edit fleet/pricing/settings
+
+const NOTIFICATION_EMAIL = 'Contact@autofluchoscoches.com';
+
+function roleForPassword_(password) {
+  return ADMIN_ROLES[password] || null;
+}
 
 function doGet(e) {
-  const sheet = getSheet_();
-  const rows = sheet.getDataRange().getValues();
+  const action = e.parameter.action;
 
-  // Admin view: full booking details, only if the correct password is
-  // supplied as a URL parameter (?action=admin&password=...).
-  if (e.parameter.action === 'admin') {
-    if (e.parameter.password !== ADMIN_PASSWORD) {
+  if (action === 'admin') {
+    const role = roleForPassword_(e.parameter.password);
+    if (!role) {
       return jsonResponse_({ success: false, error: 'Wrong password' });
     }
-    const bookings = [];
-    for (let i = 1; i < rows.length; i++) {
-      if (!rows[i][0]) continue;
-      bookings.push({
-        row: i + 1, // 1-indexed sheet row, used to target the exact row on cancel
-        carId: rows[i][0],
-        carName: rows[i][1],
-        customerName: rows[i][2],
-        phone: rows[i][3],
-        pickup: rows[i][4],
-        ret: rows[i][5],
-        ref: rows[i][6],
-        bookedAt: rows[i][7],
-      });
-    }
-    return jsonResponse_({ success: true, bookings: bookings });
+    return jsonResponse_({
+      success: true,
+      role: role,
+      bookings: listActiveBookings_(),
+      seasons: listSeasons_(),
+      cars: listCars_(),
+      settings: listSettings_(),
+      activityLog: listActivityLog_(),
+    });
   }
 
-  // Public view: just which car IDs are currently booked (no password needed —
-  // this is what every visitor's browser checks before showing "Not Available").
-  const bookedCars = [];
-  for (let i = 1; i < rows.length; i++) {
-    const carId = rows[i][0];
-    if (carId) bookedCars.push(carId);
+  if (action === 'seasons') {
+    return jsonResponse_({ seasons: listSeasons_() });
   }
-  return jsonResponse_({ bookedCars: bookedCars });
+
+  if (action === 'cars') {
+    // Public: the live site's fleet section reads the car catalog from here.
+    return jsonResponse_({ cars: listCars_() });
+  }
+
+  if (action === 'settings') {
+    // Public: index.html applies SEO meta overrides (title/description) from here.
+    return jsonResponse_({ settings: listSettings_() });
+  }
+
+  const bookedCounts = {};
+  listActiveBookings_().forEach(b => {
+    bookedCounts[b.carId] = (bookedCounts[b.carId] || 0) + 1;
+  });
+  return jsonResponse_({ bookedCounts: bookedCounts });
 }
 
 function doPost(e) {
   const body = JSON.parse(e.postData.contents);
 
-  // Admin action: cancel a booking (delete its row), freeing the car up again.
   if (body.action === 'cancel') {
-    if (body.password !== ADMIN_PASSWORD) {
-      return jsonResponse_({ success: false, error: 'Wrong password' });
-    }
-    if (!body.row) {
-      return jsonResponse_({ success: false, error: 'Missing row' });
-    }
-    const sheet = getSheet_();
-    sheet.deleteRow(body.row);
+    const role = roleForPassword_(body.password);
+    if (!role) return jsonResponse_({ success: false, error: 'Wrong password' });
+    if (!body.row) return jsonResponse_({ success: false, error: 'Missing row' });
+    getBookingsSheet_().deleteRow(Number(body.row));
+    logActivity_(role, 'cancel_booking', 'Row ' + body.row);
     return jsonResponse_({ success: true });
   }
 
-  // Default action: record a new booking.
+  if (body.action === 'addSeason') {
+    const role = roleForPassword_(body.password);
+    if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
+    if (!body.name || !body.start || !body.end || !body.value) {
+      return jsonResponse_({ success: false, error: 'Missing fields' });
+    }
+    getSeasonsSheet_().appendRow([
+      body.name, body.start, body.end, body.type === 'fixed' ? 'fixed' : 'percent', Number(body.value),
+    ]);
+    logActivity_(role, 'add_season', body.name);
+    return jsonResponse_({ success: true });
+  }
+
+  if (body.action === 'deleteSeason') {
+    const role = roleForPassword_(body.password);
+    if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
+    if (!body.row) return jsonResponse_({ success: false, error: 'Missing row' });
+    getSeasonsSheet_().deleteRow(Number(body.row));
+    logActivity_(role, 'delete_season', 'Row ' + body.row);
+    return jsonResponse_({ success: true });
+  }
+
+  if (body.action === 'saveCar') {
+    const role = roleForPassword_(body.password);
+    if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
+    const car = body.car || {};
+    if (!car.id || !car.name) return jsonResponse_({ success: false, error: 'Missing id/name' });
+    upsertCar_(car);
+    logActivity_(role, 'save_car', car.id + ' — ' + car.name);
+    return jsonResponse_({ success: true });
+  }
+
+  if (body.action === 'deleteCar') {
+    const role = roleForPassword_(body.password);
+    if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
+    if (!body.id) return jsonResponse_({ success: false, error: 'Missing id' });
+    deleteCar_(body.id);
+    logActivity_(role, 'delete_car', body.id);
+    return jsonResponse_({ success: true });
+  }
+
+  if (body.action === 'duplicateCar') {
+    const role = roleForPassword_(body.password);
+    if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
+    if (!body.id) return jsonResponse_({ success: false, error: 'Missing id' });
+    const newId = duplicateCar_(body.id);
+    if (!newId) return jsonResponse_({ success: false, error: 'Car not found' });
+    logActivity_(role, 'duplicate_car', body.id + ' -> ' + newId);
+    return jsonResponse_({ success: true, id: newId });
+  }
+
+  if (body.action === 'saveSetting') {
+    const role = roleForPassword_(body.password);
+    if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
+    if (!body.key) return jsonResponse_({ success: false, error: 'Missing key' });
+    setSetting_(body.key, body.value || '');
+    logActivity_(role, 'save_setting', body.key);
+    return jsonResponse_({ success: true });
+  }
+
+  // Default action: record a new booking (website checkout OR a manual
+  // reservation created from the admin dashboard — same code path, so
+  // inventory updates automatically either way).
   if (!body.carId) {
     return jsonResponse_({ success: false, error: 'Missing carId' });
   }
-  const sheet = getSheet_();
-  sheet.appendRow([
-    body.carId,
-    body.carName || '',
-    body.customerName || '',
-    body.phone || '',
-    body.pickup || '',
-    body.ret || '',
-    body.ref || '',
-    new Date(),
-  ]);
-  return jsonResponse_({ success: true });
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const stock = Number(body.stock) || 1;
+    const currentlyBooked = listActiveBookings_().filter(b => b.carId === body.carId).length;
+    if (currentlyBooked >= stock) {
+      return jsonResponse_({ success: false, error: 'sold_out' });
+    }
+    getBookingsSheet_().appendRow([
+      body.carId,
+      body.carName || '',
+      body.customerName || '',
+      body.phone || '',
+      body.pickup || '',
+      body.ret || '',
+      body.ref || '',
+      new Date(),
+      stock,
+      body.total || '',
+      body.source || 'website',
+    ]);
+    sendBookingEmail_(body);
+    if (body.adminPassword) {
+      const role = roleForPassword_(body.adminPassword);
+      if (role) logActivity_(role, 'manual_booking', (body.source || 'manual') + ' — ' + body.carName);
+    }
+    return jsonResponse_({ success: true });
+  } finally {
+    lock.releaseLock();
+  }
 }
 
-function getSheet_() {
+/* Frees up stock automatically once a booking's return date has passed.
+   Installed as an hourly time-driven trigger (see v3 setup notes). */
+function autoExpireBookings() {
+  const sheet = getBookingsSheet_();
+  const rows = sheet.getDataRange().getValues();
+  const now = new Date();
+  for (let i = rows.length - 1; i >= 1; i--) {
+    const ret = rows[i][5];
+    if (ret && new Date(ret) < now) {
+      sheet.deleteRow(i + 1);
+    }
+  }
+}
+
+function listActiveBookings_() {
+  const rows = getBookingsSheet_().getDataRange().getValues();
+  const bookings = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (!rows[i][0]) continue;
+    bookings.push({
+      row: i + 1,
+      carId: rows[i][0],
+      carName: rows[i][1],
+      customerName: rows[i][2],
+      phone: rows[i][3],
+      pickup: rows[i][4],
+      ret: rows[i][5],
+      ref: rows[i][6],
+      bookedAt: rows[i][7],
+      stock: rows[i][8],
+      total: rows[i][9],
+      source: rows[i][10] || 'website',
+    });
+  }
+  return bookings;
+}
+
+function listSeasons_() {
+  const rows = getSeasonsSheet_().getDataRange().getValues();
+  const seasons = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (!rows[i][0]) continue;
+    seasons.push({
+      row: i + 1,
+      name: rows[i][0],
+      start: formatDateOnly_(rows[i][1]),
+      end: formatDateOnly_(rows[i][2]),
+      type: rows[i][3] || 'percent',
+      value: rows[i][4],
+    });
+  }
+  return seasons;
+}
+
+/* ---- Cars (fleet catalog) ---- */
+function listCars_() {
+  const rows = getCarsSheet_().getDataRange().getValues();
+  const cars = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (!rows[i][0]) continue;
+    cars.push({
+      id: rows[i][0],
+      name: rows[i][1],
+      price: Number(rows[i][2]) || 0,
+      seats: Number(rows[i][3]) || 5,
+      gearKey: rows[i][4] || 'manual',
+      doors: Number(rows[i][5]) || 4,
+      fuelKey: rows[i][6] || 'diesel',
+      body: rows[i][7] ? String(rows[i][7]).split(',').map(s => s.trim()).filter(Boolean) : [],
+      cat: rows[i][8] || 'citadine',
+      stock: Number(rows[i][9]) || 1,
+      imgSrc: rows[i][10] || '',
+      offer: rows[i][11] || (rows[i][2] + '€'),
+      sortOrder: rows[i][12] === '' || rows[i][12] == null ? i : Number(rows[i][12]),
+    });
+  }
+  cars.sort((a, b) => a.sortOrder - b.sortOrder);
+  return cars;
+}
+
+function upsertCar_(car) {
+  const sheet = getCarsSheet_();
+  const rows = sheet.getDataRange().getValues();
+  const rowData = [
+    car.id, car.name, Number(car.price) || 0, Number(car.seats) || 5, car.gearKey || 'manual',
+    Number(car.doors) || 4, car.fuelKey || 'diesel', Array.isArray(car.body) ? car.body.join(',') : (car.body || ''),
+    car.cat || 'citadine', Number(car.stock) || 1, car.imgSrc || '', car.offer || ((Number(car.price) || 0) + '€'),
+    car.sortOrder == null ? '' : Number(car.sortOrder),
+  ];
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === car.id) {
+      sheet.getRange(i + 1, 1, 1, rowData.length).setValues([rowData]);
+      return;
+    }
+  }
+  sheet.appendRow(rowData);
+}
+
+function deleteCar_(id) {
+  const sheet = getCarsSheet_();
+  const rows = sheet.getDataRange().getValues();
+  for (let i = rows.length - 1; i >= 1; i--) {
+    if (rows[i][0] === id) {
+      sheet.deleteRow(i + 1);
+      return;
+    }
+  }
+}
+
+function duplicateCar_(id) {
+  const rows = getCarsSheet_().getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === id) {
+      const newId = id + '-copy-' + Date.now().toString().slice(-6);
+      const rowData = rows[i].slice();
+      rowData[0] = newId;
+      rowData[1] = rowData[1] + ' (Copy)';
+      getCarsSheet_().appendRow(rowData);
+      return newId;
+    }
+  }
+  return null;
+}
+
+/* One-time helper: run manually once from the Apps Script editor to seed the
+   "Cars" sheet with the fleet that used to be hardcoded in index.html. Safe
+   to run more than once — it skips ids that already exist. */
+function seedCarsFromLaunchData() {
+  const existing = listCars_().map(c => c.id);
+  const seed = [
+    {id:'clio5-auto', name:'RENAULT CLIO 5 AUTOMATIQUE', price:30, seats:5, gearKey:'auto', doors:4, fuelKey:'essence', body:'', cat:'berline', stock:2, imgSrc:'images/clio5-auto.webp', offer:'30€', sortOrder:1},
+    {id:'clio5-manuel', name:'RENAULT CLIO 5 MANUEL', price:30, seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', body:'', cat:'berline', stock:2, imgSrc:'images/clio5-manuel.webp', offer:'30€', sortOrder:2},
+    {id:'opel-corsa', name:'OPEL CORSA MANUEL', price:30, seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', body:'', cat:'citadine', stock:1, imgSrc:'images/opel-corsa.webp', offer:'30€', sortOrder:3},
+    {id:'sandero-stepway-auto', name:'DACIA SANDERO STEPWAY AUTOMATIC', price:30, seats:5, gearKey:'auto', doors:4, fuelKey:'essence', body:'', cat:'berline', stock:3, imgSrc:'images/sandero-stepway-auto.webp', offer:'30€', sortOrder:4},
+    {id:'sandero-streetway-auto', name:'DACIA SANDERO STREETWAY AUTOMATIQUE', price:30, seats:5, gearKey:'auto', doors:4, fuelKey:'essence', body:'', cat:'citadine', stock:2, imgSrc:'images/sandero.webp', offer:'30€', sortOrder:5},
+    {id:'sandero-streetway-manuel', name:'DACIA SANDERO STREETWAY MANUELLE', price:30, seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', body:'', cat:'citadine', stock:4, imgSrc:'images/sandero.webp', offer:'30€', sortOrder:6},
+    {id:'sandero-stepway-extreme', name:'DACIA SANDERO STEPWAY MANUAL EXTREME', price:30, seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', body:'', cat:'citadine', stock:3, imgSrc:'images/sandero-stepway-extreme.webp', offer:'30€', sortOrder:7},
+    {id:'jogger-7p', name:'DACIA JOGGER 7 PLACES MANUEL', price:40, seats:7, gearKey:'manual', doors:4, fuelKey:'diesel', body:'', cat:'familiale', stock:2, imgSrc:'images/jogger-7p.webp', offer:'40€', sortOrder:8},
+    {id:'c3-aircross-hybride', name:'CITROËN NEW C3 AIRCROSS AUTOMATIQUE HYBRIDE', price:50, seats:5, gearKey:'auto', doors:4, fuelKey:'hybride', body:'suv', cat:'berline', stock:1, imgSrc:'images/c3-aircross-hybride.webp', offer:'50€', sortOrder:9},
+    {id:'nissan-magnite', name:'NISSAN MAGNITE AUTOMATIQUE', price:35, seats:5, gearKey:'auto', doors:4, fuelKey:'essence', body:'suv', cat:'berline', stock:1, imgSrc:'images/nissan-magnite.webp', offer:'35€', sortOrder:10},
+  ];
+  seed.forEach(car => {
+    if (existing.indexOf(car.id) === -1) upsertCar_(car);
+  });
+}
+
+/* ---- Settings (key/value store, used for SEO meta overrides) ---- */
+function listSettings_() {
+  const rows = getSettingsSheet_().getDataRange().getValues();
+  const settings = {};
+  for (let i = 1; i < rows.length; i++) {
+    if (!rows[i][0]) continue;
+    settings[rows[i][0]] = rows[i][1];
+  }
+  return settings;
+}
+function setSetting_(key, value) {
+  const sheet = getSettingsSheet_();
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === key) {
+      sheet.getRange(i + 1, 2).setValue(value);
+      return;
+    }
+  }
+  sheet.appendRow([key, value]);
+}
+
+/* ---- Activity log ---- */
+function logActivity_(role, action, details) {
+  try {
+    getActivitySheet_().appendRow([new Date(), role, action, details || '']);
+  } catch (e) { /* never let logging break the actual action */ }
+}
+function listActivityLog_() {
+  const rows = getActivitySheet_().getDataRange().getValues();
+  const log = [];
+  for (let i = Math.max(1, rows.length - 200); i < rows.length; i++) {
+    if (!rows[i][0]) continue;
+    log.push({ timestamp: rows[i][0], role: rows[i][1], action: rows[i][2], details: rows[i][3] });
+  }
+  return log.reverse();
+}
+
+function formatDateOnly_(value) {
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  return String(value).slice(0, 10);
+}
+
+function sendBookingEmail_(body) {
+  try {
+    const subject = 'New booking: ' + (body.carName || body.carId) + ' — ' + (body.ref || '');
+    const lines = [
+      'A new booking was just made ' + (body.source && body.source !== 'website' ? '(source: ' + body.source + ')' : 'on the website') + '.',
+      '',
+      'Reference: ' + (body.ref || ''),
+      'Customer: ' + (body.customerName || ''),
+      'Phone: ' + (body.phone || ''),
+      'Vehicle: ' + (body.carName || body.carId),
+      'Pickup: ' + (body.pickup || ''),
+      'Return: ' + (body.ret || ''),
+      'Total: ' + (body.total || ''),
+    ];
+    MailApp.sendEmail(NOTIFICATION_EMAIL, subject, lines.join('\n'));
+  } catch (e) { /* don't fail the booking over an email quota/error */ }
+}
+
+function getBookingsSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(SHEET_NAME);
+  let sheet = ss.getSheetByName(BOOKINGS_SHEET_NAME);
   if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
-    sheet.appendRow(['car_id', 'car_name', 'customer_name', 'phone', 'pickup_date', 'return_date', 'reference', 'booked_at']);
+    sheet = ss.insertSheet(BOOKINGS_SHEET_NAME);
+    sheet.appendRow(['car_id', 'car_name', 'customer_name', 'phone', 'pickup_date', 'return_date', 'reference', 'booked_at', 'stock', 'total', 'source']);
+  }
+  return sheet;
+}
+function getSeasonsSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SEASONS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SEASONS_SHEET_NAME);
+    sheet.appendRow(['name', 'start_date', 'end_date', 'type', 'value']);
+  }
+  return sheet;
+}
+function getCarsSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(CARS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(CARS_SHEET_NAME);
+    sheet.appendRow(['id', 'name', 'price', 'seats', 'gearKey', 'doors', 'fuelKey', 'body', 'cat', 'stock', 'imgSrc', 'offer', 'sortOrder']);
+  }
+  return sheet;
+}
+function getSettingsSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SETTINGS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SETTINGS_SHEET_NAME);
+    sheet.appendRow(['key', 'value']);
+  }
+  return sheet;
+}
+function getActivitySheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(ACTIVITY_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(ACTIVITY_SHEET_NAME);
+    sheet.appendRow(['timestamp', 'role', 'action', 'details']);
   }
   return sheet;
 }
@@ -148,7 +467,11 @@ function jsonResponse_(obj) {
 }
 
 /* ------------------------------------------------------------
-   You can still free up a car manually if you ever prefer to: open the
-   Google Sheet, go to the "Bookings" tab, and delete that row — same
-   effect as using the website's admin panel "Cancel booking" button.
+   Manual edits are still fine if you ever prefer them over the dashboard:
+   - Bookings tab: delete a row to free up that car's stock.
+   - Seasons tab: name, start_date, end_date, type (percent|fixed), value.
+   - Cars tab: id, name, price, seats, gearKey (auto|manual), doors, fuelKey
+     (essence|diesel|hybride), body (comma-separated tags e.g. "suv"),
+     cat, stock, imgSrc (path under images/), offer, sortOrder (lower = first).
+   - Settings tab: key/value pairs (meta_title, meta_description, etc.).
 ------------------------------------------------------------ */

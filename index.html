@@ -53,7 +53,7 @@
 <meta property="og:locale:alternate" content="es_ES">
 <meta name="twitter:card" content="summary_large_image">
 
-<meta name="theme-color" content="#0b1730">
+<meta name="theme-color" content="#ffffff">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -109,7 +109,7 @@
     {
       "@type": "Question",
       "name": "What guarantees do you require for car reservations?",
-      "acceptedAnswer": { "@type": "Answer", "text": "$300 or $500. Please contact us via WhatsApp for further inquiries." }
+      "acceptedAnswer": { "@type": "Answer", "text": "A refundable €500 deposit (cash or bank transfer, returned after inspection), or no deposit with a non-refundable €10/day surcharge. Please contact us via WhatsApp for further inquiries." }
     },
     {
       "@type": "Question",
@@ -127,19 +127,23 @@
 
 <style>
 :root{
-  --navy-900:#070d1a;
-  --navy-800:#0b1730;
-  --navy-700:#122145;
-  --navy-600:#1a2d57;
+  /* Premium white-minimalist palette. Variable NAMES are kept as-is (navy-*,
+     ink, card, ...) even though they now hold light values, since hundreds of
+     rules below reference them — renaming would mean touching every rule.
+     Think of navy-900 as "page background", navy-700 as "subtle fill", etc. */
+  --navy-900:#ffffff;
+  --navy-800:#f7f8fa;
+  --navy-700:#f0f2f5;
+  --navy-600:#e3e7ed;
   --blue-500:#1f6feb;
   --blue-400:#3b82f6;
-  --blue-glow:rgba(31,111,235,.35);
-  --gold:#f5a524;
+  --blue-glow:rgba(31,111,235,.18);
+  --gold:#c8860d;
   --offer:#e63950;
-  --ink:#eef2fb;
-  --ink-dim:#a9b6d6;
-  --card:#0f1c3a;
-  --card-border:#203157;
+  --ink:#14182b;
+  --ink-dim:#68707e;
+  --card:#ffffff;
+  --card-border:#e6e8ee;
   --radius:16px;
   --font-ar:'Cairo',sans-serif;
   --font-lat:'Poppins',sans-serif;
@@ -216,9 +220,9 @@ h2.section-title{
 /* ---------- Header ---------- */
 header{
   position:fixed;top:0;left:0;right:0;z-index:100;
-  background:rgba(7,13,26,.85);
+  background:rgba(255,255,255,.85);
   backdrop-filter:blur(10px);
-  border-bottom:1px solid rgba(255,255,255,.06);
+  border-bottom:1px solid var(--card-border);
 }
 .nav-wrap{
   display:flex;align-items:center;justify-content:space-between;
@@ -236,20 +240,20 @@ header{
 .logo-text small{display:block;font-size:.62rem;color:var(--ink-dim);font-weight:600;letter-spacing:.12em}
 .nav-links{display:flex;gap:26px;align-items:center}
 .nav-links a{font-weight:600;font-size:.9rem;color:var(--ink-dim);transition:color .15s}
-.nav-links a:hover{color:#fff}
+.nav-links a:hover{color:var(--blue-500)}
 .nav-actions{display:flex;align-items:center;gap:14px}
-.lang-switch{display:flex;gap:4px;background:var(--navy-700);padding:4px;border-radius:999px}
-.lang-switch button{
+.lang-switch,.currency-switch{display:flex;gap:4px;background:var(--navy-700);padding:4px;border-radius:999px}
+.lang-switch button,.currency-switch button{
   background:transparent;border:none;color:var(--ink-dim);
   font-weight:700;font-size:.78rem;padding:6px 10px;border-radius:999px;cursor:pointer;
 }
-.lang-switch button.active{background:var(--blue-500);color:#fff}
+.lang-switch button.active,.currency-switch button.active{background:var(--blue-500);color:#fff}
 .phone-pill{
   display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:700;font-size:.88rem;
 }
-.burger{display:none;background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer}
+.burger{display:none;background:none;border:none;color:var(--ink);font-size:1.5rem;cursor:pointer}
 
-.lang-switch-mobile{display:none}
+.lang-switch-mobile,.currency-switch-mobile{display:none}
 
 @media (max-width:1080px){
   .nav-links{
@@ -262,8 +266,9 @@ header{
   .nav-links.open{transform:translateY(0);opacity:1}
   .phone-pill{display:none}
   .burger{display:block}
-  .nav-actions .lang-switch{display:none}
+  .nav-actions .lang-switch,.nav-actions .currency-switch{display:none}
   .lang-switch-mobile{display:flex;justify-content:center;order:-1;padding-bottom:14px;margin-bottom:4px;border-bottom:1px solid var(--card-border)}
+  .currency-switch-mobile{display:flex;justify-content:center;order:-1;padding-bottom:14px;margin-bottom:4px}
 }
 
 @media (max-width:480px){
@@ -286,7 +291,7 @@ header{
 .hero-bg-img{
   width:100%;height:100%;object-fit:cover;
   animation:heroKenBurns 26s ease-in-out infinite alternate;
-  opacity:.5;
+  opacity:.32;
 }
 @keyframes heroKenBurns{
   0%{transform:scale(1) translate(0,0)}
@@ -297,12 +302,27 @@ header{
   position:absolute;inset:0;z-index:1;
   background:
     radial-gradient(circle at 15% 20%, var(--blue-glow), transparent 45%),
-    radial-gradient(circle at 85% 80%, rgba(245,165,36,.15), transparent 40%),
-    linear-gradient(180deg, rgba(7,13,26,.55) 0%, rgba(7,13,26,.8) 65%, var(--navy-900) 100%);
+    radial-gradient(circle at 85% 80%, rgba(200,134,13,.10), transparent 40%),
+    linear-gradient(180deg, rgba(255,255,255,.65) 0%, rgba(255,255,255,.9) 55%, var(--navy-900) 100%);
 }
 .hero > .container{position:relative;z-index:2}
 .hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:50px;align-items:center}
 @media (max-width:960px){.hero-grid{grid-template-columns:1fr}}
+
+.quick-booking{
+  display:flex;flex-wrap:wrap;gap:16px;align-items:end;
+  background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);
+  padding:22px 24px;box-shadow:0 20px 50px rgba(20,24,43,.10);
+  margin-top:-46px;position:relative;z-index:5;
+}
+.qb-field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:170px}
+.qb-field label{font-size:.72rem;font-weight:700;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.06em}
+.qb-field select,.qb-field input{
+  background:var(--navy-800);border:1px solid var(--card-border);color:var(--ink);
+  padding:10px 12px;border-radius:10px;font-weight:600;font-size:.85rem;
+}
+.qb-submit{flex:0 0 auto;padding:12px 32px;white-space:nowrap}
+@media (max-width:760px){.quick-booking{margin-top:20px;flex-direction:column;align-items:stretch}.qb-field{width:100%}}
 .badge-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px}
 .pill-badge{
   display:inline-flex;align-items:center;gap:6px;
@@ -333,9 +353,10 @@ header{
 }
 .hero-photo-placeholder img{width:100%;height:100%;object-fit:cover;opacity:.9}
 .hero-visual .card-float{
-  position:relative;z-index:2;background:rgba(7,13,26,.85);
+  position:relative;z-index:2;background:rgba(255,255,255,.9);
   border:1px solid var(--card-border);backdrop-filter:blur(6px);
   border-radius:16px;padding:18px;
+  box-shadow:0 10px 30px rgba(20,24,43,.08);
 }
 .hero-visual .card-float b{color:var(--gold);font-size:1.3rem}
 
@@ -343,7 +364,7 @@ header{
 .trustbar{background:var(--navy-800);padding:22px 0;border-top:1px solid var(--card-border);border-bottom:1px solid var(--card-border)}
 .trustbar .container{display:flex;flex-wrap:wrap;justify-content:space-around;gap:20px;text-align:center}
 .trustbar .item{display:flex;flex-direction:column;gap:4px}
-.trustbar .item b{font-size:1.1rem;color:#fff}
+.trustbar .item b{font-size:1.1rem;color:var(--ink)}
 .trustbar .item span{font-size:.78rem;color:var(--ink-dim)}
 
 /* ---------- Fleet ---------- */
@@ -353,7 +374,21 @@ header{
   padding:9px 18px;border-radius:999px;font-weight:600;font-size:.85rem;cursor:pointer;
 }
 .fleet-filter button.active{background:var(--blue-500);color:#fff;border-color:var(--blue-500)}
-.fleet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:24px}
+.fleet-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.fleet-empty{text-align:center;color:var(--ink-dim);padding:40px 0;font-weight:600}
+@media (max-width:960px){.fleet-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:640px){.fleet-grid{grid-template-columns:1fr}}
+.fleet-toolbar{
+  display:flex;flex-wrap:wrap;gap:18px;justify-content:center;align-items:end;
+  margin-bottom:32px;padding:16px 20px;background:var(--navy-800);border:1px solid var(--card-border);border-radius:var(--radius);
+}
+.fleet-toolbar-field{display:flex;flex-direction:column;gap:4px}
+.fleet-toolbar-field label{font-size:.72rem;font-weight:700;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.06em}
+.fleet-toolbar-field select{
+  background:var(--card);border:1px solid var(--card-border);color:var(--ink);
+  padding:8px 12px;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;min-width:140px;
+}
+@media (max-width:640px){.fleet-toolbar{flex-direction:column;align-items:stretch}.fleet-toolbar-field select{width:100%}}
 .car-card{
   background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);
   overflow:hidden;display:flex;flex-direction:column;transition:transform .2s, border-color .2s;
@@ -368,6 +403,11 @@ header{
   position:absolute;top:10px;inset-inline-start:10px;
   background:var(--offer);color:#fff;font-size:.7rem;font-weight:800;
   padding:5px 10px;border-radius:999px;text-transform:uppercase;
+}
+.car-stock-badge{
+  position:absolute;top:10px;inset-inline-end:10px;
+  background:rgba(20,24,43,.72);color:#fff;font-size:.7rem;font-weight:700;
+  padding:5px 10px;border-radius:999px;backdrop-filter:blur(4px);
 }
 .car-body{padding:18px;display:flex;flex-direction:column;gap:12px;flex:1}
 .car-body h3{font-size:1rem}
@@ -388,6 +428,12 @@ header{
 .cta-banner .btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
 
 /* ---------- Why us ---------- */
+.about-grid{max-width:760px;text-align:center;margin:0 auto}
+.about-text{color:var(--ink-dim);font-size:1rem;line-height:1.7;margin-bottom:28px}
+.about-stats{display:flex;flex-wrap:wrap;justify-content:center;gap:36px}
+.about-stats div{display:flex;flex-direction:column;gap:4px}
+.about-stats b{font-size:1.15rem;color:var(--ink)}
+.about-stats span{font-size:.82rem;color:var(--ink-dim)}
 .why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px}
 .why-card{
   background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);
@@ -468,7 +514,7 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
 .footer-grid p{color:var(--ink-dim);font-size:.88rem}
 .footer-grid ul li{margin-bottom:10px}
 .footer-grid ul a{color:var(--ink-dim);font-size:.88rem}
-.footer-grid ul a:hover{color:#fff}
+.footer-grid ul a:hover{color:var(--blue-500)}
 .footer-social{display:flex;gap:10px;margin-top:16px}
 .footer-social a{
   width:38px;height:38px;border-radius:10px;background:var(--navy-700);
@@ -489,6 +535,25 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
 }
 .admin-booking-item b{display:block;margin-bottom:4px}
 .admin-booking-details{color:var(--ink-dim);font-size:.78rem;line-height:1.5}
+
+.admin-tabs{display:flex;gap:8px;margin-bottom:18px;border-bottom:1px solid var(--card-border)}
+.admin-tab{
+  background:none;border:none;padding:10px 4px;margin-right:16px;font-weight:700;font-size:.88rem;
+  color:var(--ink-dim);cursor:pointer;border-bottom:2px solid transparent;
+}
+.admin-tab.active{color:var(--blue-500);border-bottom-color:var(--blue-500)}
+.admin-seasons-help{color:var(--ink-dim);font-size:.82rem;margin-bottom:14px}
+.admin-season-form{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.admin-season-form input,.admin-season-form select{
+  background:var(--navy-900);border:1px solid var(--card-border);color:var(--ink);
+  padding:8px 10px;border-radius:8px;font-size:.82rem;flex:1;min-width:100px;
+}
+.admin-season-form button{flex:none}
+.admin-season-item{
+  display:flex;justify-content:space-between;align-items:center;gap:14px;
+  background:var(--navy-900);border:1px solid var(--card-border);border-radius:10px;
+  padding:12px 16px;margin-bottom:10px;font-size:.85rem;
+}
 .admin-booking-item .btn{flex:none;padding:9px 16px;font-size:.8rem}
 
 /* ---------- Floating WhatsApp ---------- */
@@ -601,6 +666,10 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
   border:1px solid rgba(230,57,80,.3);border-radius:10px;padding:10px 12px;margin:14px 0 0;
 }
 .modal-error.show{display:block}
+.modal-warning{
+  color:#a16207 !important;font-size:.82rem;background:rgba(245,165,36,.12);
+  border:1px solid rgba(245,165,36,.35);border-radius:10px;padding:10px 12px;margin:14px 0 0;
+}
 .modal-actions{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
 .modal-actions .btn{flex:1}
 .modal-note{
@@ -634,9 +703,14 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
         <button data-lang="fr">FR</button>
         <button data-lang="es">ES</button>
       </div>
+      <div class="currency-switch currency-switch-mobile currency-switch-group">
+        <button data-currency="EUR" class="active">EUR</button>
+        <button data-currency="MAD">MAD</button>
+        <button data-currency="USD">USD</button>
+      </div>
       <a href="#top" data-i18n="nav_home">Home</a>
       <a href="#flotte" data-i18n="nav_fleet">Cars List</a>
-      <a href="#pourquoi" data-i18n="nav_why">About</a>
+      <a href="#apropos" data-i18n="nav_why">About</a>
       <a href="#avis" data-i18n="nav_reviews">Reviews</a>
       <a href="#faq" data-i18n="nav_faq">FAQ</a>
       <a href="#contact" data-i18n="nav_contact">Contact</a>
@@ -647,6 +721,11 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
         <button data-lang="en" class="active">EN</button>
         <button data-lang="fr">FR</button>
         <button data-lang="es">ES</button>
+      </div>
+      <div class="currency-switch currency-switch-group" id="currencySwitch">
+        <button data-currency="EUR" class="active">EUR</button>
+        <button data-currency="MAD">MAD</button>
+        <button data-currency="USD">USD</button>
       </div>
       <a href="tel:+212661304574" class="phone-pill">📞 <bdi dir="ltr">+212 661-304574</bdi></a>
       <button class="burger" id="burgerBtn" aria-label="Menu">☰</button>
@@ -690,6 +769,39 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
   </div>
 </section>
 
+<!-- ================= QUICK BOOKING WIDGET ================= -->
+<div class="container">
+  <form class="quick-booking" id="quickBookingForm">
+    <div class="qb-field">
+      <label data-i18n="qb_location_label">Pickup Location</label>
+      <select id="qbLocation" class="loc-select"></select>
+    </div>
+    <div class="qb-field">
+      <label data-i18n="qb_pickup_label">Pickup Date &amp; Time</label>
+      <input type="datetime-local" id="qbPickup">
+    </div>
+    <div class="qb-field">
+      <label data-i18n="qb_return_label">Return Date &amp; Time</label>
+      <input type="datetime-local" id="qbReturn">
+    </div>
+    <div class="qb-field">
+      <label data-i18n="qb_category_label">Category</label>
+      <select id="qbCategory">
+        <option value="all" data-i18n="filter_all">All Cars</option>
+        <option value="petrol_hybrid" data-i18n="filter_petrol_hybrid">Petrol &amp; Hybrid</option>
+        <option value="diesel" data-i18n="filter_diesel">Diesel</option>
+        <option value="manual" data-i18n="filter_manual">Manual</option>
+        <option value="automatic" data-i18n="filter_automatic">Automatic</option>
+        <option value="suv" data-i18n="filter_suv">SUV</option>
+        <option value="7seats" data-i18n="filter_family">7 Seats</option>
+        <option value="luxury" data-i18n="filter_luxury">Luxury</option>
+        <option value="economy" data-i18n="filter_economy">Economy</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-blue qb-submit" data-i18n="qb_search_btn">Search</button>
+  </form>
+</div>
+
 <!-- ================= TRUST BAR (facts pulled from the real Google Business listing) ================= -->
 <div class="trustbar">
   <div class="container">
@@ -707,13 +819,54 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
     <h2 class="section-title" data-i18n="fleet_title">Cars We're Offering for Rentals</h2>
 
     <div class="fleet-filter" id="fleetFilter">
-      <button class="active" data-cat="all" data-i18n="filter_all">All</button>
-      <button data-cat="citadine" data-i18n="filter_city">City cars</button>
-      <button data-cat="berline" data-i18n="filter_sedan">Sedans</button>
-      <button data-cat="familiale" data-i18n="filter_family">7 Seats</button>
+      <button class="active" data-cat="all" data-i18n="filter_all">All Cars</button>
+      <button data-cat="petrol_hybrid" data-i18n="filter_petrol_hybrid">Petrol &amp; Hybrid</button>
+      <button data-cat="diesel" data-i18n="filter_diesel">Diesel</button>
+      <button data-cat="manual" data-i18n="filter_manual">Manual</button>
+      <button data-cat="automatic" data-i18n="filter_automatic">Automatic</button>
+      <button data-cat="suv" data-i18n="filter_suv">SUV</button>
+      <button data-cat="7seats" data-i18n="filter_family">7 Seats</button>
+      <button data-cat="luxury" data-i18n="filter_luxury">Luxury</button>
+      <button data-cat="economy" data-i18n="filter_economy">Economy</button>
+    </div>
+
+    <div class="fleet-toolbar" id="fleetToolbar">
+      <div class="fleet-toolbar-field">
+        <label data-i18n="toolbar_brand_label">Brand</label>
+        <select id="fleetBrandSelect"><option value="all" data-i18n="toolbar_all_brands">All Brands</option></select>
+      </div>
+      <div class="fleet-toolbar-field">
+        <label data-i18n="toolbar_seats_label">Seats</label>
+        <select id="fleetSeatsSelect">
+          <option value="all" data-i18n="toolbar_all_seats">All</option>
+          <option value="5">5</option>
+          <option value="7">7</option>
+        </select>
+      </div>
+      <div class="fleet-toolbar-field">
+        <label data-i18n="toolbar_price_label">Max price / day</label>
+        <select id="fleetPriceSelect">
+          <option value="all" data-i18n="toolbar_all_prices">Any</option>
+          <option value="25">≤ 25€</option>
+          <option value="30">≤ 30€</option>
+          <option value="40">≤ 40€</option>
+          <option value="50">≤ 50€</option>
+        </select>
+      </div>
+      <div class="fleet-toolbar-field">
+        <label data-i18n="toolbar_sort_label">Sort by</label>
+        <select id="fleetSortSelect">
+          <option value="default" data-i18n="toolbar_sort_default">Featured</option>
+          <option value="price_asc" data-i18n="toolbar_sort_price_asc">Price: Low to High</option>
+          <option value="price_desc" data-i18n="toolbar_sort_price_desc">Price: High to Low</option>
+          <option value="newest" data-i18n="toolbar_sort_newest">Newest</option>
+          <option value="popular" data-i18n="toolbar_sort_popular">Most Popular</option>
+        </select>
+      </div>
     </div>
 
     <div class="fleet-grid" id="fleetGrid"><!-- generated in JS --></div>
+    <p class="fleet-empty" id="fleetEmpty" data-i18n="fleet_empty" hidden>No cars currently match this category.</p>
   </div>
 </section>
 
@@ -730,6 +883,22 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
 </div>
 
 <!-- ================= WHY US (from the agency's own Google Business description) ================= -->
+<!-- ================= ABOUT COMPANY (facts verified against the real Google Business listing) ================= -->
+<section id="apropos" style="background:var(--navy-800)">
+  <div class="container about-grid">
+    <div>
+      <div class="section-eyebrow" data-i18n="about_eyebrow">Our story</div>
+      <h2 class="section-title" data-i18n="about_title">About Auto Fluchos Coches</h2>
+      <p class="about-text" data-i18n="about_text">Auto Fluchos Coches is a car rental agency based in Tétouan, Morocco, serving customers across Tétouan, Tangier and Northern Morocco. We're open 24/7 and rated 5.0 out of 5 on Google from 484 reviews, with fast airport, hotel and city delivery and a straightforward, no-hidden-fees booking process.</p>
+      <div class="about-stats">
+        <div><b>5.0 / 5 ⭐</b><span data-i18n="trust_google">Google rating (484 reviews)</span></div>
+        <div><b data-i18n="trust_open">Open 24/7</b></div>
+        <div><b data-i18n="about_stat_area">Tétouan &amp; Tangier</b><span data-i18n="about_stat_area_sub">Northern Morocco service area</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section id="pourquoi">
   <div class="container">
     <div class="section-eyebrow" data-i18n="why_eyebrow">About us</div>
@@ -956,9 +1125,6 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
         </div>
       </div>
 
-      <label data-i18n="modal_quantity_label">Quantity</label>
-      <input type="number" id="bkQuantity" min="1" value="1" required>
-
       <div class="modal-grid-2">
         <div>
           <label data-i18n="modal_license_label">Driving license</label>
@@ -1035,6 +1201,8 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
         <span data-i18n="modal_washing_label">Car Washing</span>
         <span>€5.00 <span data-i18n="washing_mandatory">(mandatory)</span></span>
       </div>
+
+      <p class="modal-warning" id="bkHoursWarning" data-i18n="hours_warning" hidden>Outside business hours (08:00–20:00): a €10 surcharge has been added per pickup/return outside these hours.</p>
 
       <div class="modal-total-row">
         <span data-i18n="modal_total_label">Estimated Total</span>
@@ -1198,8 +1366,32 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
     </div>
 
     <div id="adminBookingsPanel" style="display:none">
-      <div id="adminBookingsList"></div>
-      <p id="adminEmptyMsg" data-i18n="admin_no_bookings" style="display:none">No active bookings.</p>
+      <div class="admin-tabs">
+        <button type="button" class="admin-tab active" data-admin-tab="bookings" data-i18n="admin_tab_bookings">Bookings</button>
+        <button type="button" class="admin-tab" data-admin-tab="seasons" data-i18n="admin_tab_seasons">Seasonal Pricing</button>
+      </div>
+
+      <div id="adminBookingsTab">
+        <div id="adminBookingsList"></div>
+        <p id="adminEmptyMsg" data-i18n="admin_no_bookings" style="display:none">No active bookings.</p>
+      </div>
+
+      <div id="adminSeasonsTab" style="display:none">
+        <p class="admin-seasons-help" data-i18n="admin_seasons_help">Create a pricing period (e.g. Summer, Christmas). Bookings picked up inside that date range are automatically priced with the adjustment below.</p>
+        <form id="adminSeasonForm" class="admin-season-form">
+          <input type="text" id="seasonName" placeholder="Summer" required>
+          <input type="date" id="seasonStart" required>
+          <input type="date" id="seasonEnd" required>
+          <select id="seasonType">
+            <option value="percent" data-i18n="admin_season_percent">% surcharge</option>
+            <option value="fixed" data-i18n="admin_season_fixed">Fixed €/day</option>
+          </select>
+          <input type="number" id="seasonValue" placeholder="20" required>
+          <button type="submit" class="btn btn-blue" data-i18n="admin_season_add">Add period</button>
+        </form>
+        <div id="adminSeasonsList"></div>
+        <p id="adminSeasonsEmpty" data-i18n="admin_no_seasons" style="display:none">No seasonal pricing periods yet.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -1247,19 +1439,33 @@ const LOCATIONS = [
   { label: 'Tangier Port Medina', fee: 20 },
   { label: 'Hotel Delivery (Tétouan & surroundings)', fee: 10 },
 ];
+/* Deposit: exactly 2 options per the booking-engine spec — Option A (500€,
+   refundable, cash or bank transfer, returned after inspection) or Option B
+   (no deposit, but +10€/day, non-refundable). The old 300€ mid-tier is gone. */
 const DEPOSITS = [
-  { amount: 500, surcharge: 0 },
-  { amount: 300, surcharge: 5 },
-  { amount: 0, surcharge: 10 },
+  { amount: 500, surcharge: 0, refundable: true },
+  { amount: 0, surcharge: 10, refundable: false },
 ];
 const CAR_WASH_FEE = 5; // mandatory on the original site
+
+/* Business hours: bookings outside this window are still allowed, but each
+   pickup/return time that falls outside it adds a flat surcharge and shows
+   a warning in the booking modal. */
+const BUSINESS_HOURS_START = 8;  // 08:00
+const BUSINESS_HOURS_END = 20;   // 20:00
+const OUTSIDE_HOURS_FEE = 10;
+
+// Business registration numbers, shown in the footer of every booking PDF —
+// copied as-is from the original site's booking document (see the reference
+// PDF the client shared). Update here if these numbers ever change.
+const LEGAL_FOOTER_TEXT = 'RC : 29173 - Pattente : 51405048 - ICE : 002803339000014';
 
 function locationOptionLabel(loc, dict){
   return loc.fee > 0 ? `${loc.label} (+€${loc.fee})` : `${loc.label} (€0)`;
 }
 function depositOptionLabel(dep, dict){
-  if(dep.surcharge > 0) return `€${dep.amount} ${dict.deposit_refundable} (+€${dep.surcharge}${dict.deposit_per_day})`;
-  return `€${dep.amount} ${dict.deposit_refundable}`;
+  if(dep.refundable) return `€${dep.amount} ${dict.deposit_refundable}`;
+  return `${dict.deposit_no_deposit} (+€${dep.surcharge}${dict.deposit_per_day}, ${dict.deposit_non_refundable})`;
 }
 function populateLocationAndDepositSelects(dict){
   document.querySelectorAll('select.loc-select').forEach(sel=>{
@@ -1288,20 +1494,105 @@ function populateLocationAndDepositSelects(dict){
    (the agency does not yet have real photos of its own fleet — see prior
    conversation). Swap each imgSrc for a real photo of the actual vehicle
    as soon as one is available; the <img alt="..."> text can stay as-is. */
+/* stock: units of this exact model the agency owns. Defaults to 1 (matches
+   the previous single-unit-per-model behavior) until the agency provides
+   real per-model counts — bump the number here once they do, no other
+   code changes needed, the booking engine already supports N > 1. */
 const CARS = [
-  {id:'sandero-stepway-auto', cat:'berline', imgSrc:'images/sandero-stepway-auto.webp', offer:'30€', price:30, name:'DACIA SANDERO STEPWAY AUTOMATIC', seats:5, gearKey:'auto', doors:4, fuelKey:'essence'},
-  {id:'sandero-stepway-extreme', cat:'citadine', imgSrc:'images/sandero-stepway-extreme.webp', offer:'30€', price:30, name:'DACIA SANDERO STEPWAY MANUAL EXTREME', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel'},
-  {id:'sandero', cat:'citadine', imgSrc:'images/sandero.webp', offer:'25€', price:25, name:'DACIA SANDERO', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel'},
-  {id:'jogger-7p', cat:'familiale', imgSrc:'images/jogger-7p.webp', offer:'40€', price:40, name:'DACIA JOGGER 7 PLACES MANUEL', seats:7, gearKey:'manual', doors:4, fuelKey:'diesel'},
-  {id:'lodgy-7p', cat:'familiale', imgSrc:'images/lodgy-7p.webp', offer:'40€', price:40, name:'DACIA LODGY 7 PLACES OR EQUIVALENT', seats:7, gearKey:'manual', doors:4, fuelKey:'diesel'},
-  {id:'clio5-manuel', cat:'berline', imgSrc:'images/clio5-manuel.webp', offer:'30€', price:30, name:'RENAULT CLIO 5 MANUEL', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel'},
-  {id:'clio5-auto', cat:'berline', imgSrc:'images/clio5-auto.webp', offer:'30€', price:30, name:'RENAULT CLIO 5 AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence'},
-  {id:'c3-aircross-hybride', cat:'berline', imgSrc:'images/c3-aircross-hybride.webp', offer:'50€', price:50, name:'CITROËN NEW C3 AIRCROSS AUTOMATIQUE HYBRIDE', seats:5, gearKey:'auto', doors:4, fuelKey:'hybride'},
-  {id:'c-elysee', cat:'citadine', imgSrc:'images/c-elysee.webp', offer:'25€', price:25, name:'CITROËN C-ELYSÉE OR EQUIVALENT', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel'},
-  {id:'opel-corsa', cat:'citadine', imgSrc:'images/opel-corsa.webp', offer:'30€', price:30, name:'OPEL CORSA MANUEL', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel'},
-  {id:'peugeot-301', cat:'citadine', imgSrc:'images/peugeot-301.webp', offer:'25€', price:25, name:'PEUGEOT 301 OR EQUIVALENT', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel'},
-  {id:'nissan-magnite', cat:'berline', imgSrc:'images/nissan-magnite.webp', offer:'35€', price:35, name:'NISSAN MAGNITE AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence'},
+  {id:'clio5-auto', cat:'berline', imgSrc:'images/clio5-auto.webp', offer:'30€', price:30, name:'RENAULT CLIO 5 AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', stock:2},
+  {id:'clio5-manuel', cat:'berline', imgSrc:'images/clio5-manuel.webp', offer:'30€', price:30, name:'RENAULT CLIO 5 MANUEL', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:2},
+  {id:'opel-corsa', cat:'citadine', imgSrc:'images/opel-corsa.webp', offer:'30€', price:30, name:'OPEL CORSA MANUEL', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:1},
+  {id:'sandero-stepway-auto', cat:'berline', imgSrc:'images/sandero-stepway-auto.webp', offer:'30€', price:30, name:'DACIA SANDERO STEPWAY AUTOMATIC', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', stock:3},
+  /* "Streetway" is a distinct real trim from "Stepway" in this agency's fleet (confirmed
+     with the client, not a typo) — reusing sandero.webp as its representative photo since
+     it shares the same base-hatchback body style and no dedicated photo exists yet. */
+  {id:'sandero-streetway-auto', cat:'citadine', imgSrc:'images/sandero.webp', offer:'30€', price:30, name:'DACIA SANDERO STREETWAY AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', stock:2},
+  {id:'sandero-streetway-manuel', cat:'citadine', imgSrc:'images/sandero.webp', offer:'30€', price:30, name:'DACIA SANDERO STREETWAY MANUELLE', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:4},
+  {id:'sandero-stepway-extreme', cat:'citadine', imgSrc:'images/sandero-stepway-extreme.webp', offer:'30€', price:30, name:'DACIA SANDERO STEPWAY MANUAL EXTREME', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:3},
+  {id:'jogger-7p', cat:'familiale', imgSrc:'images/jogger-7p.webp', offer:'40€', price:40, name:'DACIA JOGGER 7 PLACES MANUEL', seats:7, gearKey:'manual', doors:4, fuelKey:'diesel', stock:2},
+  {id:'c3-aircross-hybride', cat:'berline', imgSrc:'images/c3-aircross-hybride.webp', offer:'50€', price:50, name:'CITROËN NEW C3 AIRCROSS AUTOMATIQUE HYBRIDE', seats:5, gearKey:'auto', doors:4, fuelKey:'hybride', body:['suv'], stock:1},
+  {id:'nissan-magnite', cat:'berline', imgSrc:'images/nissan-magnite.webp', offer:'35€', price:35, name:'NISSAN MAGNITE AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', body:['suv'], stock:1},
 ];
+
+/* Category matching for the fleet filter bar. Categories are derived from each
+   car's real specs (fuel/gearbox/seats/price) rather than a single fixed `cat`,
+   so a car can match more than one filter (e.g. an automatic SUV matches both
+   "Automatic" and "SUV"). "Luxury" has no matching car yet — the agency hasn't
+   confirmed a luxury model/pricing tier, so the filter is shown but stays empty
+   rather than mislabeling an existing car as luxury. "Economy" = the cheapest
+   published daily rate (25€), matching how the original site's own pricing reads. */
+function carMatchesCategory(c, catKey){
+  switch(catKey){
+    case 'all': return true;
+    case 'petrol_hybrid': return c.fuelKey === 'essence' || c.fuelKey === 'hybride';
+    case 'diesel': return c.fuelKey === 'diesel';
+    case 'manual': return c.gearKey === 'manual';
+    case 'automatic': return c.gearKey === 'auto';
+    case 'suv': return (c.body || []).includes('suv');
+    case '7seats': return c.seats === 7;
+    case 'luxury': return (c.body || []).includes('luxury');
+    case 'economy': return c.price <= 25;
+    default: return true;
+  }
+}
+
+/* =========================================================
+   1b) FLEET TOOLBAR — brand/seats/price filters + sort, on top of the
+   category chips above. Brand is read straight off each car's real name
+   (first word), so it never goes stale. "Newest" and "Popular" sort options
+   are part of the requested UI but intentionally behave like "Featured"
+   (catalog order) — there is no real manufacture-date or booking-popularity
+   data per car yet, and inventing one would show customers a fake signal.
+========================================================= */
+let fleetBrandFilter = 'all';
+let fleetSeatsFilter = 'all';
+let fleetMaxPrice = 'all';
+let fleetSortKey = 'default';
+
+function getCarBrand(c){ return c.name.split(' ')[0]; }
+
+function populateBrandSelect(){
+  const sel = document.getElementById('fleetBrandSelect');
+  if(!sel) return;
+  const brands = [...new Set(CARS.map(getCarBrand))].sort();
+  const allOption = sel.querySelector('option[value="all"]');
+  sel.innerHTML = '';
+  sel.appendChild(allOption);
+  brands.forEach(b=>{
+    const opt = document.createElement('option');
+    opt.value = b; opt.textContent = b.charAt(0) + b.slice(1).toLowerCase();
+    sel.appendChild(opt);
+  });
+  sel.value = fleetBrandFilter;
+}
+
+function applyFleetFiltersAndSort(list){
+  let out = list;
+  if(fleetBrandFilter !== 'all') out = out.filter(c => getCarBrand(c) === fleetBrandFilter);
+  if(fleetSeatsFilter !== 'all') out = out.filter(c => String(c.seats) === fleetSeatsFilter);
+  if(fleetMaxPrice !== 'all') out = out.filter(c => c.price <= Number(fleetMaxPrice));
+  if(fleetSortKey === 'price_asc') out = [...out].sort((a,b)=>a.price-b.price);
+  else if(fleetSortKey === 'price_desc') out = [...out].sort((a,b)=>b.price-a.price);
+  return out;
+}
+
+document.getElementById('fleetBrandSelect').addEventListener('change', e=>{
+  fleetBrandFilter = e.target.value;
+  renderFleet(I18N[currentLang], document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
+});
+document.getElementById('fleetSeatsSelect').addEventListener('change', e=>{
+  fleetSeatsFilter = e.target.value;
+  renderFleet(I18N[currentLang], document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
+});
+document.getElementById('fleetPriceSelect').addEventListener('change', e=>{
+  fleetMaxPrice = e.target.value;
+  renderFleet(I18N[currentLang], document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
+});
+document.getElementById('fleetSortSelect').addEventListener('change', e=>{
+  fleetSortKey = e.target.value;
+  renderFleet(I18N[currentLang], document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
+});
+populateBrandSelect();
 
 /* =========================================================
    2) TRANSLATIONS — EN mirrors the original site's exact wording;
@@ -1320,14 +1611,24 @@ const I18N = {
     feat_easier:'Easier & Faster Bookings', feat_pickup:'Too Many Pickup Locations',
     hero_card_sub:'Call anytime',
     trust_google:'Google rating (484 reviews)', trust_open:'Open 24/7',
-    trust_deposit:'$300 / $500', trust_deposit_sub:'Reservation guarantee',
+    trust_deposit:'€500 or €0+10€/day', trust_deposit_sub:'Reservation guarantee',
     trust_age:'25 years', trust_age_sub:'Minimum driver age',
     fleet_eyebrow:"Checkout our new cars", fleet_title:"Cars We're Offering for Rentals",
-    filter_all:'All', filter_city:'City cars', filter_sedan:'Sedans', filter_family:'7 Seats',
+    filter_all:'All Cars', filter_petrol_hybrid:'Petrol &amp; Hybrid', filter_diesel:'Diesel', filter_manual:'Manual', filter_automatic:'Automatic', filter_suv:'SUV', filter_family:'7 Seats', filter_luxury:'Luxury', filter_economy:'Economy',
+    fleet_empty:'No cars currently match this category.',
+    toolbar_brand_label:'Brand', toolbar_all_brands:'All Brands', toolbar_seats_label:'Seats', toolbar_all_seats:'All',
+    toolbar_price_label:'Max price / day', toolbar_all_prices:'Any', toolbar_sort_label:'Sort by',
+    toolbar_sort_default:'Featured', toolbar_sort_price_asc:'Price: Low to High', toolbar_sort_price_desc:'Price: High to Low',
+    toolbar_sort_newest:'Newest', toolbar_sort_popular:'Most Popular',
+    qb_location_label:'Pickup Location', qb_pickup_label:'Pickup Date &amp; Time', qb_return_label:'Return Date &amp; Time',
+    qb_category_label:'Category', qb_search_btn:'Search',
     per_day:'/ Day', book_now:'BOOK NOW', seats:'Seats', doors:'Doors',
     gear_manual:'Manual', gear_auto:'Automatic', fuel_essence:'Essence', fuel_diesel:'Diesel', fuel_hybride:'Hybride',
     banner1_title:'Easier & Faster Bookings', banner1_sub:"Search. Book. Drive. It's that simple.",
-    why_eyebrow:'About us', why_title:'Why choose Auto Fluchos Coches',
+    why_eyebrow:'Our advantages', why_title:'Why choose Auto Fluchos Coches',
+    about_eyebrow:'Our story', about_title:'About Auto Fluchos Coches',
+    about_text:'Auto Fluchos Coches is a car rental agency based in Tétouan, Morocco, serving customers across Tétouan, Tangier and Northern Morocco. We\'re open 24/7 and rated 5.0 out of 5 on Google from 484 reviews, with fast airport, hotel and city delivery and a straightforward, no-hidden-fees booking process.',
+    about_stat_area:'Tétouan &amp; Tangier', about_stat_area_sub:'Northern Morocco service area',
     why1_title:'Modern & fully air-conditioned vehicles',
     why2_title:'Airport, hotel & city delivery service',
     why3_title:'Affordable rates with no hidden fees',
@@ -1346,7 +1647,7 @@ const I18N = {
     team_eyebrow:'Our expert people', team_title:'Meet Our Professional Team Members', team_role:'Manager',
     faq_eyebrow:'Frequently asked questions', faq_title:'Question & Answers',
     faq_items:[
-      ['What guarantees do you require for car reservations?','$300 or $500. Please contact us via WhatsApp for further inquiries.'],
+      ['What guarantees do you require for car reservations?','A refundable €500 deposit (cash or bank transfer, returned after inspection), or no deposit with a non-refundable €10/day surcharge. Please contact us via WhatsApp for further inquiries.'],
       ['What is the minimum age requirement to rent your car?','The minimum age requirement is 25 years old. Alternatively, please contact us via WhatsApp.'],
       ['What is the minimum number of days for car rental?','3 days.']
     ],
@@ -1359,6 +1660,10 @@ const I18N = {
     admin_login_sub:'Enter the admin password to view and cancel bookings.',
     admin_password_label:'Password', admin_wrong_password:'Incorrect password.',
     admin_login_btn:'Log in', admin_no_bookings:'No active bookings.',
+    admin_tab_bookings:'Bookings', admin_tab_seasons:'Seasonal Pricing',
+    admin_seasons_help:'Create a pricing period (e.g. Summer, Christmas). Bookings picked up inside that date range are automatically priced with the adjustment below.',
+    admin_season_percent:'% surcharge', admin_season_fixed:'Fixed €/day', admin_season_add:'Add period',
+    admin_no_seasons:'No seasonal pricing periods yet.', admin_season_delete:'Delete',
     admin_cancel_btn:'Cancel booking', admin_confirm_cancel:'Cancel this booking and make the car available again?',
     admin_cancel_failed:'Could not cancel the booking. Please try again.',
     admin_not_configured:'The booking backend is not configured yet.',
@@ -1375,14 +1680,19 @@ const I18N = {
     loc_hotel:'Hotel Delivery', loc_chefchaouen:'Chefchaouen',
     modal_deposit_label:'Deposit', modal_washing_label:'Car Washing', washing_no:'Not needed', washing_yes:'Include car washing',
     washing_mandatory:'mandatory', deposit_refundable:'deposit (refundable)', deposit_per_day:'/day',
+    deposit_no_deposit:'No deposit', deposit_non_refundable:'non-refundable',
+    hours_warning:'Outside business hours (08:00–20:00): a €10 surcharge has been added per pickup/return outside these hours.',
+    pickup_delay_error:'For a booking today, the earliest pickup time is 2 hours from now.',
+    sold_out_error:'Sorry, this vehicle was just booked by someone else. Please pick another car.',
     modal_address_label:'Address', modal_extra_info_label:'Extra Information',
     modal_resources_title:'Resources', res_second_driver:'Second driver', res_baby_0_15:'Baby seat Birth to 15 Months',
     res_baby_1_4:'Baby seat 1 to 4 years', res_baby_4_12:'Baby seat 4 to 12 years', res_total:'/ Total',
     modal_total_label:'Estimated Total', modal_terms_label:'I have read and agree to the', modal_terms_link:'terms and conditions',
     modal_email_label:'Email', modal_message_label:'Your Question', modal_send_enquiry:'Send Enquiry',
     terms_title:'General Conditions',
-    terms_body:'Minimum age 25. Minimum rental period 3 days. A deposit of $300 or $500 (depending on the vehicle) is required at pick-up. Please bring a valid driving license and passport/ID. Contact us on WhatsApp for the complete terms.',
+    terms_body:'Minimum age 25. Minimum rental period 3 days. A refundable €500 deposit (cash or bank transfer, returned after inspection) is required at pick-up, or you may choose no deposit with a non-refundable €10/day surcharge instead. Please bring a valid driving license and passport/ID. Contact us on WhatsApp for the complete terms.',
     unavailable_badge:'Not Available', unavailable_btn:'Not Available',
+    stock_available_label:'available',
     required_field:'Please fill in all required fields.',
     confirm_title:'Booking Confirmed!', confirm_text:'Your booking PDF has been downloaded. Choose how you want to send it to us:',
     confirm_email_btn:'📧 Send via Email', confirm_whatsapp_btn:'Send via WhatsApp',
@@ -1396,7 +1706,7 @@ const I18N = {
     pdf_col_quantity:'Quantity', pdf_col_price:'Price', pdf_subtotal:'Subtotal:', pdf_total_row:'Total:',
     pdf_payment_method:'Payment method:', pdf_payment_cash:'Cash on delivery',
     pdf_washing_value:'Car wash',
-    pdf_deposit:'Deposit Required', pdf_deposit_value:'$300 or $500 depending on the vehicle',
+    pdf_deposit:'Deposit Required', pdf_deposit_value:'€500 refundable, or €0 + €10/day non-refundable',
     pdf_footer:'Thank you for choosing Auto Fluchos Coches!',
   },
   fr:{
@@ -1410,14 +1720,24 @@ const I18N = {
     feat_easier:'Réservations plus faciles et rapides', feat_pickup:'De nombreux points de retrait',
     hero_card_sub:'Appelez à tout moment',
     trust_google:'Note Google (484 avis)', trust_open:'Ouvert 24h/24',
-    trust_deposit:'300$ / 500$', trust_deposit_sub:'Garantie de réservation',
+    trust_deposit:'500€ ou 0€+10€/j', trust_deposit_sub:'Garantie de réservation',
     trust_age:'25 ans', trust_age_sub:'Âge minimum du conducteur',
     fleet_eyebrow:'Découvrez nos nouvelles voitures', fleet_title:'Les voitures que nous proposons à la location',
-    filter_all:'Toutes', filter_city:'Citadines', filter_sedan:'Berlines', filter_family:'7 Places',
+    filter_all:'Toutes les voitures', filter_petrol_hybrid:'Essence &amp; Hybride', filter_diesel:'Diesel', filter_manual:'Manuelle', filter_automatic:'Automatique', filter_suv:'SUV', filter_family:'7 Places', filter_luxury:'Luxe', filter_economy:'Économique',
+    fleet_empty:'Aucune voiture ne correspond à cette catégorie pour le moment.',
+    toolbar_brand_label:'Marque', toolbar_all_brands:'Toutes les marques', toolbar_seats_label:'Places', toolbar_all_seats:'Toutes',
+    toolbar_price_label:'Prix max / jour', toolbar_all_prices:'Tous', toolbar_sort_label:'Trier par',
+    toolbar_sort_default:'En vedette', toolbar_sort_price_asc:'Prix : croissant', toolbar_sort_price_desc:'Prix : décroissant',
+    toolbar_sort_newest:'Plus récent', toolbar_sort_popular:'Plus populaire',
+    qb_location_label:'Lieu de prise en charge', qb_pickup_label:'Date et heure de prise en charge', qb_return_label:'Date et heure de retour',
+    qb_category_label:'Catégorie', qb_search_btn:'Rechercher',
     per_day:'/ Jour', book_now:'RÉSERVER', seats:'Places', doors:'Portes',
     gear_manual:'Manuelle', gear_auto:'Automatique', fuel_essence:'Essence', fuel_diesel:'Diesel', fuel_hybride:'Hybride',
     banner1_title:'Réservations plus faciles et rapides', banner1_sub:"Cherchez. Réservez. Roulez. C'est aussi simple que ça.",
-    why_eyebrow:'À propos', why_title:'Pourquoi choisir Auto Fluchos Coches',
+    why_eyebrow:'Nos atouts', why_title:'Pourquoi choisir Auto Fluchos Coches',
+    about_eyebrow:'Notre histoire', about_title:'À propos d\'Auto Fluchos Coches',
+    about_text:'Auto Fluchos Coches est une agence de location de voitures basée à Tétouan, au Maroc, qui sert les clients à Tétouan, Tanger et dans tout le Nord du Maroc. Nous sommes ouverts 24h/24 et 7j/7, notés 5,0/5 sur Google avec 484 avis, avec un service de livraison rapide à l\'aéroport, à l\'hôtel et en ville, et un processus de réservation simple, sans frais cachés.',
+    about_stat_area:'Tétouan &amp; Tanger', about_stat_area_sub:'Zone de service : Nord du Maroc',
     why1_title:'Véhicules modernes et entièrement climatisés',
     why2_title:'Service de livraison aéroport, hôtel et ville',
     why3_title:'Tarifs abordables sans frais cachés',
@@ -1436,7 +1756,7 @@ const I18N = {
     team_eyebrow:'Nos experts', team_title:'Rencontrez notre équipe professionnelle', team_role:'Gérant',
     faq_eyebrow:'Questions fréquentes', faq_title:'Questions & Réponses',
     faq_items:[
-      ['Quelles garanties demandez-vous pour les réservations de voiture ?','300$ ou 500$. Contactez-nous sur WhatsApp pour plus de renseignements.'],
+      ['Quelles garanties demandez-vous pour les réservations de voiture ?','Une caution remboursable de 500€ (espèces ou virement bancaire, restituée après inspection), ou sans caution avec un supplément non remboursable de 10€/jour. Contactez-nous sur WhatsApp pour plus de renseignements.'],
       ["Quel est l'âge minimum requis pour louer votre voiture ?","L'âge minimum requis est de 25 ans. Vous pouvez aussi nous contacter sur WhatsApp."],
       ['Quelle est la durée minimale de location ?','3 jours.']
     ],
@@ -1449,6 +1769,10 @@ const I18N = {
     admin_login_sub:'Entrez le mot de passe admin pour voir et annuler les réservations.',
     admin_password_label:'Mot de passe', admin_wrong_password:'Mot de passe incorrect.',
     admin_login_btn:'Se connecter', admin_no_bookings:'Aucune réservation active.',
+    admin_tab_bookings:'Réservations', admin_tab_seasons:'Tarification saisonnière',
+    admin_seasons_help:'Créez une période tarifaire (ex. Été, Noël). Les réservations dont la prise en charge tombe dans cette période sont automatiquement tarifées avec l\'ajustement ci-dessous.',
+    admin_season_percent:'Supplément %', admin_season_fixed:'Fixe €/jour', admin_season_add:'Ajouter la période',
+    admin_no_seasons:'Aucune période tarifaire pour le moment.', admin_season_delete:'Supprimer',
     admin_cancel_btn:'Annuler la réservation', admin_confirm_cancel:'Annuler cette réservation et rendre la voiture disponible à nouveau ?',
     admin_cancel_failed:"Impossible d'annuler la réservation. Veuillez réessayer.",
     admin_not_configured:"Le backend de réservation n'est pas encore configuré.",
@@ -1465,14 +1789,19 @@ const I18N = {
     loc_hotel:'Livraison à l\'hôtel', loc_chefchaouen:'Chefchaouen',
     modal_deposit_label:'Caution', modal_washing_label:'Lavage de la voiture', washing_no:'Non nécessaire', washing_yes:'Inclure le lavage',
     washing_mandatory:'obligatoire', deposit_refundable:'de caution (remboursable)', deposit_per_day:'/jour',
+    deposit_no_deposit:'Sans caution', deposit_non_refundable:'non remboursable',
+    hours_warning:'En dehors des heures d\'ouverture (08h00–20h00) : un supplément de 10€ a été ajouté par prise en charge/retour hors de ces heures.',
+    pickup_delay_error:'Pour une réservation aujourd\'hui, l\'heure de prise en charge la plus proche est dans 2 heures.',
+    sold_out_error:'Désolé, ce véhicule vient d\'être réservé par quelqu\'un d\'autre. Veuillez choisir une autre voiture.',
     modal_address_label:'Adresse', modal_extra_info_label:'Informations complémentaires',
     modal_resources_title:'Ressources', res_second_driver:'Deuxième conducteur', res_baby_0_15:'Siège bébé Naissance à 15 mois',
     res_baby_1_4:'Siège enfant 1 à 4 ans', res_baby_4_12:'Siège enfant 4 à 12 ans', res_total:'/ Total',
     modal_total_label:'Total estimé', modal_terms_label:"J'ai lu et j'accepte les", modal_terms_link:'conditions générales',
     modal_email_label:'Email', modal_message_label:'Votre question', modal_send_enquiry:'Envoyer la demande',
     terms_title:'Conditions générales',
-    terms_body:"Âge minimum 25 ans. Durée minimale de location 3 jours. Une caution de 300$ ou 500$ (selon le véhicule) est requise à la prise en charge. Merci d'apporter un permis de conduire et un passeport/pièce d'identité valides. Contactez-nous sur WhatsApp pour les conditions complètes.",
+    terms_body:"Âge minimum 25 ans. Durée minimale de location 3 jours. Une caution remboursable de 500€ (espèces ou virement bancaire, restituée après inspection) est requise à la prise en charge, ou vous pouvez choisir l'option sans caution avec un supplément non remboursable de 10€/jour. Merci d'apporter un permis de conduire et un passeport/pièce d'identité valides. Contactez-nous sur WhatsApp pour les conditions complètes.",
     unavailable_badge:'Indisponible', unavailable_btn:'Indisponible',
+    stock_available_label:'disponibles',
     required_field:'Merci de remplir tous les champs obligatoires.',
     confirm_title:'Réservation confirmée !', confirm_text:'Votre PDF de réservation a été téléchargé. Choisissez comment nous l\'envoyer :',
     confirm_email_btn:'📧 Envoyer par Email', confirm_whatsapp_btn:'Envoyer par WhatsApp',
@@ -1486,7 +1815,7 @@ const I18N = {
     pdf_col_quantity:'Quantité', pdf_col_price:'Prix', pdf_subtotal:'Sous-total :', pdf_total_row:'Total :',
     pdf_payment_method:'Mode de paiement :', pdf_payment_cash:'Paiement à la livraison',
     pdf_washing_value:'Lavage de la voiture',
-    pdf_deposit:'Caution requise', pdf_deposit_value:'300$ ou 500$ selon le véhicule',
+    pdf_deposit:'Caution requise', pdf_deposit_value:'500€ remboursable, ou 0€ + 10€/jour non remboursable',
     pdf_footer:'Merci d\'avoir choisi Auto Fluchos Coches !',
   },
   es:{
@@ -1500,14 +1829,24 @@ const I18N = {
     feat_easier:'Reservas más fáciles y rápidas', feat_pickup:'Muchos puntos de recogida',
     hero_card_sub:'Llame en cualquier momento',
     trust_google:'Valoración Google (484 reseñas)', trust_open:'Abierto 24h',
-    trust_deposit:'300$ / 500$', trust_deposit_sub:'Garantía de reserva',
+    trust_deposit:'500€ o 0€+10€/día', trust_deposit_sub:'Garantía de reserva',
     trust_age:'25 años', trust_age_sub:'Edad mínima del conductor',
     fleet_eyebrow:'Descubra nuestros coches nuevos', fleet_title:'Coches que ofrecemos en alquiler',
-    filter_all:'Todos', filter_city:'Urbanos', filter_sedan:'Berlinas', filter_family:'7 Plazas',
+    filter_all:'Todos los coches', filter_petrol_hybrid:'Gasolina e Híbrido', filter_diesel:'Diésel', filter_manual:'Manual', filter_automatic:'Automático', filter_suv:'SUV', filter_family:'7 Plazas', filter_luxury:'Lujo', filter_economy:'Económico',
+    fleet_empty:'Ningún coche coincide con esta categoría por ahora.',
+    toolbar_brand_label:'Marca', toolbar_all_brands:'Todas las marcas', toolbar_seats_label:'Plazas', toolbar_all_seats:'Todas',
+    toolbar_price_label:'Precio máx / día', toolbar_all_prices:'Cualquiera', toolbar_sort_label:'Ordenar por',
+    toolbar_sort_default:'Destacados', toolbar_sort_price_asc:'Precio: menor a mayor', toolbar_sort_price_desc:'Precio: mayor a menor',
+    toolbar_sort_newest:'Más recientes', toolbar_sort_popular:'Más populares',
+    qb_location_label:'Lugar de recogida', qb_pickup_label:'Fecha y hora de recogida', qb_return_label:'Fecha y hora de devolución',
+    qb_category_label:'Categoría', qb_search_btn:'Buscar',
     per_day:'/ Día', book_now:'RESERVAR', seats:'Plazas', doors:'Puertas',
     gear_manual:'Manual', gear_auto:'Automático', fuel_essence:'Gasolina', fuel_diesel:'Diésel', fuel_hybride:'Híbrido',
     banner1_title:'Reservas más fáciles y rápidas', banner1_sub:'Busque. Reserve. Conduzca. Así de sencillo.',
-    why_eyebrow:'Sobre nosotros', why_title:'Por qué elegir Auto Fluchos Coches',
+    why_eyebrow:'Nuestras ventajas', why_title:'Por qué elegir Auto Fluchos Coches',
+    about_eyebrow:'Nuestra historia', about_title:'Sobre Auto Fluchos Coches',
+    about_text:'Auto Fluchos Coches es una agencia de alquiler de coches con sede en Tetuán, Marruecos, que atiende a clientes en Tetuán, Tánger y el norte de Marruecos. Estamos abiertos 24/7 y tenemos una calificación de 5.0 sobre 5 en Google con 484 reseñas, con servicio rápido de entrega en el aeropuerto, hotel y ciudad, y un proceso de reserva sencillo, sin cargos ocultos.',
+    about_stat_area:'Tetuán y Tánger', about_stat_area_sub:'Zona de servicio: norte de Marruecos',
     why1_title:'Vehículos modernos y totalmente climatizados',
     why2_title:'Servicio de entrega en aeropuerto, hotel y ciudad',
     why3_title:'Tarifas asequibles sin cargos ocultos',
@@ -1526,7 +1865,7 @@ const I18N = {
     team_eyebrow:'Nuestro equipo experto', team_title:'Conozca a nuestro equipo profesional', team_role:'Gerente',
     faq_eyebrow:'Preguntas frecuentes', faq_title:'Preguntas y Respuestas',
     faq_items:[
-      ['¿Qué garantías piden para las reservas de coche?','300$ o 500$. Contáctenos por WhatsApp para más información.'],
+      ['¿Qué garantías piden para las reservas de coche?','Un depósito reembolsable de 500€ (efectivo o transferencia bancaria, devuelto tras la inspección), o sin depósito con un recargo no reembolsable de 10€/día. Contáctenos por WhatsApp para más información.'],
       ['¿Cuál es la edad mínima requerida para alquilar su coche?','La edad mínima requerida es de 25 años. También puede contactarnos por WhatsApp.'],
       ['¿Cuál es la duración mínima del alquiler?','3 días.']
     ],
@@ -1539,6 +1878,10 @@ const I18N = {
     admin_login_sub:'Introduzca la contraseña de administrador para ver y cancelar reservas.',
     admin_password_label:'Contraseña', admin_wrong_password:'Contraseña incorrecta.',
     admin_login_btn:'Iniciar sesión', admin_no_bookings:'No hay reservas activas.',
+    admin_tab_bookings:'Reservas', admin_tab_seasons:'Precios de temporada',
+    admin_seasons_help:'Cree un período de precios (ej. Verano, Navidad). Las reservas cuya recogida caiga dentro de ese rango de fechas se calculan automáticamente con el ajuste indicado abajo.',
+    admin_season_percent:'Recargo %', admin_season_fixed:'Fijo €/día', admin_season_add:'Añadir período',
+    admin_no_seasons:'Aún no hay períodos de precios de temporada.', admin_season_delete:'Eliminar',
     admin_cancel_btn:'Cancelar reserva', admin_confirm_cancel:'¿Cancelar esta reserva y volver a poner el coche disponible?',
     admin_cancel_failed:'No se pudo cancelar la reserva. Inténtelo de nuevo.',
     admin_not_configured:'El backend de reservas aún no está configurado.',
@@ -1555,14 +1898,19 @@ const I18N = {
     loc_hotel:'Entrega en el hotel', loc_chefchaouen:'Chefchaouen',
     modal_deposit_label:'Depósito', modal_washing_label:'Lavado del coche', washing_no:'No necesario', washing_yes:'Incluir lavado',
     washing_mandatory:'obligatorio', deposit_refundable:'de depósito (reembolsable)', deposit_per_day:'/día',
+    deposit_no_deposit:'Sin depósito', deposit_non_refundable:'no reembolsable',
+    hours_warning:'Fuera del horario comercial (08:00–20:00): se ha añadido un recargo de 10€ por cada recogida/devolución fuera de este horario.',
+    pickup_delay_error:'Para una reserva de hoy, la hora de recogida más próxima es dentro de 2 horas.',
+    sold_out_error:'Lo sentimos, este vehículo acaba de ser reservado por otra persona. Elija otro coche.',
     modal_address_label:'Dirección', modal_extra_info_label:'Información adicional',
     modal_resources_title:'Recursos', res_second_driver:'Segundo conductor', res_baby_0_15:'Silla bebé Nacimiento a 15 meses',
     res_baby_1_4:'Silla infantil 1 a 4 años', res_baby_4_12:'Silla infantil 4 a 12 años', res_total:'/ Total',
     modal_total_label:'Total estimado', modal_terms_label:'He leído y acepto los', modal_terms_link:'términos y condiciones',
     modal_email_label:'Correo', modal_message_label:'Su pregunta', modal_send_enquiry:'Enviar consulta',
     terms_title:'Condiciones generales',
-    terms_body:'Edad mínima 25 años. Duración mínima del alquiler 3 días. Se requiere un depósito de 300$ o 500$ (según el vehículo) al recoger el coche. Traiga un carné de conducir y pasaporte/DNI válidos. Contáctenos por WhatsApp para las condiciones completas.',
+    terms_body:'Edad mínima 25 años. Duración mínima del alquiler 3 días. Se requiere un depósito reembolsable de 500€ (efectivo o transferencia bancaria, devuelto tras la inspección) al recoger el coche, o puede elegir la opción sin depósito con un recargo no reembolsable de 10€/día. Traiga un carné de conducir y pasaporte/DNI válidos. Contáctenos por WhatsApp para las condiciones completas.',
     unavailable_badge:'No disponible', unavailable_btn:'No disponible',
+    stock_available_label:'disponibles',
     required_field:'Por favor complete todos los campos obligatorios.',
     confirm_title:'¡Reserva confirmada!', confirm_text:'Su PDF de reserva se ha descargado. Elija cómo enviárnoslo:',
     confirm_email_btn:'📧 Enviar por Email', confirm_whatsapp_btn:'Enviar por WhatsApp',
@@ -1576,7 +1924,7 @@ const I18N = {
     pdf_col_quantity:'Cantidad', pdf_col_price:'Precio', pdf_subtotal:'Subtotal:', pdf_total_row:'Total:',
     pdf_payment_method:'Método de pago:', pdf_payment_cash:'Pago contra entrega',
     pdf_washing_value:'Lavado del coche',
-    pdf_deposit:'Depósito requerido', pdf_deposit_value:'300$ o 500$ según el vehículo',
+    pdf_deposit:'Depósito requerido', pdf_deposit_value:'500€ reembolsable, o 0€ + 10€/día no reembolsable',
     pdf_footer:'¡Gracias por elegir Auto Fluchos Coches!',
   },
   ar:{
@@ -1590,14 +1938,24 @@ const I18N = {
     feat_easier:'حجوزات أسهل وأسرع', feat_pickup:'نقط استلام متعددة',
     hero_card_sub:'اتصل بنا في أي وقت',
     trust_google:'تقييم غوغل (484 تقييم)', trust_open:'مفتوح 24/24',
-    trust_deposit:'300$ / 500$', trust_deposit_sub:'ضمان الحجز',
+    trust_deposit:'500€ أو 0€+10€/يوم', trust_deposit_sub:'ضمان الحجز',
     trust_age:'25 سنة', trust_age_sub:'السن الأدنى للسائق',
     fleet_eyebrow:'اكتشف سياراتنا الجديدة', fleet_title:'السيارات المتوفرة للكراء',
-    filter_all:'الكل', filter_city:'اقتصادية', filter_sedan:'سيدان', filter_family:'7 مقاعد',
+    filter_all:'كل السيارات', filter_petrol_hybrid:'بنزين وهجين', filter_diesel:'ديزل', filter_manual:'يدوي', filter_automatic:'أوتوماتيكي', filter_suv:'SUV (دفع رباعي)', filter_family:'7 مقاعد', filter_luxury:'فاخرة', filter_economy:'اقتصادية',
+    fleet_empty:'لا توجد سيارات في هذه الفئة حالياً.',
+    toolbar_brand_label:'العلامة التجارية', toolbar_all_brands:'كل العلامات', toolbar_seats_label:'المقاعد', toolbar_all_seats:'الكل',
+    toolbar_price_label:'أقصى سعر / يوم', toolbar_all_prices:'أي سعر', toolbar_sort_label:'الترتيب حسب',
+    toolbar_sort_default:'مميزة', toolbar_sort_price_asc:'السعر: من الأقل إلى الأعلى', toolbar_sort_price_desc:'السعر: من الأعلى إلى الأقل',
+    toolbar_sort_newest:'الأحدث', toolbar_sort_popular:'الأكثر طلباً',
+    qb_location_label:'مكان الاستلام', qb_pickup_label:'تاريخ ووقت الاستلام', qb_return_label:'تاريخ ووقت الإرجاع',
+    qb_category_label:'الفئة', qb_search_btn:'بحث',
     per_day:'/ اليوم', book_now:'احجز الآن', seats:'مقاعد', doors:'أبواب',
     gear_manual:'يدوي', gear_auto:'أوتوماتيك', fuel_essence:'بنزين', fuel_diesel:'ديزل', fuel_hybride:'هجين',
     banner1_title:'حجوزات أسهل وأسرع', banner1_sub:'ابحث. احجز. قُد سيارتك. بكل بساطة.',
-    why_eyebrow:'من نحن', why_title:'لماذا تختار Auto Fluchos Coches',
+    why_eyebrow:'مميزاتنا', why_title:'لماذا تختار Auto Fluchos Coches',
+    about_eyebrow:'قصتنا', about_title:'من نحن - Auto Fluchos Coches',
+    about_text:'أوطو فلوشوس كوشيس هي وكالة لكراء السيارات مقرها تطوان، المغرب، تخدم الزبناء في تطوان وطنجة وشمال المغرب. نحن مفتوحون على مدار الساعة طوال أيام الأسبوع، وحاصلون على تقييم 5.0 من 5 على غوغل بناءً على 484 تقييماً، مع خدمة توصيل سريعة للمطار والفندق والمدينة، وعملية حجز بسيطة بدون رسوم خفية.',
+    about_stat_area:'تطوان وطنجة', about_stat_area_sub:'منطقة الخدمة: شمال المغرب',
     why1_title:'سيارات حديثة ومكيفة بالكامل',
     why2_title:'خدمة توصيل للمطار والفندق والمدينة',
     why3_title:'أسعار مناسبة بدون رسوم خفية',
@@ -1616,7 +1974,7 @@ const I18N = {
     team_eyebrow:'فريقنا المتخصص', team_title:'تعرف على فريقنا المحترف', team_role:'مدير',
     faq_eyebrow:'الأسئلة الشائعة', faq_title:'أسئلة وأجوبة',
     faq_items:[
-      ['ما هي الضمانات المطلوبة لحجز السيارة؟','300$ أو 500$. تواصل معنا عبر واتساب لمزيد من المعلومات.'],
+      ['ما هي الضمانات المطلوبة لحجز السيارة؟','ضمان قابل للاسترجاع بقيمة 500€ (نقداً أو تحويلاً بنكياً، يُرجع بعد المعاينة)، أو بدون ضمان مقابل رسم إضافي غير قابل للاسترجاع 10€/اليوم. تواصل معنا عبر واتساب لمزيد من المعلومات.'],
       ['ما هو السن الأدنى المطلوب لكراء سيارتكم؟','السن الأدنى المطلوب هو 25 سنة. يمكنك أيضاً التواصل معنا عبر واتساب.'],
       ['ما هي أقل مدة لكراء السيارة؟','3 أيام.']
     ],
@@ -1629,6 +1987,10 @@ const I18N = {
     admin_login_sub:'أدخل كلمة سر الإدارة لعرض وإلغاء الحجوزات.',
     admin_password_label:'كلمة السر', admin_wrong_password:'كلمة السر غير صحيحة.',
     admin_login_btn:'تسجيل الدخول', admin_no_bookings:'لا توجد حجوزات نشطة.',
+    admin_tab_bookings:'الحجوزات', admin_tab_seasons:'التسعير الموسمي',
+    admin_seasons_help:'أنشئ فترة تسعير (مثلاً الصيف، عيد الميلاد). الحجوزات التي يقع تاريخ استلامها ضمن هذه الفترة يتم تسعيرها تلقائياً بالتعديل أدناه.',
+    admin_season_percent:'نسبة % إضافية', admin_season_fixed:'مبلغ ثابت €/اليوم', admin_season_add:'إضافة فترة',
+    admin_no_seasons:'لا توجد فترات تسعير موسمي بعد.', admin_season_delete:'حذف',
     admin_cancel_btn:'إلغاء الحجز', admin_confirm_cancel:'هل تريد إلغاء هذا الحجز وجعل السيارة متوفرة من جديد؟',
     admin_cancel_failed:'تعذّر إلغاء الحجز. حاول مرة أخرى.',
     admin_not_configured:'لم يتم إعداد نظام الحجوزات بعد.',
@@ -1645,14 +2007,19 @@ const I18N = {
     loc_hotel:'التوصيل للفندق', loc_chefchaouen:'شفشاون',
     modal_deposit_label:'الضمان', modal_washing_label:'غسل السيارة', washing_no:'غير مطلوب', washing_yes:'شامل غسل السيارة',
     washing_mandatory:'إجباري', deposit_refundable:'ضمان (قابل للاسترجاع)', deposit_per_day:'/اليوم',
+    deposit_no_deposit:'بدون ضمان', deposit_non_refundable:'غير قابل للاسترجاع',
+    hours_warning:'خارج ساعات العمل (08:00–20:00): تمت إضافة 10€ لكل عملية استلام/إرجاع خارج هذه الساعات.',
+    pickup_delay_error:'بالنسبة لحجز اليوم، أقرب وقت للاستلام هو بعد ساعتين من الآن.',
+    sold_out_error:'عذراً، تم حجز هذه السيارة للتو من طرف شخص آخر. يرجى اختيار سيارة أخرى.',
     modal_address_label:'العنوان', modal_extra_info_label:'معلومات إضافية',
     modal_resources_title:'إضافات', res_second_driver:'سائق ثاني', res_baby_0_15:'مقعد طفل من الولادة إلى 15 شهر',
     res_baby_1_4:'مقعد طفل من 1 إلى 4 سنوات', res_baby_4_12:'مقعد طفل من 4 إلى 12 سنة', res_total:'/ المجموع',
     modal_total_label:'المجموع التقديري', modal_terms_label:'لقد قرأت ووافقت على', modal_terms_link:'الشروط والأحكام',
     modal_email_label:'البريد الإلكتروني', modal_message_label:'سؤالك', modal_send_enquiry:'إرسال الاستفسار',
     terms_title:'الشروط العامة',
-    terms_body:'السن الأدنى 25 سنة. أقل مدة للكراء 3 أيام. يتطلب ضمان بقيمة 300$ أو 500$ (حسب السيارة) عند الاستلام. يرجى إحضار رخصة سياقة وجواز سفر/بطاقة تعريف سارية المفعول. تواصل معنا عبر واتساب للشروط الكاملة.',
+    terms_body:'السن الأدنى 25 سنة. أقل مدة للكراء 3 أيام. يتطلب ضمان قابل للاسترجاع بقيمة 500€ (نقداً أو تحويلاً بنكياً، يُرجع بعد المعاينة) عند الاستلام، أو يمكنك اختيار عدم الضمان مقابل رسم إضافي غير قابل للاسترجاع 10€/اليوم. يرجى إحضار رخصة سياقة وجواز سفر/بطاقة تعريف سارية المفعول. تواصل معنا عبر واتساب للشروط الكاملة.',
     unavailable_badge:'غير متوفرة', unavailable_btn:'غير متوفرة',
+    stock_available_label:'متوفرة',
     required_field:'يرجى ملء جميع الحقول المطلوبة.',
     confirm_title:'تم تأكيد الحجز!', confirm_text:'تم تحميل ملف PDF الخاص بحجزك. اختر طريقة إرساله لنا:',
     confirm_email_btn:'📧 إرسال عبر البريد الإلكتروني', confirm_whatsapp_btn:'إرسال عبر واتساب',
@@ -1666,7 +2033,7 @@ const I18N = {
     pdf_payment_method:'Payment method:', pdf_payment_cash:'Cash on delivery',
     pdf_washing_value:'Car wash',
     pdf_pickup:'تاريخ الاستلام', pdf_return:'تاريخ الإرجاع', pdf_notes:'ملاحظات',
-    pdf_deposit:'الضمان المطلوب', pdf_deposit_value:'300$ أو 500$ حسب السيارة',
+    pdf_deposit:'الضمان المطلوب', pdf_deposit_value:'500€ قابل للاسترجاع، أو 0€ + 10€/اليوم غير قابل للاسترجاع',
     pdf_footer:'شكراً لاختياركم Auto Fluchos Coches!',
   }
 };
@@ -1709,6 +2076,85 @@ function applyLang(lang){
 }
 
 /* =========================================================
+   3b) CURRENCY SWITCHER (display only)
+   Converts prices shown while browsing (fleet cards, car-switch dropdown
+   in the booking modal) to MAD/USD using live rates from frankfurter.app
+   (free, no API key, ECB-based). The actual booking total, location/deposit
+   fees, and the generated PDF/WhatsApp/email text always stay in EUR —
+   that's the agency's real transaction currency, and keeping it fixed
+   avoids a legal document's total drifting with a live exchange rate.
+========================================================= */
+const CURRENCY_SYMBOLS = { EUR: '€', MAD: 'DH', USD: '$' };
+// Emergency-only fallback if the live API is unreachable AND no cached rate exists yet
+// (e.g. first-ever visit with no internet). Approximate, replaced by live rates once fetched.
+const FALLBACK_RATES = { EUR: 1, MAD: 10.9, USD: 1.08 };
+let currencyRates = { ...FALLBACK_RATES };
+
+function getSavedCurrency(){
+  try { return localStorage.getItem('afc_currency'); }
+  catch(e){ return null; }
+}
+function saveCurrency(cur){
+  try { localStorage.setItem('afc_currency', cur); }
+  catch(e){ /* ignore: not critical, just means the choice won't persist on reload */ }
+}
+let currentCurrency = getSavedCurrency() || 'EUR';
+
+async function fetchCurrencyRates(){
+  try {
+    const cachedRaw = localStorage.getItem('afc_currency_rates');
+    if(cachedRaw){
+      const cached = JSON.parse(cachedRaw);
+      if(cached && cached.MAD && cached.USD) currencyRates = { EUR: 1, MAD: cached.MAD, USD: cached.USD };
+    }
+  } catch(e){ /* ignore */ }
+
+  try {
+    const res = await fetch('https://api.frankfurter.app/latest?from=EUR&to=MAD,USD');
+    if(!res.ok) throw new Error('bad response');
+    const data = await res.json();
+    if(data && data.rates && data.rates.MAD && data.rates.USD){
+      currencyRates = { EUR: 1, MAD: data.rates.MAD, USD: data.rates.USD };
+      try { localStorage.setItem('afc_currency_rates', JSON.stringify(currencyRates)); }
+      catch(e){ /* ignore */ }
+      refreshDisplayedPrices();
+    }
+  } catch(e){ /* offline or API unreachable — keep cached/fallback rates already set above */ }
+}
+
+function fmtPrice(eurAmount){
+  const rate = currencyRates[currentCurrency] || 1;
+  if(currentCurrency === 'EUR') return `${eurAmount}€`;
+  const converted = eurAmount * rate;
+  const decimals = currentCurrency === 'MAD' ? 0 : 2;
+  return `${converted.toFixed(decimals)} ${CURRENCY_SYMBOLS[currentCurrency]}`;
+}
+
+function refreshDisplayedPrices(){
+  const dict = I18N[currentLang];
+  renderFleet(dict, document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
+  if(typeof populateCarSelect === 'function') populateCarSelect(dict);
+}
+
+function setCurrency(cur){
+  if(!CURRENCY_SYMBOLS[cur]) return;
+  currentCurrency = cur;
+  saveCurrency(cur);
+  document.querySelectorAll('.currency-switch-group button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.currency === cur);
+  });
+  refreshDisplayedPrices();
+}
+document.querySelectorAll('.currency-switch-group').forEach(group=>{
+  group.addEventListener('click', e=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    setCurrency(btn.dataset.currency);
+  });
+});
+fetchCurrencyRates();
+
+/* =========================================================
    4) FLEET RENDERING
    AVAILABILITY BACKEND: booked cars are tracked in a Google Sheet via a
    Google Apps Script Web App (see apps-script.gs.txt in this project for
@@ -1723,63 +2169,83 @@ function applyLang(lang){
 ========================================================= */
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxKZk3f58C67EZArO4uLRSu7chg3soBBgIBQYNOq3-NXUkoZ0--82S5NgS7ccWbiuOi/exec';
 
-let remoteBookedCars = null; // null until the first successful fetch; then the shared source of truth
+/* Availability is now stock-aware: the backend returns how many units of each
+   car_id are currently active-booked (bookedCounts), compared against that
+   car's CARS[].stock to know how many units remain. A car with stock:1 (the
+   default) behaves exactly like the old binary booked/not-booked system. */
+let remoteBookedCounts = null; // null until the first successful fetch; then the shared source of truth
 
 async function fetchBookedCars(){
   if(APPS_SCRIPT_URL.startsWith('PASTE_')) return; // not deployed yet — stay on local fallback
   try {
     const res = await fetch(APPS_SCRIPT_URL);
     const data = await res.json();
-    remoteBookedCars = Array.isArray(data.bookedCars) ? data.bookedCars : [];
+    remoteBookedCounts = (data && typeof data.bookedCounts === 'object' && data.bookedCounts) ? data.bookedCounts : {};
   } catch(e){
-    remoteBookedCars = null; // offline or backend unreachable — fall back to local-only for this visit
+    remoteBookedCounts = null; // offline or backend unreachable — fall back to local-only for this visit
   }
 }
 
-function getBookedCars(){
-  if(remoteBookedCars !== null) return remoteBookedCars;
-  try { return JSON.parse(localStorage.getItem('afc_booked_cars') || '[]'); }
-  catch(e){ return []; }
+function getBookedCounts(){
+  if(remoteBookedCounts !== null) return remoteBookedCounts;
+  try { return JSON.parse(localStorage.getItem('afc_booked_counts') || '{}'); }
+  catch(e){ return {}; }
+}
+function getRemainingStock(car){
+  const booked = getBookedCounts()[car.id] || 0;
+  return Math.max(0, (car.stock || 1) - booked);
 }
 
 async function addBookedCar(carId, details){
+  if(APPS_SCRIPT_URL.startsWith('PASTE_')){
+    // Backend not deployed yet — fall back to local-only optimistic tracking
+    // (no real overbooking protection across visitors until it's deployed).
+    try {
+      const counts = JSON.parse(localStorage.getItem('afc_booked_counts') || '{}');
+      counts[carId] = (counts[carId] || 0) + 1;
+      localStorage.setItem('afc_booked_counts', JSON.stringify(counts));
+    } catch(e){ /* ignore: local fallback just won't persist */ }
+    if(remoteBookedCounts !== null) remoteBookedCounts[carId] = (remoteBookedCounts[carId] || 0) + 1;
+    return { success: true };
+  }
   try {
-    const list = JSON.parse(localStorage.getItem('afc_booked_cars') || '[]');
-    if(!list.includes(carId)) list.push(carId);
-    localStorage.setItem('afc_booked_cars', JSON.stringify(list));
-  } catch(e){ /* ignore: local fallback just won't persist */ }
-
-  if(remoteBookedCars !== null && !remoteBookedCars.includes(carId)) remoteBookedCars.push(carId);
-
-  if(APPS_SCRIPT_URL.startsWith('PASTE_')) return; // not deployed yet
-  try {
-    await fetch(APPS_SCRIPT_URL, {
+    const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: {'Content-Type': 'text/plain;charset=utf-8'}, // avoids a CORS preflight against Apps Script
       body: JSON.stringify({ carId, ...details }),
     });
-  } catch(e){ /* offline or backend unreachable — the local mark above still works for this device */ }
+    const data = await res.json();
+    if(data.success && remoteBookedCounts !== null){
+      remoteBookedCounts[carId] = (remoteBookedCounts[carId] || 0) + 1;
+    }
+    return data;
+  } catch(e){
+    return { success: false, error: 'network' }; // offline or backend unreachable — booking wasn't recorded, don't proceed
+  }
 }
 
 function renderFleet(dict, cat){
   const grid = document.getElementById('fleetGrid');
   grid.innerHTML = '';
-  const booked = getBookedCars();
-  CARS.filter(c => cat === 'all' || c.cat === cat).forEach(c=>{
+  const matching = applyFleetFiltersAndSort(CARS.filter(c => carMatchesCategory(c, cat)));
+  const emptyEl = document.getElementById('fleetEmpty');
+  if(emptyEl) emptyEl.hidden = matching.length > 0;
+  matching.forEach(c=>{
     const gearLabel = c.gearKey === 'auto' ? dict.gear_auto : dict.gear_manual;
     const fuelLabel = dict['fuel_' + c.fuelKey];
-    const isBooked = booked.includes(c.id);
+    const isBooked = getRemainingStock(c) <= 0;
     const altText = `${c.name} rental car in Tétouan &amp; Tangier — ${c.seats} seats, ${gearLabel}, ${fuelLabel} — Auto Fluchos Coches`;
     const card = document.createElement('div');
     card.className = 'car-card' + (isBooked ? ' is-unavailable' : '');
     card.innerHTML = `
       <div class="car-photo">
         <span class="car-offer${isBooked ? ' is-unavailable-badge' : ''}">${isBooked ? dict.unavailable_badge : c.offer}</span>
+        ${!isBooked ? `<span class="car-stock-badge">🚗 ${getRemainingStock(c)} ${dict.stock_available_label}</span>` : ''}
         <img src="${c.imgSrc}" alt="${altText}" loading="lazy">
       </div>
       <div class="car-body">
         <h3>${c.name}</h3>
-        <div class="car-price">${c.price}€ <span>${dict.per_day}</span></div>
+        <div class="car-price">${fmtPrice(c.price)} <span>${dict.per_day}</span></div>
         <div class="car-specs">
           <span>👥 ${c.seats} ${dict.seats}</span>
           <span>⚙️ ${gearLabel}</span>
@@ -1800,6 +2266,19 @@ document.getElementById('fleetFilter').addEventListener('click', e=>{
   document.querySelectorAll('#fleetFilter button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   renderFleet(I18N[currentLang], btn.dataset.cat);
+});
+
+/* Quick Booking widget in the hero: doesn't book anything itself — it just
+   jumps to the fleet section pre-filtered by the chosen category, so a
+   visitor picking dates/location up front lands straight on matching cars. */
+document.getElementById('quickBookingForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const cat = document.getElementById('qbCategory').value;
+  document.querySelectorAll('#fleetFilter button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.cat === cat);
+  });
+  renderFleet(I18N[currentLang], cat);
+  document.getElementById('flotte').scrollIntoView({ behavior: 'smooth' });
 });
 
 /* =========================================================
@@ -1930,10 +2409,9 @@ document.getElementById('modalTabs').addEventListener('click', e=>{
 function populateCarSelect(dict){
   const sel = document.getElementById('modalCarSelect');
   const prev = sel.value;
-  const booked = getBookedCars();
   sel.innerHTML = CARS.map(c=>{
-    const isBooked = booked.includes(c.id);
-    const label = `${c.name} — ${c.price}€${dict.per_day}${isBooked ? ' (' + dict.unavailable_badge + ')' : ''}`;
+    const isBooked = getRemainingStock(c) <= 0;
+    const label = `${c.name} — ${fmtPrice(c.price)}${dict.per_day}${isBooked ? ' (' + dict.unavailable_badge + ')' : ''}`;
     return `<option value="${c.id}" ${isBooked ? 'disabled' : ''}>${label}</option>`;
   }).join('');
   if(prev && CARS.some(c => c.id === prev)) sel.value = prev;
@@ -1960,13 +2438,14 @@ async function openBookingModal(carId){
   // so a car someone else just booked shows as unavailable here too.
   await fetchBookedCars();
   renderFleet(I18N[currentLang], document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
-  if(getBookedCars().includes(activeBookingCar.id)){
+  if(getRemainingStock(activeBookingCar) <= 0){
     // the car this button was for just got booked by someone else — bump to the first free one
-    const fallback = CARS.find(c => !getBookedCars().includes(c.id));
+    const fallback = CARS.find(c => getRemainingStock(c) > 0);
     if(fallback) activeBookingCar = fallback;
   }
   populateCarSelect(I18N[currentLang]);
   document.getElementById('modalCarSelect').value = activeBookingCar.id;
+  refreshPickupMin();
   updateTotal();
 }
 function closeBookingModal(){ bookingOverlay.classList.remove('open'); }
@@ -2039,6 +2518,7 @@ async function loadAdminBookings(){
       return;
     }
     renderAdminBookings(data.bookings);
+    renderAdminSeasons(data.seasons || []);
     document.getElementById('adminLoginPanel').style.display = 'none';
     document.getElementById('adminBookingsPanel').style.display = 'block';
   } catch(e){
@@ -2086,10 +2566,101 @@ document.getElementById('adminLoginBtn').addEventListener('click', async ()=>{
     }
     adminPassword = pwd;
     renderAdminBookings(data.bookings);
+    renderAdminSeasons(data.seasons || []);
     document.getElementById('adminLoginPanel').style.display = 'none';
     document.getElementById('adminBookingsPanel').style.display = 'block';
   } catch(e){
     showAdminLoginError(dict.admin_network_error);
+  }
+});
+
+/* ---- Admin tabs (Bookings / Seasonal Pricing) ---- */
+document.querySelectorAll('.admin-tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('adminBookingsTab').style.display = tab.dataset.adminTab === 'bookings' ? 'block' : 'none';
+    document.getElementById('adminSeasonsTab').style.display = tab.dataset.adminTab === 'seasons' ? 'block' : 'none';
+  });
+});
+
+/* ---- Seasonal pricing CRUD (admin) ---- */
+function renderAdminSeasons(seasons){
+  const dict = I18N[currentLang];
+  const list = document.getElementById('adminSeasonsList');
+  const emptyMsg = document.getElementById('adminSeasonsEmpty');
+  list.innerHTML = '';
+  if(!seasons.length){
+    emptyMsg.style.display = 'block';
+    return;
+  }
+  emptyMsg.style.display = 'none';
+  seasons.forEach(s=>{
+    const item = document.createElement('div');
+    item.className = 'admin-season-item';
+    const adjustment = s.type === 'fixed' ? `+€${s.value}/day` : `+${s.value}%`;
+    item.innerHTML = `
+      <div>
+        <b>${s.name}</b>
+        <div class="admin-booking-details">${s.start} → ${s.end} · ${adjustment}</div>
+      </div>
+      <button type="button" class="btn btn-outline" data-season-row="${s.row}">${dict.admin_season_delete}</button>`;
+    list.appendChild(item);
+  });
+}
+
+document.getElementById('adminSeasonForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const dict = I18N[currentLang];
+  const name = document.getElementById('seasonName').value.trim();
+  const start = document.getElementById('seasonStart').value;
+  const end = document.getElementById('seasonEnd').value;
+  const type = document.getElementById('seasonType').value;
+  const value = document.getElementById('seasonValue').value;
+  if(!name || !start || !end || !value) return;
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action: 'addSeason', password: adminPassword, name, start, end, type, value }),
+    });
+    const data = await res.json();
+    if(data.success){
+      document.getElementById('adminSeasonForm').reset();
+      document.getElementById('seasonType').value = 'percent';
+      await fetchSeasonalPeriods();
+      loadAdminBookings();
+    } else {
+      alert(dict.admin_cancel_failed);
+    }
+  } catch(e){
+    alert(dict.admin_network_error);
+  }
+});
+
+document.getElementById('adminSeasonsList').addEventListener('click', async e=>{
+  const btn = e.target.closest('button[data-season-row]');
+  if(!btn) return;
+  const dict = I18N[currentLang];
+  if(!confirm(dict.admin_confirm_cancel)) return;
+  btn.disabled = true;
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action: 'deleteSeason', password: adminPassword, row: btn.dataset.seasonRow }),
+    });
+    const data = await res.json();
+    if(data.success){
+      await fetchSeasonalPeriods();
+      loadAdminBookings();
+    } else {
+      alert(dict.admin_cancel_failed);
+      btn.disabled = false;
+    }
+  } catch(e){
+    alert(dict.admin_network_error);
+    btn.disabled = false;
   }
 });
 
@@ -2107,7 +2678,9 @@ document.getElementById('adminBookingsList').addEventListener('click', async e=>
     });
     const data = await res.json();
     if(data.success){
-      if(remoteBookedCars) remoteBookedCars = remoteBookedCars.filter(id => id !== btn.dataset.carid);
+      if(remoteBookedCounts && remoteBookedCounts[btn.dataset.carid]){
+        remoteBookedCounts[btn.dataset.carid] = Math.max(0, remoteBookedCounts[btn.dataset.carid] - 1);
+      }
       renderFleet(dict, document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
       loadAdminBookings();
     } else {
@@ -2120,15 +2693,82 @@ document.getElementById('adminBookingsList').addEventListener('click', async e=>
   }
 });
 
-/* ---- live price estimate (Booking Form only): days x price x quantity
+/* ---- live price estimate (Booking Form only): days x price
    + pick-up/drop-off location fees + deposit-based daily surcharge
-   + mandatory €5 car wash + resources (second driver + baby seats x qty) ---- */
+   + mandatory €5 car wash + resources (second driver + baby seats x qty)
+   + outside-business-hours surcharge + seasonal pricing ---- */
 function computeDays(pickupId, returnId){
   const p = document.getElementById(pickupId).value;
   const r = document.getElementById(returnId).value;
   if(!p || !r) return 1;
-  const diff = (new Date(r) - new Date(p)) / (1000 * 60 * 60 * 24);
-  return diff > 0 ? Math.ceil(diff) : 1;
+  const diffMs = new Date(r) - new Date(p);
+  if(diffMs <= 0) return 1;
+  const wholeDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const remainderHours = (diffMs - wholeDays * 24 * 60 * 60 * 1000) / (1000 * 60 * 60);
+  // Grace period: up to 2 extra hours past a whole number of days is free;
+  // more than 2 hours automatically adds one more rental day.
+  if(remainderHours <= 2) return Math.max(1, wholeDays);
+  return wholeDays + 1;
+}
+
+/* ---- Business hours (08:00-20:00): pickup/return outside this window is still
+   allowed, but each one outside it adds a flat surcharge and shows a warning. ---- */
+function isOutsideBusinessHours(datetimeLocalValue){
+  if(!datetimeLocalValue) return false;
+  const hour = new Date(datetimeLocalValue).getHours();
+  return hour < BUSINESS_HOURS_START || hour >= BUSINESS_HOURS_END;
+}
+function getOutsideHoursFee(pickupId, returnId){
+  const pickup = document.getElementById(pickupId).value;
+  const ret = document.getElementById(returnId).value;
+  let fee = 0;
+  if(isOutsideBusinessHours(pickup)) fee += OUTSIDE_HOURS_FEE;
+  if(isOutsideBusinessHours(ret)) fee += OUTSIDE_HOURS_FEE;
+  return fee;
+}
+function updateBookingWarnings(outsideHoursFee){
+  const el = document.getElementById('bkHoursWarning');
+  if(!el) return;
+  el.hidden = outsideHoursFee <= 0;
+}
+
+/* ---- Pickup delay: for a booking made for today, the earliest allowed pickup
+   time is now + 2 hours. Future-day pickups are unaffected (the min string's
+   date part alone already sorts after "today"). ---- */
+function toDatetimeLocalString(date){
+  const pad = n => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+function refreshPickupMin(){
+  const input = document.getElementById('bkPickup');
+  if(!input) return;
+  const minAllowed = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  input.min = toDatetimeLocalString(minAllowed);
+}
+function isPickupTooSoon(pickupValue){
+  if(!pickupValue) return false;
+  const minAllowed = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  return new Date(pickupValue) < minAllowed;
+}
+
+/* ---- Seasonal pricing: admin-defined periods (Summer/Holidays/Christmas/
+   Special events) override the car's daily rate automatically when the
+   pickup date falls inside one. Empty until the agency creates periods in
+   the admin panel — no invented seasonal prices. ---- */
+let SEASONAL_PERIODS = [];
+function getSeasonalDailyRate(basePrice, pickupDatetimeLocal){
+  if(!pickupDatetimeLocal) return basePrice;
+  const pickupDate = pickupDatetimeLocal.slice(0, 10);
+  const active = SEASONAL_PERIODS.find(p => pickupDate >= p.start && pickupDate <= p.end);
+  if(!active) return basePrice;
+  return active.type === 'percent' ? basePrice * (1 + active.value / 100) : basePrice + active.value;
+}
+async function fetchSeasonalPeriods(){
+  try {
+    const res = await fetch(APPS_SCRIPT_URL + '?action=seasons');
+    const data = await res.json();
+    if(Array.isArray(data.seasons)) SEASONAL_PERIODS = data.seasons;
+  } catch(e){ /* offline or not deployed yet — booking just uses each car's base price */ }
 }
 function getResourcesBreakdown(prefix){
   const dict = I18N[currentLang];
@@ -2153,21 +2793,24 @@ function updateTotal(){
   const totalEl = document.getElementById('bkTotalDisplay');
   if(!totalEl) return;
   const days = computeDays('bkPickup', 'bkReturn');
-  const qty = Math.max(1, parseInt(document.getElementById('bkQuantity').value, 10) || 1);
   const pickupLoc = LOCATIONS[document.getElementById('bkPickupLoc').value || 0];
   const dropoffLoc = LOCATIONS[document.getElementById('bkDropoffLoc').value || 0];
   const deposit = DEPOSITS[document.getElementById('bkDeposit').value || 0];
   const resourcesFee = getResourcesBreakdown('bk').fee;
+  const outsideHoursFee = getOutsideHoursFee('bkPickup', 'bkReturn');
+  const seasonalRate = getSeasonalDailyRate(activeBookingCar.price, document.getElementById('bkPickup').value);
 
-  const total = (activeBookingCar.price * days * qty)
+  const total = (seasonalRate * days)
     + pickupLoc.fee + dropoffLoc.fee
     + (deposit.surcharge * days)
     + CAR_WASH_FEE
-    + resourcesFee;
+    + resourcesFee
+    + outsideHoursFee;
 
   totalEl.textContent = total.toFixed(2) + ' €';
+  updateBookingWarnings(outsideHoursFee);
 }
-['bkPickup','bkReturn','bkQuantity','bkPickupLoc','bkDropoffLoc','bkDeposit',
+['bkPickup','bkReturn','bkPickupLoc','bkDropoffLoc','bkDeposit',
  'bkSecondDriver','bkBabySeat1chk','bkBabySeat1qty','bkBabySeat2chk','bkBabySeat2qty','bkBabySeat3chk','bkBabySeat3qty'
 ].forEach(id=>{
   const el = document.getElementById(id);
@@ -2186,18 +2829,23 @@ function readFileAsDataUrl(file){
   });
 }
 
-/* Converts a same-origin image URL (webp/png/jpg) to a PNG data URL via canvas —
-   jsPDF's addImage() needs PNG/JPEG, so the site's .webp assets go through this first. */
-function imageUrlToPngDataUrl(url){
+/* Converts a same-origin image URL (webp/png/jpg) to a PNG/JPEG data URL via canvas —
+   jsPDF's addImage() needs PNG/JPEG, so the site's .webp assets go through this first.
+   Also downscales to maxWidth: embedding a full 900px source photo at ~30mm print size
+   was producing multi-MB PDFs for no visible benefit. */
+function imageUrlToPngDataUrl(url, { maxWidth = 500, format = 'image/jpeg', quality = 0.82 } = {}){
   return new Promise((resolve)=>{
     const img = new Image();
     img.onload = () => {
       try {
+        const scale = Math.min(1, maxWidth / img.naturalWidth);
         const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        canvas.getContext('2d').drawImage(img, 0, 0);
-        resolve(canvas.toDataURL('image/png'));
+        canvas.width = Math.round(img.naturalWidth * scale);
+        canvas.height = Math.round(img.naturalHeight * scale);
+        const ctx = canvas.getContext('2d');
+        if(format === 'image/jpeg'){ ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL(format, quality));
       } catch(e){ resolve(null); }
     };
     img.onerror = () => resolve(null);
@@ -2218,11 +2866,9 @@ function formatDateTimeForPdf(value, locale){
 
 /* Reservation PDF, styled to match the original site's invoice-style booking
    document: logo + business info, centered "Reservation" title, bill-to block,
-   a blue product table (car thumbnail + bulleted details), and blue
-   Subtotal/Total/Payment bars.
-   TODO: this business's real RC / Patente / ICE registration numbers were not
-   available when this was built — add a footer line with them once you have
-   them (search "legal footer" below). Never invent these numbers. */
+   a blue product table (car thumbnail + bulleted details), blue
+   Subtotal/Total/Payment bars, and a legal footer line with the business's
+   real registration numbers (search "legal footer" below). */
 async function generateBookingPdf(dict, data){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -2294,7 +2940,7 @@ async function generateBookingPdf(dict, data){
 
   // ---- Table body: thumbnail + bulleted product details ----
   if(data.carImg){
-    try { doc.addImage(data.carImg, 'PNG', marginX + 1, y + 3, 32, 22); } catch(e){}
+    try { doc.addImage(data.carImg, 'JPEG', marginX + 1, y + 3, 32, 22); } catch(e){}
   }
   let py = y + 6;
   const productX = marginX + 38;
@@ -2307,7 +2953,6 @@ async function generateBookingPdf(dict, data){
   const bullets = [
     [dict.pdf_pickup, data.pickup],
     [dict.pdf_return, data.ret],
-    [dict.modal_quantity_label, String(data.quantity)],
   ];
   if(data.licenseFileName) bullets.push([dict.modal_license_label, data.licenseFileName]);
   if(data.passportFileName) bullets.push([dict.modal_passport_label, data.passportFileName]);
@@ -2355,7 +3000,12 @@ async function generateBookingPdf(dict, data){
   bar(dict.pdf_total_row, data.total);
   bar(dict.pdf_payment_method, dict.pdf_payment_cash);
 
-  // ---- legal footer: intentionally left blank — see TODO above the function ----
+  // ---- legal footer: business registration numbers ----
+  y += 10;
+  doc.setTextColor(...DARK);
+  doc.setFontSize(9.5);
+  doc.setFont(undefined, 'bolditalic');
+  doc.text(LEGAL_FOOTER_TEXT, marginX, y);
 
   return doc;
 }
@@ -2370,12 +3020,17 @@ bookingForm.addEventListener('submit', async e=>{
   const termsChecked = document.getElementById('bkTerms').checked;
 
   if(!name || !phone || !pickup || !ret || !termsChecked){
+    bookingError.textContent = dict.required_field;
+    bookingError.classList.add('show');
+    return;
+  }
+  if(isPickupTooSoon(pickup)){
+    bookingError.textContent = dict.pickup_delay_error;
     bookingError.classList.add('show');
     return;
   }
   bookingError.classList.remove('show');
 
-  const quantity = Math.max(1, parseInt(document.getElementById('bkQuantity').value, 10) || 1);
   const licenseYears = document.getElementById('bkLicenseYears').value.trim();
   const pickupLocData = LOCATIONS[document.getElementById('bkPickupLoc').value || 0];
   const dropoffLocData = LOCATIONS[document.getElementById('bkDropoffLoc').value || 0];
@@ -2386,29 +3041,44 @@ bookingForm.addEventListener('submit', async e=>{
   const resources = getResourcesBreakdown('bk').text;
   const total = document.getElementById('bkTotalDisplay').textContent;
 
+  const ref = 'AFC-' + Date.now().toString().slice(-8);
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  if(submitBtn) submitBtn.disabled = true;
+
+  // Record the booking FIRST (server-side stock check, atomic against concurrent
+  // bookings) — only generate/download the PDF once the vehicle is confirmed as
+  // actually still available, so two customers can't both "win" the last unit.
+  const bookingResult = await addBookedCar(activeBookingCar.id, {
+    ref, carName: activeBookingCar.name, customerName: name, phone, pickup, ret,
+    stock: activeBookingCar.stock || 1, total,
+  });
+  if(submitBtn) submitBtn.disabled = false;
+  if(!bookingResult.success){
+    bookingError.textContent = bookingResult.error === 'sold_out' ? dict.sold_out_error : dict.required_field;
+    bookingError.classList.add('show');
+    await fetchBookedCars();
+    renderFleet(dict, document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
+    return;
+  }
+  renderFleet(dict, document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
+
   const licenseFile = selectedFiles.bkLicense;
   const passportFile = selectedFiles.bkPassport;
   const [carImg, logoImg] = await Promise.all([
-    imageUrlToPngDataUrl(activeBookingCar.imgSrc), imageUrlToPngDataUrl('images/logo.webp')
+    imageUrlToPngDataUrl(activeBookingCar.imgSrc, { maxWidth: 400, format: 'image/jpeg', quality: 0.8 }),
+    imageUrlToPngDataUrl('images/logo.webp', { maxWidth: 200, format: 'image/png' })
   ]);
-
-  const ref = 'AFC-' + Date.now().toString().slice(-8);
 
   const pdfData = {
     ref, date: new Date().toLocaleDateString(dict.htmlLang, { year: 'numeric', month: 'long', day: 'numeric' }),
     name, phone, carName: activeBookingCar.name,
     pickup: formatDateTimeForPdf(pickup, dict.htmlLang), ret: formatDateTimeForPdf(ret, dict.htmlLang),
-    quantity, licenseYears, pickupLoc, dropoffLoc, deposit, resources, total,
+    quantity: 1, licenseYears, pickupLoc, dropoffLoc, deposit, resources, total,
     licenseFileName: licenseFile?.name || '', passportFileName: passportFile?.name || '',
     carImg, logoImg,
   };
   const doc = await generateBookingPdf(dict, pdfData);
   doc.save(`booking-${ref}.pdf`);
-
-  await addBookedCar(activeBookingCar.id, {
-    ref, carName: activeBookingCar.name, customerName: name, phone, pickup, ret,
-  });
-  renderFleet(dict, document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
 
   const summary = `${dict.pdf_title} ${ref}\n${dict.pdf_car}: ${activeBookingCar.name}\n${dict.pdf_customer}: ${name}\n${dict.pdf_phone}: ${phone}\n${dict.pdf_pickup}: ${pickup}\n${dict.pdf_return}: ${ret}\n${dict.modal_total_label}: ${total}`;
 
@@ -2467,12 +3137,16 @@ enquiryForm.addEventListener('submit', e=>{
 });
 
 applyLang(currentLang);
+document.querySelectorAll('.currency-switch-group button').forEach(b=>{
+  b.classList.toggle('active', b.dataset.currency === currentCurrency);
+});
 
 // Load the shared availability list from the backend, then re-render with real data
 // once it arrives (the page still works instantly off local/no data while this resolves).
 fetchBookedCars().then(()=>{
   renderFleet(I18N[currentLang], document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
 });
+fetchSeasonalPeriods();
 </script>
 
 </body>
