@@ -507,7 +507,7 @@ header{
 .map-embed iframe{width:100%;height:100%;min-height:320px;border:0}
 
 /* ---------- Footer ---------- */
-footer{background:var(--navy-800);border-top:1px solid var(--card-border);padding:50px 0 24px}
+footer{background:var(--navy-800);border-top:1px solid var(--card-border);padding:50px 0 90px}
 .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:36px;margin-bottom:36px}
 @media (max-width:760px){.footer-grid{grid-template-columns:1fr}}
 .footer-grid h4{font-size:.95rem;margin-bottom:16px}
@@ -520,21 +520,18 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
   width:38px;height:38px;border-radius:10px;background:var(--navy-700);
   display:flex;align-items:center;justify-content:center;
 }
+/* Always stacked and centered (not just on mobile): the floating WhatsApp
+   button is fixed to the bottom-right corner on every screen size, so at max
+   scroll it can sit on top of whatever is last in the document. Keeping this
+   row centered plus the extra footer bottom padding above keeps it clear of
+   the button at any width. */
 .footer-bottom{
   border-top:1px solid var(--card-border);padding-top:20px;
-  display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;
   color:var(--ink-dim);font-size:.82rem;
 }
-.admin-link{opacity:.55;transition:opacity .15s}
+.admin-link{opacity:.7;transition:opacity .15s;font-weight:600}
 .admin-link:hover{opacity:1;color:var(--blue-400)}
-/* The floating WhatsApp button is fixed to the bottom-right corner, so at max
-   scroll it sits on top of whatever is last in the document flow. Give the
-   footer extra bottom room on phones (where the button takes up more of the
-   viewport) and stack/center the bottom row so nothing sits under it. */
-@media (max-width:480px){
-  footer{padding-bottom:96px}
-  .footer-bottom{flex-direction:column;align-items:center;text-align:center}
-}
 
 .admin-booking-item{
   display:flex;justify-content:space-between;align-items:center;gap:14px;
@@ -1097,7 +1094,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
     </div>
     <div class="footer-bottom">
       <span>© <span id="year"></span> <span data-i18n="footer_by">by</span> autofluchoscoches.com</span>
-      <a href="#" id="adminLink" class="admin-link" data-i18n="admin_link_text">🔑 Admin</a>
+      <a href="admin.html" id="adminLink" class="admin-link" target="_blank" rel="noopener" data-i18n="admin_link_text">🔑 Admin</a>
     </div>
   </div>
 </footer>
@@ -2543,7 +2540,10 @@ function openAdminModal(){
 }
 function closeAdminModal(){ adminOverlay.classList.remove('open'); }
 
-document.getElementById('adminLink').addEventListener('click', e=>{ e.preventDefault(); openAdminModal(); });
+// The footer's "🔑 Admin" link now opens admin.html directly (the complete
+// dashboard — it covers everything this in-page modal did, plus fleet/pricing/
+// reports/etc.). The modal below is kept as dead code only in case it's ever
+// needed again; nothing currently opens it.
 document.getElementById('adminClose').addEventListener('click', closeAdminModal);
 adminOverlay.addEventListener('click', e=>{ if(e.target === adminOverlay) closeAdminModal(); });
 
