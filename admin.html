@@ -136,7 +136,7 @@ tr.dragging{opacity:.4}
     <p>Admin Dashboard — sign in with your admin password.</p>
     <input type="password" id="loginPassword" placeholder="Password" autofocus required>
     <p class="login-error" id="loginError">Wrong password.</p>
-    <button type="submit">Sign in</button>
+    <button type="submit" id="loginSubmitBtn">Sign in</button>
   </form>
 </div>
 
@@ -240,13 +240,34 @@ document.getElementById('modalOverlay').addEventListener('click', e=>{
 document.getElementById('loginForm').addEventListener('submit', async e=>{
   e.preventDefault();
   const password = document.getElementById('loginPassword').value;
-  const data = await apiGetAdmin(password);
-  if(!data || !data.success){
-    document.getElementById('loginError').classList.add('show');
+  const errorEl = document.getElementById('loginError');
+  const submitBtn = document.getElementById('loginSubmitBtn');
+  errorEl.classList.remove('show');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Signing in…';
+
+  // A network/CORS failure (blocked request, ad-blocker, offline, etc.) throws
+  // before ever reaching the server — that is NOT the same as a wrong password,
+  // so retry once automatically, then show an accurate message either way
+  // instead of a misleading "Wrong password".
+  let result = await apiGetAdmin(password);
+  if(result.networkError) result = await apiGetAdmin(password);
+
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Sign in';
+
+  if(result.networkError){
+    errorEl.textContent = "Couldn't reach the server — this isn't a wrong password. Check your internet connection, or disable any ad-blocker/privacy extension for this site (some block Google Apps Script URLs), then try again.";
+    errorEl.classList.add('show');
+    return;
+  }
+  if(!result.data || !result.data.success){
+    errorEl.textContent = 'Wrong password.';
+    errorEl.classList.add('show');
     return;
   }
   state.password = password;
-  applyAdminData(data);
+  applyAdminData(result.data);
   try { sessionStorage.setItem('afc_admin_pw', password); } catch(e){}
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').classList.add('ready');
@@ -254,8 +275,8 @@ document.getElementById('loginForm').addEventListener('submit', async e=>{
   navigate('dashboard');
 });
 async function apiGetAdmin(password){
-  try { return await apiGet({ action: 'admin', password }); }
-  catch(e){ return null; }
+  try { return { data: await apiGet({ action: 'admin', password }) }; }
+  catch(e){ return { networkError: true }; }
 }
 function applyAdminData(data){
   state.role = data.role;
@@ -275,10 +296,11 @@ document.getElementById('logoutBtn').addEventListener('click', ()=>{
   let saved = null;
   try { saved = sessionStorage.getItem('afc_admin_pw'); } catch(e){}
   if(!saved) return;
-  const data = await apiGetAdmin(saved);
-  if(data && data.success){
+  let result = await apiGetAdmin(saved);
+  if(result.networkError) result = await apiGetAdmin(saved);
+  if(result.data && result.data.success){
     state.password = saved;
-    applyAdminData(data);
+    applyAdminData(result.data);
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('app').classList.add('ready');
     buildSidebar();
@@ -287,8 +309,9 @@ document.getElementById('logoutBtn').addEventListener('click', ()=>{
 })();
 
 async function refreshAdminData(){
-  const data = await apiGetAdmin(state.password);
-  if(data && data.success) applyAdminData(data);
+  const result = await apiGetAdmin(state.password);
+  if(result.data && result.data.success) applyAdminData(result.data);
+  else if(result.networkError) toast("Couldn't refresh — connection issue, showing last-loaded data.");
 }
 
 /* ---------------- Dark mode ---------------- */
