@@ -527,6 +527,14 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
 }
 .admin-link{opacity:.55;transition:opacity .15s}
 .admin-link:hover{opacity:1;color:var(--blue-400)}
+/* The floating WhatsApp button is fixed to the bottom-right corner, so at max
+   scroll it sits on top of whatever is last in the document flow. Give the
+   footer extra bottom room on phones (where the button takes up more of the
+   viewport) and stack/center the bottom row so nothing sits under it. */
+@media (max-width:480px){
+  footer{padding-bottom:96px}
+  .footer-bottom{flex-direction:column;align-items:center;text-align:center}
+}
 
 .admin-booking-item{
   display:flex;justify-content:space-between;align-items:center;gap:14px;

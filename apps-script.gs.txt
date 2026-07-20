@@ -8,9 +8,7 @@
    - Fleet data (the car catalog) now lives in a "Cars" sheet tab instead
      of being hardcoded in index.html, so the new admin dashboard
      (admin.html) can actually create/edit/delete/duplicate vehicles.
-   - Three admin passwords mapped to roles (Super Admin / Manager /
-     Employee) — Employee can view bookings/calendar/customers and create
-     manual reservations, but cannot edit fleet/pricing/settings.
+   - Single shared admin password (full access) — see ADMIN_ROLES below.
    - "Settings" sheet stores SEO meta title/description overrides that
      index.html applies at runtime.
    - "ActivityLog" sheet records every mutating admin action (who did
@@ -40,12 +38,10 @@ const CARS_SHEET_NAME = 'Cars';
 const SETTINGS_SHEET_NAME = 'Settings';
 const ACTIVITY_SHEET_NAME = 'ActivityLog';
 
-// Three passwords, three roles. Employee = view + manual reservations only.
-// Manager = everything except Settings/roles. Super Admin = everything.
+// Single shared admin password — full access (super_admin role), no separate
+// Manager/Employee tiers. Change it here any time; redeploy afterwards.
 const ADMIN_ROLES = {
-  'fluchos2026': 'super_admin',
-  'manager2026': 'manager',
-  'employee2026': 'employee',
+  'Nadir2026': 'super_admin',
 };
 const EDITOR_ROLES = ['super_admin', 'manager']; // allowed to edit fleet/pricing/settings
 

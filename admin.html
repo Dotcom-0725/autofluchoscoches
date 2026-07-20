@@ -999,11 +999,11 @@ function renderSettingsTab(tab){
       <div class="card"><div class="table-wrap"><table>
         <thead><tr><th>Role</th><th>Can do</th></tr></thead>
         <tbody>
-          <tr><td><span class="pill pill-blue">Super Admin</span></td><td>Full access to every module, including Settings and roles.</td></tr>
-          <tr><td><span class="pill pill-blue">Manager</span></td><td>Everything except Settings (SEO/roles/backups).</td></tr>
-          <tr><td><span class="pill pill-gray">Employee</span></td><td>View-only + Reservations, Calendar and Customers; can create manual bookings but cannot edit fleet/pricing/settings.</td></tr>
+          <tr><td><span class="pill pill-blue">Super Admin</span></td><td>Full access to every module. Currently the only role in use — one shared password for the whole team.</td></tr>
         </tbody>
-      </table></div></div>
+      </table></div>
+      <div class="card-pad" style="color:var(--ink-dim);font-size:.8rem">The dashboard's code still supports splitting this into separate Manager/Employee roles with restricted access later — just add more entries to ADMIN_ROLES in the backend if that's ever needed.</div>
+      </div>
     `;
   } else if(tab === 'log'){
     el.innerHTML = `
