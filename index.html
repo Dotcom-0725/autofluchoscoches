@@ -214,6 +214,14 @@ h2.section-title{
 .btn-outline:hover{border-color:var(--blue-400)}
 .btn-block{width:100%;justify-content:center}
 .ico-wa{width:18px;height:18px;fill:currentColor;flex:none}
+.car-actions{display:flex;gap:8px}
+.car-actions .btn-primary{flex:1}
+.car-email-btn{
+  flex:none;width:46px;height:46px;padding:0;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+  background:var(--navy-800);border:1.5px solid var(--card-border);color:var(--ink);
+}
+.car-email-btn:hover{border-color:var(--blue-400);color:var(--blue-500)}
 
 /* ---------- Header ----------
    sticky (not fixed): on mobile the header sits right after the black
@@ -703,7 +711,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
 <div class="topbar-strip">
   <div class="topbar-strip-inner">
     <div class="topbar-contact">
-      <a href="mailto:Contact@autofluchoscoches.com" aria-label="Email us">✉️</a>
+      <a href="mailto:Auto.fluchos@gmail.com" aria-label="Email us">✉️</a>
       <a href="tel:+212661304574" aria-label="Call us">📞</a>
     </div>
     <div class="topbar-selectors">
@@ -1035,7 +1043,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
         </div>
         <div class="contact-line">
           <div class="ic">✉️</div>
-          <div><b data-i18n="contact_email_label">Email</b><a href="mailto:Contact@autofluchoscoches.com">Contact@autofluchoscoches.com</a></div>
+          <div><b data-i18n="contact_email_label">Email</b><a href="mailto:Auto.fluchos@gmail.com">Auto.fluchos@gmail.com</a></div>
         </div>
         <div class="contact-line">
           <div class="ic">🕐</div>
@@ -1089,7 +1097,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
         <ul>
           <li>📍 N°30, Av. Bejaia, Tétouan 93000</li>
           <li>📞 <bdi dir="ltr">+212 661-304574</bdi></li>
-          <li>✉️ Contact@autofluchoscoches.com</li>
+          <li>✉️ Auto.fluchos@gmail.com</li>
         </ul>
       </div>
     </div>
@@ -1670,7 +1678,7 @@ const I18N = {
     qb_pickup_date_label:'Pickup Date', qb_pickup_time_label:'Pickup Time',
     qb_return_date_label:'Return Date', qb_return_time_label:'Return Time',
     qb_category_label:'Category', qb_search_btn:'Search',
-    per_day:'/ Day', book_now:'BOOK NOW', seats:'Seats', doors:'Doors',
+    per_day:'/ Day', book_now:'BOOK NOW', seats:'Seats', doors:'Doors', car_email_aria:'Email us about this car', unlimited_mileage:'Unlimited mileage',
     gear_manual:'Manual', gear_auto:'Automatic', fuel_essence:'Essence', fuel_diesel:'Diesel', fuel_hybride:'Hybride',
     banner1_title:'Easier & Faster Bookings', banner1_sub:"Search. Book. Drive. It's that simple.",
     why_eyebrow:'Our advantages', why_title:'Why choose Auto Fluchos Coches',
@@ -1780,7 +1788,7 @@ const I18N = {
     qb_pickup_date_label:'Date de départ', qb_pickup_time_label:'Heure de départ',
     qb_return_date_label:'Date de retour', qb_return_time_label:'Heure de retour',
     qb_category_label:'Catégorie', qb_search_btn:'Rechercher',
-    per_day:'/ Jour', book_now:'RÉSERVER', seats:'Places', doors:'Portes',
+    per_day:'/ Jour', book_now:'RÉSERVER', seats:'Places', doors:'Portes', car_email_aria:'Nous contacter par email pour cette voiture', unlimited_mileage:'Kilométrage illimité',
     gear_manual:'Manuelle', gear_auto:'Automatique', fuel_essence:'Essence', fuel_diesel:'Diesel', fuel_hybride:'Hybride',
     banner1_title:'Réservations plus faciles et rapides', banner1_sub:"Cherchez. Réservez. Roulez. C'est aussi simple que ça.",
     why_eyebrow:'Nos atouts', why_title:'Pourquoi choisir Auto Fluchos Coches',
@@ -1890,7 +1898,7 @@ const I18N = {
     qb_pickup_date_label:'Fecha de salida', qb_pickup_time_label:'Hora de salida',
     qb_return_date_label:'Fecha de devolución', qb_return_time_label:'Hora de devolución',
     qb_category_label:'Categoría', qb_search_btn:'Buscar',
-    per_day:'/ Día', book_now:'RESERVAR', seats:'Plazas', doors:'Puertas',
+    per_day:'/ Día', book_now:'RESERVAR', seats:'Plazas', doors:'Puertas', car_email_aria:'Contáctenos por email sobre este coche', unlimited_mileage:'Kilometraje ilimitado',
     gear_manual:'Manual', gear_auto:'Automático', fuel_essence:'Gasolina', fuel_diesel:'Diésel', fuel_hybride:'Híbrido',
     banner1_title:'Reservas más fáciles y rápidas', banner1_sub:'Busque. Reserve. Conduzca. Así de sencillo.',
     why_eyebrow:'Nuestras ventajas', why_title:'Por qué elegir Auto Fluchos Coches',
@@ -2001,7 +2009,7 @@ const I18N = {
     qb_pickup_date_label:'تاريخ الاستلام', qb_pickup_time_label:'وقت الاستلام',
     qb_return_date_label:'تاريخ الإرجاع', qb_return_time_label:'وقت الإرجاع',
     qb_category_label:'الفئة', qb_search_btn:'بحث',
-    per_day:'/ اليوم', book_now:'احجز الآن', seats:'مقاعد', doors:'أبواب',
+    per_day:'/ اليوم', book_now:'احجز الآن', seats:'مقاعد', doors:'أبواب', car_email_aria:'راسلنا عبر البريد الإلكتروني بخصوص هذه السيارة', unlimited_mileage:'كيلومترية مجانية غير محدودة',
     gear_manual:'يدوي', gear_auto:'أوتوماتيك', fuel_essence:'بنزين', fuel_diesel:'ديزل', fuel_hybride:'هجين',
     banner1_title:'حجوزات أسهل وأسرع', banner1_sub:'ابحث. احجز. قُد سيارتك. بكل بساطة.',
     why_eyebrow:'مميزاتنا', why_title:'لماذا تختار Auto Fluchos Coches',
@@ -2303,10 +2311,14 @@ function renderFleet(dict, cat){
           <span>⚙️ ${gearLabel}</span>
           <span>🚪 ${c.doors} ${dict.doors}</span>
           <span>⛽ ${fuelLabel}</span>
+          <span>♾️ ${dict.unlimited_mileage}</span>
         </div>
         ${isBooked
           ? `<button type="button" class="btn btn-block" disabled>🚫 ${dict.unavailable_btn}</button>`
-          : `<button type="button" class="btn btn-primary btn-block" data-book-id="${c.id}"><svg class="ico-wa" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.31.65 4.47 1.78 6.31L4 29l7.86-1.74A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Zm0 21.72c-1.94 0-3.75-.55-5.28-1.5l-.38-.23-4.66 1.03 1.05-4.55-.25-.4A9.63 9.63 0 0 1 5.32 15c0-5.34 4.35-9.68 9.684-9.68S24.688 9.66 24.688 15 21.34 24.72 16.004 24.72Zm5.37-7.26c-.29-.15-1.73-.86-2-.95-.27-.1-.46-.15-.66.15-.2.29-.76.95-.93 1.14-.17.2-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.44-.86-.77-1.44-1.72-1.61-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.48.1-.2.05-.37-.02-.51-.07-.15-.66-1.6-.91-2.19-.24-.58-.48-.5-.66-.51-.17-.01-.37-.01-.56-.01s-.51.07-.78.37c-.27.29-1.02 1-1.02 2.43 0 1.44 1.05 2.83 1.2 3.02.15.2 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.61.7.22 1.34.19 1.84.11.56-.08 1.73-.7 1.98-1.38.24-.68.24-1.26.17-1.38-.07-.13-.26-.2-.55-.35Z"/></svg> ${dict.book_now}</button>`}
+          : `<div class="car-actions">
+              <button type="button" class="btn btn-primary btn-block" data-book-id="${c.id}"><svg class="ico-wa" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.31.65 4.47 1.78 6.31L4 29l7.86-1.74A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Zm0 21.72c-1.94 0-3.75-.55-5.28-1.5l-.38-.23-4.66 1.03 1.05-4.55-.25-.4A9.63 9.63 0 0 1 5.32 15c0-5.34 4.35-9.68 9.684-9.68S24.688 9.66 24.688 15 21.34 24.72 16.004 24.72Zm5.37-7.26c-.29-.15-1.73-.86-2-.95-.27-.1-.46-.15-.66.15-.2.29-.76.95-.93 1.14-.17.2-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.44-.86-.77-1.44-1.72-1.61-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.48.1-.2.05-.37-.02-.51-.07-.15-.66-1.6-.91-2.19-.24-.58-.48-.5-.66-.51-.17-.01-.37-.01-.56-.01s-.51.07-.78.37c-.27.29-1.02 1-1.02 2.43 0 1.44 1.05 2.83 1.2 3.02.15.2 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.61.7.22 1.34.19 1.84.11.56-.08 1.73-.7 1.98-1.38.24-.68.24-1.26.17-1.38-.07-.13-.26-.2-.55-.35Z"/></svg> ${dict.book_now}</button>
+              <a class="car-email-btn" href="mailto:Auto.fluchos@gmail.com?subject=${encodeURIComponent(dict.modal_title + ' - ' + c.name)}" aria-label="${dict.car_email_aria}" title="${dict.car_email_aria}">✉️</a>
+            </div>`}
       </div>`;
     grid.appendChild(card);
   });
@@ -2972,7 +2984,7 @@ async function generateBookingPdf(dict, data){
   doc.setFontSize(9);
   doc.setTextColor(...GRAY);
   doc.text('Phone: +212 661-304574', marginX, 46);
-  doc.text('Contact@autofluchoscoches.com', marginX, 51);
+  doc.text('Auto.fluchos@gmail.com', marginX, 51);
   doc.text('https://autofluchoscoches.com', marginX, 56);
 
   doc.setTextColor(...DARK);
@@ -3166,7 +3178,7 @@ bookingForm.addEventListener('submit', async e=>{
   document.getElementById('confirmWhatsappBtn').href =
     'https://wa.me/212661304574?text=' + encodeURIComponent(summary);
   document.getElementById('confirmEmailBtn').href =
-    'mailto:Contact@autofluchoscoches.com?subject=' +
+    'mailto:Auto.fluchos@gmail.com?subject=' +
     encodeURIComponent(`${dict.pdf_title} ${ref}`) +
     '&body=' + encodeURIComponent(summary + '\n\n' + dict.confirm_attach_note);
 
