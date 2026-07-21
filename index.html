@@ -217,14 +217,19 @@ h2.section-title{
 .btn-block{width:100%;justify-content:center}
 .ico-wa{width:18px;height:18px;fill:currentColor;flex:none}
 
-/* ---------- Header ---------- */
+/* ---------- Header ----------
+   sticky (not fixed): on mobile the header sits right after the black
+   contact/language top bar in normal flow, then sticks to the viewport top
+   once scrolled past — fixed positioning would instead pin it at y:0 from
+   the start and overlap the top bar above it. */
 header{
-  position:fixed;top:0;left:0;right:0;z-index:100;
+  position:sticky;top:0;left:0;right:0;z-index:100;
   background:rgba(255,255,255,.85);
   backdrop-filter:blur(10px);
   border-bottom:1px solid var(--card-border);
 }
 .nav-wrap{
+  position:relative;
   display:flex;align-items:center;justify-content:space-between;
   padding:14px 20px;max-width:1200px;margin:0 auto;
 }
@@ -253,22 +258,57 @@ header{
 }
 .burger{display:none;background:none;border:none;color:var(--ink);font-size:1.5rem;cursor:pointer}
 
-.lang-switch-mobile,.currency-switch-mobile{display:none}
-
 @media (max-width:1080px){
   .nav-links{
-    position:fixed;top:70px;left:0;right:0;
+    position:absolute;top:100%;left:0;right:0;
     background:var(--navy-800);
     flex-direction:column;align-items:stretch;padding:24px;gap:18px;
-    transform:translateY(-150%);opacity:0;
+    transform:translateY(-20px);opacity:0;pointer-events:none;
     transition:all .25s ease;border-bottom:1px solid var(--card-border);
   }
-  .nav-links.open{transform:translateY(0);opacity:1}
+  .nav-links.open{transform:translateY(0);opacity:1;pointer-events:auto}
   .phone-pill{display:none}
   .burger{display:block}
   .nav-actions .lang-switch,.nav-actions .currency-switch{display:none}
-  .lang-switch-mobile{display:flex;justify-content:center;order:-1;padding-bottom:14px;margin-bottom:4px;border-bottom:1px solid var(--card-border)}
-  .currency-switch-mobile{display:flex;justify-content:center;order:-1;padding-bottom:14px;margin-bottom:4px}
+}
+
+/* ---------- Mobile top bar: contact + language/currency dropdowns ---------- */
+.topbar-strip{display:none}
+@media (max-width:1080px){
+  .topbar-strip{
+    display:block;background:#0b0d10;color:#fff;font-size:.78rem;position:relative;z-index:120;
+  }
+  .topbar-strip-inner{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:9px 16px;max-width:100%;
+  }
+  .topbar-contact{display:flex;gap:16px}
+  .topbar-contact a{color:#fff;opacity:.85;font-size:1rem;line-height:1;text-decoration:none}
+  .topbar-contact a:hover{opacity:1}
+  .topbar-selectors{display:flex;gap:14px}
+  .topbar-dropdown{position:relative}
+  .topbar-dropdown-btn{
+    background:none;border:none;color:#fff;font-weight:700;font-size:.78rem;
+    display:flex;align-items:center;gap:4px;cursor:pointer;padding:2px;white-space:nowrap;
+  }
+  .topbar-dropdown-btn .chevron{font-size:.7rem;transition:transform .15s}
+  .topbar-dropdown.open .topbar-dropdown-btn .chevron{transform:rotate(180deg)}
+  .topbar-dropdown-menu{
+    display:none;position:absolute;top:100%;inset-inline-end:0;margin-top:10px;
+    background:#fff;color:var(--ink);border-radius:10px;box-shadow:0 14px 34px rgba(0,0,0,.25);
+    min-width:150px;overflow:hidden;z-index:130;padding:4px;
+  }
+  .topbar-dropdown.open .topbar-dropdown-menu{display:block}
+  .topbar-dropdown-menu button{
+    display:block;width:100%;text-align:start;padding:9px 12px;background:none;border:none;
+    border-radius:7px;font-size:.82rem;font-weight:600;color:var(--ink);cursor:pointer;white-space:nowrap;
+  }
+  .topbar-dropdown-menu button:hover{background:var(--navy-800)}
+  .topbar-dropdown-menu button.active{color:var(--blue-500);background:var(--accent-dim,var(--navy-800))}
+}
+@media (max-width:360px){
+  .topbar-selectors{gap:8px}
+  .topbar-dropdown-btn{font-size:.7rem}
 }
 
 @media (max-width:480px){
@@ -277,21 +317,22 @@ header{
   .logo-text small{font-size:.56rem;letter-spacing:.06em}
 }
 
-/* ---------- Hero ---------- */
+/* ---------- Hero (booking form directly on the background photo) ---------- */
 .hero{
-  padding:150px 0 60px;
+  padding:70px 0;
   background:var(--navy-900);
   position:relative;
   overflow:hidden;
 }
 /* Animated hero background: a slow continuous Ken Burns zoom/pan on a photo of Tétouan
    (AI-generated representative image — swap images/hero-tetouan.webp for a real photo
-   of Tétouan whenever one is available). */
+   of Tétouan whenever one is available). Kept fairly visible (not washed out) since the
+   booking form below is an opaque card and stays readable regardless of the photo. */
 .hero-bg-wrap{position:absolute;inset:0;z-index:0}
 .hero-bg-img{
   width:100%;height:100%;object-fit:cover;
   animation:heroKenBurns 26s ease-in-out infinite alternate;
-  opacity:.32;
+  opacity:.6;
 }
 @keyframes heroKenBurns{
   0%{transform:scale(1) translate(0,0)}
@@ -301,19 +342,32 @@ header{
 .hero-overlay{
   position:absolute;inset:0;z-index:1;
   background:
-    radial-gradient(circle at 15% 20%, var(--blue-glow), transparent 45%),
-    radial-gradient(circle at 85% 80%, rgba(200,134,13,.10), transparent 40%),
-    linear-gradient(180deg, rgba(255,255,255,.65) 0%, rgba(255,255,255,.9) 55%, var(--navy-900) 100%);
+    radial-gradient(circle at 15% 15%, var(--blue-glow), transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(200,134,13,.12), transparent 40%),
+    linear-gradient(180deg, rgba(255,255,255,.25) 0%, rgba(255,255,255,.55) 70%, var(--navy-900) 100%);
 }
 .hero > .container{position:relative;z-index:2}
-.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:50px;align-items:center}
-@media (max-width:960px){.hero-grid{grid-template-columns:1fr}}
+
+.badge-row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:18px}
+.pill-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.85);border:1px solid var(--card-border);
+  padding:7px 14px;border-radius:999px;font-size:.8rem;font-weight:700;color:var(--ink-dim);
+  backdrop-filter:blur(4px);
+}
+.pill-badge b{color:var(--gold)}
+
+.hero-booking-inner{display:flex;flex-direction:column;align-items:center;max-width:900px}
+.hero-booking-inner h1{
+  font-size:clamp(1.6rem,3.4vw,2.1rem);margin-bottom:24px;text-align:center;
+  color:var(--ink);text-shadow:0 2px 20px rgba(255,255,255,.6);
+}
 
 .quick-booking{
-  display:flex;flex-wrap:wrap;gap:16px;align-items:end;
+  display:flex;flex-wrap:wrap;gap:16px;align-items:end;width:100%;
   background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);
-  padding:22px 24px;box-shadow:0 20px 50px rgba(20,24,43,.10);
-  margin-top:-46px;position:relative;z-index:5;
+  padding:24px 26px;box-shadow:0 20px 50px rgba(20,24,43,.18);
+  position:relative;z-index:5;
 }
 .qb-field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:170px}
 .qb-field label{font-size:.72rem;font-weight:700;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.06em}
@@ -322,43 +376,14 @@ header{
   padding:10px 12px;border-radius:10px;font-weight:600;font-size:.85rem;
 }
 .qb-submit{flex:0 0 auto;padding:12px 32px;white-space:nowrap}
-@media (max-width:760px){.quick-booking{margin-top:20px;flex-direction:column;align-items:stretch}.qb-field{width:100%}}
-.badge-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px}
-.pill-badge{
-  display:inline-flex;align-items:center;gap:6px;
-  background:var(--navy-700);border:1px solid var(--card-border);
-  padding:7px 14px;border-radius:999px;font-size:.8rem;font-weight:700;color:var(--ink-dim);
+.qb-field-pair{display:flex;gap:10px;flex:1.4;min-width:220px}
+.qb-field-pair .qb-field{min-width:0}
+@media (max-width:760px){
+  .hero{padding:36px 0}
+  .quick-booking{flex-direction:column;align-items:stretch}
+  .qb-field{width:100%}
+  .qb-field-pair{width:100%}
 }
-.pill-badge b{color:var(--gold)}
-.hero h1{font-size:clamp(2.1rem,4.6vw,3.2rem);margin-bottom:20px}
-.hero p.lead{color:var(--ink-dim);font-size:1.05rem;max-width:520px;margin-bottom:28px}
-.hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:36px}
-.hero-features{display:flex;flex-wrap:wrap;gap:26px}
-.hero-feature{display:flex;align-items:center;gap:12px}
-.hero-feature .ico{
-  width:44px;height:44px;border-radius:12px;background:var(--navy-700);
-  display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex:none;
-}
-.hero-feature span{font-weight:700;font-size:.9rem}
-.hero-visual{
-  position:relative;background:var(--card);
-  border:1px solid var(--card-border);border-radius:24px;
-  padding:26px;min-height:380px;
-  display:flex;flex-direction:column;justify-content:flex-end;
-  overflow:hidden;
-}
-.hero-photo-placeholder{
-  position:absolute;inset:0;
-  background:linear-gradient(160deg,var(--navy-600),var(--navy-800));
-}
-.hero-photo-placeholder img{width:100%;height:100%;object-fit:cover;opacity:.9}
-.hero-visual .card-float{
-  position:relative;z-index:2;background:rgba(255,255,255,.9);
-  border:1px solid var(--card-border);backdrop-filter:blur(6px);
-  border-radius:16px;padding:18px;
-  box-shadow:0 10px 30px rgba(20,24,43,.08);
-}
-.hero-visual .card-float b{color:var(--gold);font-size:1.3rem}
 
 /* ---------- Trust bar ---------- */
 .trustbar{background:var(--navy-800);padding:22px 0;border-top:1px solid var(--card-border);border-bottom:1px solid var(--card-border)}
@@ -691,6 +716,39 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
 </head>
 <body>
 
+<!-- ================= MOBILE TOP BAR (contact + language/currency) ================= -->
+<div class="topbar-strip">
+  <div class="topbar-strip-inner">
+    <div class="topbar-contact">
+      <a href="mailto:Contact@autofluchoscoches.com" aria-label="Email us">✉️</a>
+      <a href="tel:+212661304574" aria-label="Call us">📞</a>
+    </div>
+    <div class="topbar-selectors">
+      <div class="topbar-dropdown" id="currencyTopbarDropdown">
+        <button type="button" class="topbar-dropdown-btn" id="currencyTopbarBtn">
+          <span id="currencyTopbarLabel">€ EUR</span><span class="chevron">▾</span>
+        </button>
+        <div class="topbar-dropdown-menu currency-switch-group" id="currencyTopbarMenu">
+          <button data-currency="EUR" class="active">€ Euro</button>
+          <button data-currency="MAD">DH Dirham</button>
+          <button data-currency="USD">$ Dollar</button>
+        </div>
+      </div>
+      <div class="topbar-dropdown" id="langTopbarDropdown">
+        <button type="button" class="topbar-dropdown-btn" id="langTopbarBtn">
+          <span id="langTopbarLabel">🇬🇧 English</span><span class="chevron">▾</span>
+        </button>
+        <div class="topbar-dropdown-menu lang-switch-group" id="langTopbarMenu">
+          <button data-lang="ar">🇲🇦 العربية</button>
+          <button data-lang="en" class="active">🇬🇧 English</button>
+          <button data-lang="fr">🇫🇷 Français</button>
+          <button data-lang="es">🇪🇸 Español</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ================= HEADER ================= -->
 <header>
   <div class="nav-wrap">
@@ -702,17 +760,6 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       </div>
     </a>
     <nav class="nav-links" id="navLinks">
-      <div class="lang-switch lang-switch-mobile lang-switch-group">
-        <button data-lang="ar">AR</button>
-        <button data-lang="en" class="active">EN</button>
-        <button data-lang="fr">FR</button>
-        <button data-lang="es">ES</button>
-      </div>
-      <div class="currency-switch currency-switch-mobile currency-switch-group">
-        <button data-currency="EUR" class="active">EUR</button>
-        <button data-currency="MAD">MAD</button>
-        <button data-currency="USD">USD</button>
-      </div>
       <a href="#top" data-i18n="nav_home">Home</a>
       <a href="#flotte" data-i18n="nav_fleet">Cars List</a>
       <a href="#apropos" data-i18n="nav_why">About</a>
@@ -722,10 +769,10 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
     </nav>
     <div class="nav-actions">
       <div class="lang-switch lang-switch-group" id="langSwitch">
-        <button data-lang="ar">AR</button>
-        <button data-lang="en" class="active">EN</button>
-        <button data-lang="fr">FR</button>
-        <button data-lang="es">ES</button>
+        <button data-lang="ar">🇲🇦 AR</button>
+        <button data-lang="en" class="active">🇬🇧 EN</button>
+        <button data-lang="fr">🇫🇷 FR</button>
+        <button data-lang="es">🇪🇸 ES</button>
       </div>
       <div class="currency-switch currency-switch-group" id="currencySwitch">
         <button data-currency="EUR" class="active">EUR</button>
@@ -740,72 +787,63 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
 
 <!-- ================= HERO ================= -->
 <div id="top"></div>
-<section class="hero">
+<section class="hero hero-booking">
   <div class="hero-bg-wrap">
     <img class="hero-bg-img" src="images/hero-tetouan.webp" alt="Tétouan medina cityscape with the Rif mountains" loading="eager">
   </div>
   <div class="hero-overlay"></div>
-  <div class="container hero-grid">
-    <div>
-      <div class="badge-row">
-        <span class="pill-badge" data-i18n="badge_know_us">GET TO KNOW US</span>
-      </div>
-      <h1 data-i18n="hero_title">Search, Book &amp; Rent Vehicle Easily</h1>
-      <p class="lead" data-i18n="hero_lead">Find your ideal vehicle in seconds. Browse, book, and hit the road — fast, effortless, and always reliable.</p>
-      <div class="hero-cta">
-        <a class="btn btn-blue" href="#flotte" data-i18n="cta_find_car">Find a Car</a>
-        <button type="button" class="btn btn-primary" id="heroBookBtn">
-          <svg class="ico-wa" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.31.65 4.47 1.78 6.31L4 29l7.86-1.74A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Zm0 21.72c-1.94 0-3.75-.55-5.28-1.5l-.38-.23-4.66 1.03 1.05-4.55-.25-.4A9.63 9.63 0 0 1 5.32 15c0-5.34 4.35-9.68 9.684-9.68S24.688 9.66 24.688 15 21.34 24.72 16.004 24.72Zm5.37-7.26c-.29-.15-1.73-.86-2-.95-.27-.1-.46-.15-.66.15-.2.29-.76.95-.93 1.14-.17.2-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.44-.86-.77-1.44-1.72-1.61-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.48.1-.2.05-.37-.02-.51-.07-.15-.66-1.6-.91-2.19-.24-.58-.48-.5-.66-.51-.17-.01-.37-.01-.56-.01s-.51.07-.78.37c-.27.29-1.02 1-1.02 2.43 0 1.44 1.05 2.83 1.2 3.02.15.2 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.61.7.22 1.34.19 1.84.11.56-.08 1.73-.7 1.98-1.38.24-.68.24-1.26.17-1.38-.07-.13-.26-.2-.55-.35Z"/></svg>
-          <span data-i18n="cta_whatsapp">Book on WhatsApp</span>
-        </button>
-      </div>
-      <div class="hero-features">
-        <div class="hero-feature"><div class="ico">⚡</div><span data-i18n="feat_easier">Easier &amp; Faster Bookings</span></div>
-        <div class="hero-feature"><div class="ico">📍</div><span data-i18n="feat_pickup">Too Many Pickup Locations</span></div>
-      </div>
+  <div class="container hero-booking-inner">
+    <div class="badge-row">
+      <span class="pill-badge" data-i18n="badge_know_us">GET TO KNOW US</span>
     </div>
-    <div class="hero-visual">
-      <div class="hero-photo-placeholder"><img src="images/sandero-stepway-auto.webp" alt="Dacia Sandero Stepway Automatic rental car"></div>
-      <div class="card-float">
-        <b><bdi dir="ltr">+212 661-304574</bdi></b>
-        <div style="color:var(--ink-dim);font-size:.85rem;margin-top:4px" data-i18n="hero_card_sub">Call anytime</div>
+    <h1 data-i18n="qb_hero_title">Booking Information</h1>
+    <form class="quick-booking" id="quickBookingForm">
+      <div class="qb-field">
+        <label data-i18n="qb_location_label">Pickup Location</label>
+        <select id="qbLocation" class="loc-select"></select>
       </div>
-    </div>
+      <div class="qb-field">
+        <label data-i18n="qb_return_location_label">Return Location</label>
+        <select id="qbLocationReturn" class="loc-select"></select>
+      </div>
+      <div class="qb-field-pair">
+        <div class="qb-field">
+          <label data-i18n="qb_pickup_date_label">Pickup Date</label>
+          <input type="date" id="qbPickupDate">
+        </div>
+        <div class="qb-field">
+          <label data-i18n="qb_pickup_time_label">Pickup Time</label>
+          <input type="time" id="qbPickupTime" value="10:00">
+        </div>
+      </div>
+      <div class="qb-field-pair">
+        <div class="qb-field">
+          <label data-i18n="qb_return_date_label">Return Date</label>
+          <input type="date" id="qbReturnDate">
+        </div>
+        <div class="qb-field">
+          <label data-i18n="qb_return_time_label">Return Time</label>
+          <input type="time" id="qbReturnTime" value="10:00">
+        </div>
+      </div>
+      <div class="qb-field">
+        <label data-i18n="qb_category_label">Category</label>
+        <select id="qbCategory">
+          <option value="all" data-i18n="filter_all">All Cars</option>
+          <option value="petrol_hybrid" data-i18n="filter_petrol_hybrid">Petrol &amp; Hybrid</option>
+          <option value="diesel" data-i18n="filter_diesel">Diesel</option>
+          <option value="manual" data-i18n="filter_manual">Manual</option>
+          <option value="automatic" data-i18n="filter_automatic">Automatic</option>
+          <option value="suv" data-i18n="filter_suv">SUV</option>
+          <option value="7seats" data-i18n="filter_family">7 Seats</option>
+          <option value="luxury" data-i18n="filter_luxury">Luxury</option>
+          <option value="economy" data-i18n="filter_economy">Economy</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-blue qb-submit" data-i18n="qb_search_btn">Search</button>
+    </form>
   </div>
 </section>
-
-<!-- ================= QUICK BOOKING WIDGET ================= -->
-<div class="container">
-  <form class="quick-booking" id="quickBookingForm">
-    <div class="qb-field">
-      <label data-i18n="qb_location_label">Pickup Location</label>
-      <select id="qbLocation" class="loc-select"></select>
-    </div>
-    <div class="qb-field">
-      <label data-i18n="qb_pickup_label">Pickup Date &amp; Time</label>
-      <input type="datetime-local" id="qbPickup">
-    </div>
-    <div class="qb-field">
-      <label data-i18n="qb_return_label">Return Date &amp; Time</label>
-      <input type="datetime-local" id="qbReturn">
-    </div>
-    <div class="qb-field">
-      <label data-i18n="qb_category_label">Category</label>
-      <select id="qbCategory">
-        <option value="all" data-i18n="filter_all">All Cars</option>
-        <option value="petrol_hybrid" data-i18n="filter_petrol_hybrid">Petrol &amp; Hybrid</option>
-        <option value="diesel" data-i18n="filter_diesel">Diesel</option>
-        <option value="manual" data-i18n="filter_manual">Manual</option>
-        <option value="automatic" data-i18n="filter_automatic">Automatic</option>
-        <option value="suv" data-i18n="filter_suv">SUV</option>
-        <option value="7seats" data-i18n="filter_family">7 Seats</option>
-        <option value="luxury" data-i18n="filter_luxury">Luxury</option>
-        <option value="economy" data-i18n="filter_economy">Economy</option>
-      </select>
-    </div>
-    <button type="submit" class="btn btn-blue qb-submit" data-i18n="qb_search_btn">Search</button>
-  </form>
-</div>
 
 <!-- ================= TRUST BAR (facts pulled from the real Google Business listing) ================= -->
 <div class="trustbar">
@@ -1665,7 +1703,10 @@ const I18N = {
     toolbar_price_label:'Max price / day', toolbar_all_prices:'Any', toolbar_sort_label:'Sort by',
     toolbar_sort_default:'Featured', toolbar_sort_price_asc:'Price: Low to High', toolbar_sort_price_desc:'Price: High to Low',
     toolbar_sort_newest:'Newest', toolbar_sort_popular:'Most Popular',
-    qb_location_label:'Pickup Location', qb_pickup_label:'Pickup Date &amp; Time', qb_return_label:'Return Date &amp; Time',
+    qb_hero_title:'Booking Information',
+    qb_location_label:'Pickup Location', qb_return_location_label:'Return Location',
+    qb_pickup_date_label:'Pickup Date', qb_pickup_time_label:'Pickup Time',
+    qb_return_date_label:'Return Date', qb_return_time_label:'Return Time',
     qb_category_label:'Category', qb_search_btn:'Search',
     per_day:'/ Day', book_now:'BOOK NOW', seats:'Seats', doors:'Doors',
     gear_manual:'Manual', gear_auto:'Automatic', fuel_essence:'Essence', fuel_diesel:'Diesel', fuel_hybride:'Hybride',
@@ -1774,7 +1815,10 @@ const I18N = {
     toolbar_price_label:'Prix max / jour', toolbar_all_prices:'Tous', toolbar_sort_label:'Trier par',
     toolbar_sort_default:'En vedette', toolbar_sort_price_asc:'Prix : croissant', toolbar_sort_price_desc:'Prix : décroissant',
     toolbar_sort_newest:'Plus récent', toolbar_sort_popular:'Plus populaire',
-    qb_location_label:'Lieu de prise en charge', qb_pickup_label:'Date et heure de prise en charge', qb_return_label:'Date et heure de retour',
+    qb_hero_title:'Informations de réservation',
+    qb_location_label:'Lieu de prise en charge', qb_return_location_label:'Lieu de retour',
+    qb_pickup_date_label:'Date de départ', qb_pickup_time_label:'Heure de départ',
+    qb_return_date_label:'Date de retour', qb_return_time_label:'Heure de retour',
     qb_category_label:'Catégorie', qb_search_btn:'Rechercher',
     per_day:'/ Jour', book_now:'RÉSERVER', seats:'Places', doors:'Portes',
     gear_manual:'Manuelle', gear_auto:'Automatique', fuel_essence:'Essence', fuel_diesel:'Diesel', fuel_hybride:'Hybride',
@@ -1883,7 +1927,10 @@ const I18N = {
     toolbar_price_label:'Precio máx / día', toolbar_all_prices:'Cualquiera', toolbar_sort_label:'Ordenar por',
     toolbar_sort_default:'Destacados', toolbar_sort_price_asc:'Precio: menor a mayor', toolbar_sort_price_desc:'Precio: mayor a menor',
     toolbar_sort_newest:'Más recientes', toolbar_sort_popular:'Más populares',
-    qb_location_label:'Lugar de recogida', qb_pickup_label:'Fecha y hora de recogida', qb_return_label:'Fecha y hora de devolución',
+    qb_hero_title:'Información de reserva',
+    qb_location_label:'Lugar de recogida', qb_return_location_label:'Lugar de devolución',
+    qb_pickup_date_label:'Fecha de salida', qb_pickup_time_label:'Hora de salida',
+    qb_return_date_label:'Fecha de devolución', qb_return_time_label:'Hora de devolución',
     qb_category_label:'Categoría', qb_search_btn:'Buscar',
     per_day:'/ Día', book_now:'RESERVAR', seats:'Plazas', doors:'Puertas',
     gear_manual:'Manual', gear_auto:'Automático', fuel_essence:'Gasolina', fuel_diesel:'Diésel', fuel_hybride:'Híbrido',
@@ -1992,7 +2039,10 @@ const I18N = {
     toolbar_price_label:'أقصى سعر / يوم', toolbar_all_prices:'أي سعر', toolbar_sort_label:'الترتيب حسب',
     toolbar_sort_default:'مميزة', toolbar_sort_price_asc:'السعر: من الأقل إلى الأعلى', toolbar_sort_price_desc:'السعر: من الأعلى إلى الأقل',
     toolbar_sort_newest:'الأحدث', toolbar_sort_popular:'الأكثر طلباً',
-    qb_location_label:'مكان الاستلام', qb_pickup_label:'تاريخ ووقت الاستلام', qb_return_label:'تاريخ ووقت الإرجاع',
+    qb_hero_title:'معلومات الحجز',
+    qb_location_label:'مكان الاستلام', qb_return_location_label:'مكان الإرجاع',
+    qb_pickup_date_label:'تاريخ الاستلام', qb_pickup_time_label:'وقت الاستلام',
+    qb_return_date_label:'تاريخ الإرجاع', qb_return_time_label:'وقت الإرجاع',
     qb_category_label:'الفئة', qb_search_btn:'بحث',
     per_day:'/ اليوم', book_now:'احجز الآن', seats:'مقاعد', doors:'أبواب',
     gear_manual:'يدوي', gear_auto:'أوتوماتيك', fuel_essence:'بنزين', fuel_diesel:'ديزل', fuel_hybride:'هجين',
@@ -2370,6 +2420,36 @@ document.querySelectorAll('.lang-switch-group').forEach(group=>{
 document.getElementById('burgerBtn').addEventListener('click', ()=>{
   document.getElementById('navLinks').classList.toggle('open');
 });
+
+/* Mobile top bar dropdowns (currency + language): open/close on click,
+   close on an outside click, and keep the button label in sync with
+   whichever option is currently active (setCurrency/applyLang already
+   toggle .active on these buttons via the shared .currency-switch-group /
+   .lang-switch-group delegated listeners above — this just mirrors that
+   selection into the visible button label and closes the menu). */
+function setupTopbarDropdown(dropdownId, btnId, menuId, labelId){
+  const dropdown = document.getElementById(dropdownId);
+  const btn = document.getElementById(btnId);
+  const menu = document.getElementById(menuId);
+  const label = document.getElementById(labelId);
+  if(!dropdown || !btn || !menu || !label) return;
+  btn.addEventListener('click', e=>{
+    e.stopPropagation();
+    document.querySelectorAll('.topbar-dropdown.open').forEach(d=>{ if(d !== dropdown) d.classList.remove('open'); });
+    dropdown.classList.toggle('open');
+  });
+  menu.addEventListener('click', e=>{
+    const optionBtn = e.target.closest('button');
+    if(!optionBtn) return;
+    label.textContent = optionBtn.textContent;
+    dropdown.classList.remove('open');
+  });
+}
+setupTopbarDropdown('currencyTopbarDropdown', 'currencyTopbarBtn', 'currencyTopbarMenu', 'currencyTopbarLabel');
+setupTopbarDropdown('langTopbarDropdown', 'langTopbarBtn', 'langTopbarMenu', 'langTopbarLabel');
+document.addEventListener('click', ()=>{
+  document.querySelectorAll('.topbar-dropdown.open').forEach(d => d.classList.remove('open'));
+});
 document.querySelectorAll('#navLinks a').forEach(a=>{
   a.addEventListener('click', ()=> document.getElementById('navLinks').classList.remove('open'));
 });
@@ -2500,10 +2580,6 @@ document.getElementById('fleetGrid').addEventListener('click', e=>{
   const btn = e.target.closest('button[data-book-id]');
   if(!btn) return;
   openBookingModal(btn.dataset.bookId);
-});
-/* Hero CTA opens the booking form directly, pre-selected with the car shown in the hero photo */
-document.getElementById('heroBookBtn').addEventListener('click', ()=>{
-  openBookingModal('sandero-stepway-auto');
 });
 document.getElementById('bookingClose').addEventListener('click', closeBookingModal);
 document.getElementById('bookingCancel').addEventListener('click', closeBookingModal);
@@ -3188,6 +3264,23 @@ applyLang(currentLang);
 document.querySelectorAll('.currency-switch-group button').forEach(b=>{
   b.classList.toggle('active', b.dataset.currency === currentCurrency);
 });
+// Sync the mobile top bar's dropdown labels to whichever option ended up active above.
+['currencyTopbarMenu', 'langTopbarMenu'].forEach(menuId=>{
+  const activeBtn = document.querySelector(`#${menuId} button.active`);
+  const label = document.getElementById(menuId.replace('Menu', 'Label'));
+  if(activeBtn && label) label.textContent = activeBtn.textContent;
+});
+
+// Quick Booking widget: default both pickup and return location to the agency
+// office (matches the reference layout the client asked to match).
+(function setQuickBookingDefaults(){
+  const officeIndex = LOCATIONS.findIndex(l => l.label.includes('Agency Office'));
+  if(officeIndex === -1) return;
+  const qbLoc = document.getElementById('qbLocation');
+  const qbLocReturn = document.getElementById('qbLocationReturn');
+  if(qbLoc) qbLoc.value = String(officeIndex);
+  if(qbLocReturn) qbLocReturn.value = String(officeIndex);
+})();
 
 // Load the shared availability list from the backend, then re-render with real data
 // once it arrives (the page still works instantly off local/no data while this resolves).
