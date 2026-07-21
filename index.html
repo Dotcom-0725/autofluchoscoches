@@ -214,14 +214,6 @@ h2.section-title{
 .btn-outline:hover{border-color:var(--blue-400)}
 .btn-block{width:100%;justify-content:center}
 .ico-wa{width:18px;height:18px;fill:currentColor;flex:none}
-.car-actions{display:flex;gap:8px}
-.car-actions .btn-primary{flex:1}
-.car-email-btn{
-  flex:none;width:46px;height:46px;padding:0;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
-  background:var(--navy-800);border:1.5px solid var(--card-border);color:var(--ink);
-}
-.car-email-btn:hover{border-color:var(--blue-400);color:var(--blue-500)}
 
 /* ---------- Header ----------
    sticky (not fixed): on mobile the header sits right after the black
@@ -384,6 +376,12 @@ header{
 .qb-submit{flex:0 0 auto;padding:12px 32px;white-space:nowrap}
 .qb-field-pair{display:flex;gap:10px;flex:1.4;min-width:220px}
 .qb-field-pair .qb-field{min-width:0}
+.qb-error{
+  display:none;width:100%;color:#c0273a;font-size:.8rem;font-weight:600;
+  background:rgba(230,57,80,.1);border:1px solid rgba(230,57,80,.3);
+  border-radius:10px;padding:9px 12px;
+}
+.qb-error.show{display:block}
 @media (max-width:760px){
   .hero{padding:36px 0}
   .quick-booking{flex-direction:column;align-items:stretch}
@@ -697,6 +695,13 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
   font-size:.78rem;text-align:center;margin-top:14px;
   background:var(--navy-700);border-radius:10px;padding:10px 12px;
 }
+.confirm-success-box{
+  background:rgba(18,161,80,.1);border:1px solid rgba(18,161,80,.3);color:#0d7a3f;
+  border-radius:12px;padding:14px 16px;margin:14px 0;font-size:.85rem;line-height:1.55;
+}
+.confirm-success-box p{margin:0 0 8px}
+.confirm-success-box p:last-child{margin-bottom:0}
+.confirm-success-box .confirm-thanks{font-weight:700;margin-top:10px}
 
 /* ---------- RTL specific ---------- */
 html[dir="rtl"] .car-offer{inset-inline-start:auto;inset-inline-end:10px}
@@ -831,6 +836,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
           <option value="economy" data-i18n="filter_economy">Economy</option>
         </select>
       </div>
+      <p class="qb-error" id="qbError" data-i18n="min_rental_error">The minimum car rental period is 3 days.</p>
       <button type="submit" class="btn btn-blue qb-submit" data-i18n="qb_search_btn">Search</button>
     </form>
   </div>
@@ -1415,6 +1421,13 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
   <div class="modal-box">
     <button class="modal-close" id="confirmClose" aria-label="Close">✕</button>
     <h3 data-i18n="confirm_title">Booking Confirmed!</h3>
+    <div class="confirm-success-box">
+      <p>✅ <span data-i18n="confirm_success_line1">Your booking request has been received successfully.</span></p>
+      <p data-i18n="confirm_success_line2">Your request will be reviewed, and Auto Fluchos Coches will contact you within 24 hours to finalize the confirmation.</p>
+      <p>✅ <span data-i18n="confirm_success_line3">Once you receive the confirmation message from us, your booking is 100% confirmed.</span></p>
+      <p data-i18n="confirm_success_line4">The confirmation will be sent via the contact method you choose below (Email, WhatsApp, or other).</p>
+      <p class="confirm-thanks" data-i18n="confirm_success_thanks">Thank you for choosing Auto Fluchos Coches.</p>
+    </div>
     <p data-i18n="confirm_text">Your booking PDF has been downloaded. Choose how you want to send it to us:</p>
     <div class="modal-actions" style="flex-direction:column">
       <a class="btn btn-blue btn-block" id="confirmEmailBtn" href="#" data-i18n="confirm_email_btn">📧 Send via Email</a>
@@ -1461,6 +1474,7 @@ const DEPOSITS = [
   { amount: 0, surcharge: 10, refundable: false },
 ];
 const CAR_WASH_FEE = 5; // mandatory on the original site
+const MIN_RENTAL_DAYS = 3;
 
 /* Business hours: bookings outside this window are still allowed, but each
    pickup/return time that falls outside it adds a flat surcharge and shows
@@ -1678,7 +1692,7 @@ const I18N = {
     qb_pickup_date_label:'Pickup Date', qb_pickup_time_label:'Pickup Time',
     qb_return_date_label:'Return Date', qb_return_time_label:'Return Time',
     qb_category_label:'Category', qb_search_btn:'Search',
-    per_day:'/ Day', book_now:'BOOK NOW', seats:'Seats', doors:'Doors', car_email_aria:'Email us about this car', unlimited_mileage:'Unlimited mileage',
+    per_day:'/ Day', book_now:'BOOK NOW', seats:'Seats', doors:'Doors', unlimited_mileage:'Unlimited mileage',
     gear_manual:'Manual', gear_auto:'Automatic', fuel_essence:'Essence', fuel_diesel:'Diesel', fuel_hybride:'Hybride',
     banner1_title:'Easier & Faster Bookings', banner1_sub:"Search. Book. Drive. It's that simple.",
     why_eyebrow:'Our advantages', why_title:'Why choose Auto Fluchos Coches',
@@ -1738,6 +1752,7 @@ const I18N = {
     deposit_no_deposit:'No deposit', deposit_non_refundable:'non-refundable',
     hours_warning:'Outside business hours (08:00–20:00): a €10 surcharge has been added per pickup/return outside these hours.',
     pickup_delay_error:'For a booking today, the earliest pickup time is 2 hours from now.',
+    min_rental_error:'The minimum car rental period is 3 days.',
     sold_out_error:'Sorry, this vehicle was just booked by someone else. Please pick another car.',
     modal_address_label:'Address', modal_extra_info_label:'Extra Information',
     modal_resources_title:'Resources', res_second_driver:'Second driver', res_baby_0_15:'Baby seat Birth to 15 Months',
@@ -1750,6 +1765,11 @@ const I18N = {
     stock_available_label:'available',
     required_field:'Please fill in all required fields.',
     confirm_title:'Booking Confirmed!', confirm_text:'Your booking PDF has been downloaded. Choose how you want to send it to us:',
+    confirm_success_line1:'Your booking request has been received successfully.',
+    confirm_success_line2:'Your request will be reviewed, and Auto Fluchos Coches will contact you within 24 hours to finalize the confirmation.',
+    confirm_success_line3:'Once you receive the confirmation message from us, your booking is 100% confirmed.',
+    confirm_success_line4:'The confirmation will be sent via the contact method you choose below (Email, WhatsApp, or other).',
+    confirm_success_thanks:'Thank you for choosing Auto Fluchos Coches.',
     confirm_email_btn:'📧 Send via Email', confirm_whatsapp_btn:'Send via WhatsApp',
     confirm_attach_note:'Please attach the downloaded PDF file to your message before sending.',
     confirm_close:'Close',
@@ -1788,7 +1808,7 @@ const I18N = {
     qb_pickup_date_label:'Date de départ', qb_pickup_time_label:'Heure de départ',
     qb_return_date_label:'Date de retour', qb_return_time_label:'Heure de retour',
     qb_category_label:'Catégorie', qb_search_btn:'Rechercher',
-    per_day:'/ Jour', book_now:'RÉSERVER', seats:'Places', doors:'Portes', car_email_aria:'Nous contacter par email pour cette voiture', unlimited_mileage:'Kilométrage illimité',
+    per_day:'/ Jour', book_now:'RÉSERVER', seats:'Places', doors:'Portes', unlimited_mileage:'Kilométrage illimité',
     gear_manual:'Manuelle', gear_auto:'Automatique', fuel_essence:'Essence', fuel_diesel:'Diesel', fuel_hybride:'Hybride',
     banner1_title:'Réservations plus faciles et rapides', banner1_sub:"Cherchez. Réservez. Roulez. C'est aussi simple que ça.",
     why_eyebrow:'Nos atouts', why_title:'Pourquoi choisir Auto Fluchos Coches',
@@ -1848,6 +1868,7 @@ const I18N = {
     deposit_no_deposit:'Sans caution', deposit_non_refundable:'non remboursable',
     hours_warning:'En dehors des heures d\'ouverture (08h00–20h00) : un supplément de 10€ a été ajouté par prise en charge/retour hors de ces heures.',
     pickup_delay_error:'Pour une réservation aujourd\'hui, l\'heure de prise en charge la plus proche est dans 2 heures.',
+    min_rental_error:'La durée minimale de location est de 3 jours.',
     sold_out_error:'Désolé, ce véhicule vient d\'être réservé par quelqu\'un d\'autre. Veuillez choisir une autre voiture.',
     modal_address_label:'Adresse', modal_extra_info_label:'Informations complémentaires',
     modal_resources_title:'Ressources', res_second_driver:'Deuxième conducteur', res_baby_0_15:'Siège bébé Naissance à 15 mois',
@@ -1860,6 +1881,11 @@ const I18N = {
     stock_available_label:'disponibles',
     required_field:'Merci de remplir tous les champs obligatoires.',
     confirm_title:'Réservation confirmée !', confirm_text:'Votre PDF de réservation a été téléchargé. Choisissez comment nous l\'envoyer :',
+    confirm_success_line1:'Votre demande de réservation a été bien reçue.',
+    confirm_success_line2:'Votre demande sera examinée, et Auto Fluchos Coches vous contactera sous 24 heures pour finaliser la confirmation.',
+    confirm_success_line3:'Une fois que vous recevez notre message de confirmation, votre réservation est confirmée à 100%.',
+    confirm_success_line4:'La confirmation vous sera envoyée via le moyen de contact que vous choisissez ci-dessous (Email, WhatsApp, ou autre).',
+    confirm_success_thanks:'Merci d\'avoir choisi Auto Fluchos Coches.',
     confirm_email_btn:'📧 Envoyer par Email', confirm_whatsapp_btn:'Envoyer par WhatsApp',
     confirm_attach_note:'Merci de joindre le fichier PDF téléchargé à votre message avant de l\'envoyer.',
     confirm_close:'Fermer',
@@ -1898,7 +1924,7 @@ const I18N = {
     qb_pickup_date_label:'Fecha de salida', qb_pickup_time_label:'Hora de salida',
     qb_return_date_label:'Fecha de devolución', qb_return_time_label:'Hora de devolución',
     qb_category_label:'Categoría', qb_search_btn:'Buscar',
-    per_day:'/ Día', book_now:'RESERVAR', seats:'Plazas', doors:'Puertas', car_email_aria:'Contáctenos por email sobre este coche', unlimited_mileage:'Kilometraje ilimitado',
+    per_day:'/ Día', book_now:'RESERVAR', seats:'Plazas', doors:'Puertas', unlimited_mileage:'Kilometraje ilimitado',
     gear_manual:'Manual', gear_auto:'Automático', fuel_essence:'Gasolina', fuel_diesel:'Diésel', fuel_hybride:'Híbrido',
     banner1_title:'Reservas más fáciles y rápidas', banner1_sub:'Busque. Reserve. Conduzca. Así de sencillo.',
     why_eyebrow:'Nuestras ventajas', why_title:'Por qué elegir Auto Fluchos Coches',
@@ -1959,6 +1985,7 @@ const I18N = {
     deposit_no_deposit:'Sin depósito', deposit_non_refundable:'no reembolsable',
     hours_warning:'Fuera del horario comercial (08:00–20:00): se ha añadido un recargo de 10€ por cada recogida/devolución fuera de este horario.',
     pickup_delay_error:'Para una reserva de hoy, la hora de recogida más próxima es dentro de 2 horas.',
+    min_rental_error:'La duración mínima del alquiler es de 3 días.',
     sold_out_error:'Lo sentimos, este vehículo acaba de ser reservado por otra persona. Elija otro coche.',
     modal_address_label:'Dirección', modal_extra_info_label:'Información adicional',
     modal_resources_title:'Recursos', res_second_driver:'Segundo conductor', res_baby_0_15:'Silla bebé Nacimiento a 15 meses',
@@ -1971,6 +1998,11 @@ const I18N = {
     stock_available_label:'disponibles',
     required_field:'Por favor complete todos los campos obligatorios.',
     confirm_title:'¡Reserva confirmada!', confirm_text:'Su PDF de reserva se ha descargado. Elija cómo enviárnoslo:',
+    confirm_success_line1:'Su solicitud de reserva se ha recibido correctamente.',
+    confirm_success_line2:'Su solicitud será revisada, y Auto Fluchos Coches se pondrá en contacto con usted en un plazo de 24 horas para finalizar la confirmación.',
+    confirm_success_line3:'Una vez que reciba nuestro mensaje de confirmación, su reserva estará confirmada al 100%.',
+    confirm_success_line4:'La confirmación se enviará por el medio de contacto que elija a continuación (Email, WhatsApp u otro).',
+    confirm_success_thanks:'Gracias por elegir Auto Fluchos Coches.',
     confirm_email_btn:'📧 Enviar por Email', confirm_whatsapp_btn:'Enviar por WhatsApp',
     confirm_attach_note:'Por favor adjunte el archivo PDF descargado a su mensaje antes de enviarlo.',
     confirm_close:'Cerrar',
@@ -2009,7 +2041,7 @@ const I18N = {
     qb_pickup_date_label:'تاريخ الاستلام', qb_pickup_time_label:'وقت الاستلام',
     qb_return_date_label:'تاريخ الإرجاع', qb_return_time_label:'وقت الإرجاع',
     qb_category_label:'الفئة', qb_search_btn:'بحث',
-    per_day:'/ اليوم', book_now:'احجز الآن', seats:'مقاعد', doors:'أبواب', car_email_aria:'راسلنا عبر البريد الإلكتروني بخصوص هذه السيارة', unlimited_mileage:'كيلومترية مجانية غير محدودة',
+    per_day:'/ اليوم', book_now:'احجز الآن', seats:'مقاعد', doors:'أبواب', unlimited_mileage:'كيلومترية مجانية غير محدودة',
     gear_manual:'يدوي', gear_auto:'أوتوماتيك', fuel_essence:'بنزين', fuel_diesel:'ديزل', fuel_hybride:'هجين',
     banner1_title:'حجوزات أسهل وأسرع', banner1_sub:'ابحث. احجز. قُد سيارتك. بكل بساطة.',
     why_eyebrow:'مميزاتنا', why_title:'لماذا تختار Auto Fluchos Coches',
@@ -2070,6 +2102,7 @@ const I18N = {
     deposit_no_deposit:'بدون ضمان', deposit_non_refundable:'غير قابل للاسترجاع',
     hours_warning:'خارج ساعات العمل (08:00–20:00): تمت إضافة 10€ لكل عملية استلام/إرجاع خارج هذه الساعات.',
     pickup_delay_error:'بالنسبة لحجز اليوم، أقرب وقت للاستلام هو بعد ساعتين من الآن.',
+    min_rental_error:'الحد الأدنى لمدة كراء السيارة هو 3 أيام.',
     sold_out_error:'عذراً، تم حجز هذه السيارة للتو من طرف شخص آخر. يرجى اختيار سيارة أخرى.',
     modal_address_label:'العنوان', modal_extra_info_label:'معلومات إضافية',
     modal_resources_title:'إضافات', res_second_driver:'سائق ثاني', res_baby_0_15:'مقعد طفل من الولادة إلى 15 شهر',
@@ -2082,6 +2115,11 @@ const I18N = {
     stock_available_label:'متوفرة',
     required_field:'يرجى ملء جميع الحقول المطلوبة.',
     confirm_title:'تم تأكيد الحجز!', confirm_text:'تم تحميل ملف PDF الخاص بحجزك. اختر طريقة إرساله لنا:',
+    confirm_success_line1:'تم استلام طلب حجزكم بنجاح.',
+    confirm_success_line2:'سيتم مراجعة طلبكم، وستتواصل معكم شركة Auto Fluchos Coches خلال 24 ساعة لتأكيد الحجز بشكل نهائي.',
+    confirm_success_line3:'بعد استلام رسالة التأكيد من الشركة، يصبح حجزكم مؤكداً بنسبة 100%.',
+    confirm_success_line4:'سيتم إرسال التأكيد عبر وسيلة التواصل التي اخترتموها أدناه (البريد الإلكتروني، واتساب، أو غيرها).',
+    confirm_success_thanks:'شكراً لاختياركم Auto Fluchos Coches.',
     confirm_email_btn:'📧 إرسال عبر البريد الإلكتروني', confirm_whatsapp_btn:'إرسال عبر واتساب',
     confirm_attach_note:'يرجى إرفاق ملف PDF الذي تم تحميله برسالتك قبل الإرسال.',
     confirm_close:'إغلاق',
@@ -2315,10 +2353,7 @@ function renderFleet(dict, cat){
         </div>
         ${isBooked
           ? `<button type="button" class="btn btn-block" disabled>🚫 ${dict.unavailable_btn}</button>`
-          : `<div class="car-actions">
-              <button type="button" class="btn btn-primary btn-block" data-book-id="${c.id}"><svg class="ico-wa" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.31.65 4.47 1.78 6.31L4 29l7.86-1.74A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Zm0 21.72c-1.94 0-3.75-.55-5.28-1.5l-.38-.23-4.66 1.03 1.05-4.55-.25-.4A9.63 9.63 0 0 1 5.32 15c0-5.34 4.35-9.68 9.684-9.68S24.688 9.66 24.688 15 21.34 24.72 16.004 24.72Zm5.37-7.26c-.29-.15-1.73-.86-2-.95-.27-.1-.46-.15-.66.15-.2.29-.76.95-.93 1.14-.17.2-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.44-.86-.77-1.44-1.72-1.61-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.48.1-.2.05-.37-.02-.51-.07-.15-.66-1.6-.91-2.19-.24-.58-.48-.5-.66-.51-.17-.01-.37-.01-.56-.01s-.51.07-.78.37c-.27.29-1.02 1-1.02 2.43 0 1.44 1.05 2.83 1.2 3.02.15.2 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.61.7.22 1.34.19 1.84.11.56-.08 1.73-.7 1.98-1.38.24-.68.24-1.26.17-1.38-.07-.13-.26-.2-.55-.35Z"/></svg> ${dict.book_now}</button>
-              <button type="button" class="car-email-btn" data-book-id="${c.id}" aria-label="${dict.car_email_aria}" title="${dict.car_email_aria}">✉️</button>
-            </div>`}
+          : `<button type="button" class="btn btn-blue btn-block" data-book-id="${c.id}">${dict.book_now}</button>`}
       </div>`;
     grid.appendChild(card);
   });
@@ -2335,8 +2370,24 @@ document.getElementById('fleetFilter').addEventListener('click', e=>{
 /* Quick Booking widget in the hero: doesn't book anything itself — it just
    jumps to the fleet section pre-filtered by the chosen category, so a
    visitor picking dates/location up front lands straight on matching cars. */
+function qbRentalDays(){
+  const pickup = document.getElementById('qbPickupDate').value;
+  const ret = document.getElementById('qbReturnDate').value;
+  if(!pickup || !ret) return null;
+  return Math.round((new Date(ret) - new Date(pickup)) / (1000 * 60 * 60 * 24));
+}
+function validateQbDates(){
+  const days = qbRentalDays();
+  const tooShort = days !== null && days < MIN_RENTAL_DAYS;
+  document.getElementById('qbError').classList.toggle('show', tooShort);
+  return !tooShort;
+}
+['qbPickupDate', 'qbReturnDate'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', validateQbDates);
+});
 document.getElementById('quickBookingForm').addEventListener('submit', e=>{
   e.preventDefault();
+  if(!validateQbDates()) return;
   const cat = document.getElementById('qbCategory').value;
   document.querySelectorAll('#fleetFilter button').forEach(b=>{
     b.classList.toggle('active', b.dataset.cat === cat);
@@ -2540,7 +2591,20 @@ async function openBookingModal(carId){
   populateCarSelect(I18N[currentLang]);
   document.getElementById('modalCarSelect').value = activeBookingCar.id;
   refreshPickupMin();
+  setDefaultBookingDates();
   updateTotal();
+}
+// Default the booking form to today (10:00) for pickup and today+3 days (10:00) for
+// return, so the customer immediately sees the 3-day minimum rental period.
+function setDefaultBookingDates(){
+  const pickupInput = document.getElementById('bkPickup');
+  const returnInput = document.getElementById('bkReturn');
+  const today = new Date();
+  today.setHours(10, 0, 0, 0);
+  const returnDate = new Date(today);
+  returnDate.setDate(returnDate.getDate() + MIN_RENTAL_DAYS);
+  pickupInput.value = toDatetimeLocalString(today);
+  returnInput.value = toDatetimeLocalString(returnDate);
 }
 function closeBookingModal(){ bookingOverlay.classList.remove('open'); }
 function closeConfirmModal(){ confirmOverlay.classList.remove('open'); }
@@ -3122,6 +3186,11 @@ bookingForm.addEventListener('submit', async e=>{
     bookingError.classList.add('show');
     return;
   }
+  if(computeDays('bkPickup', 'bkReturn') < MIN_RENTAL_DAYS){
+    bookingError.textContent = dict.min_rental_error;
+    bookingError.classList.add('show');
+    return;
+  }
   bookingError.classList.remove('show');
 
   const licenseYears = document.getElementById('bkLicenseYears').value.trim();
@@ -3249,6 +3318,21 @@ document.querySelectorAll('.currency-switch-group button').forEach(b=>{
   const qbLocReturn = document.getElementById('qbLocationReturn');
   if(qbLoc) qbLoc.value = String(officeIndex);
   if(qbLocReturn) qbLocReturn.value = String(officeIndex);
+})();
+
+// Quick Booking widget: default the pickup date to today and the return date to
+// today + MIN_RENTAL_DAYS, so the customer sees the 3-day minimum rental period
+// straight away (pickup/return time stay at their 10:00 default).
+(function setQuickBookingDefaultDates(){
+  const pad = n => String(n).padStart(2, '0');
+  const toDateStr = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const today = new Date();
+  const returnDate = new Date(today);
+  returnDate.setDate(returnDate.getDate() + MIN_RENTAL_DAYS);
+  const qbPickupDate = document.getElementById('qbPickupDate');
+  const qbReturnDate = document.getElementById('qbReturnDate');
+  if(qbPickupDate){ qbPickupDate.value = toDateStr(today); qbPickupDate.min = toDateStr(today); }
+  if(qbReturnDate) qbReturnDate.value = toDateStr(returnDate);
 })();
 
 // Load the shared availability list from the backend, then re-render with real data
