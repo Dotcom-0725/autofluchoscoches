@@ -141,6 +141,7 @@ tr.dragging{opacity:.4}
 </div>
 
 <div id="app">
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">AUTO FLUCHOS <span style="color:#5b9bff">COCHES</span><small>ADMIN DASHBOARD</small></div>
     <ul class="nav-list" id="navList"></ul>
@@ -152,9 +153,12 @@ tr.dragging{opacity:.4}
   </aside>
   <main>
     <div class="topbar">
-      <div>
-        <h2 id="pageTitle">Dashboard</h2>
-        <div class="sub" id="pageSub"></div>
+      <div class="topbar-title-row">
+        <button type="button" id="sidebarToggle" class="sidebar-toggle-btn" aria-label="Menu">☰</button>
+        <div>
+          <h2 id="pageTitle">Dashboard</h2>
+          <div class="sub" id="pageSub"></div>
+        </div>
       </div>
       <a href="index.html" class="btn btn-outline" target="_blank">View live site ↗</a>
     </div>
