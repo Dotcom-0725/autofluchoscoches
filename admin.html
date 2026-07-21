@@ -64,9 +64,13 @@ input,select,textarea{font-family:inherit;font-size:.85rem}
 .sidebar-footer button:hover{color:#fff}
 
 main{flex:1;min-width:0;padding:28px 34px;max-width:100%}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:10px}
 .topbar h2{margin:0;font-size:1.35rem}
 .topbar .sub{color:var(--ink-dim);font-size:.82rem;margin-top:2px}
+.topbar-title-row{display:flex;align-items:center;gap:12px}
+.sidebar-toggle-btn{display:none;background:none;border:1px solid var(--card-border);color:var(--ink);border-radius:8px;width:38px;height:38px;font-size:1.1rem;align-items:center;justify-content:center;flex:0 0 auto}
+.sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(10,12,16,.5);z-index:150}
+.sidebar-backdrop.open{display:block}
 
 .card{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);box-shadow:var(--shadow)}
 .card + .card{margin-top:20px}
@@ -121,9 +125,10 @@ tr:last-child td{border-bottom:none}
 tr.dragging{opacity:.4}
 .toast{position:fixed;bottom:20px;inset-inline-end:20px;background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:9px;font-size:.82rem;font-weight:600;z-index:900;box-shadow:var(--shadow)}
 @media (max-width:900px){
-  .sidebar{position:fixed;z-index:200;transform:translateX(-100%);transition:transform .2s}
+  .sidebar{position:fixed;z-index:200;top:0;left:0;bottom:0;transform:translateX(-100%);transition:transform .2s}
   .sidebar.open{transform:translateX(0)}
-  main{padding:20px}
+  .sidebar-toggle-btn{display:flex}
+  main{padding:20px;width:100%}
   .field-grid{grid-template-columns:1fr}
 }
 </style>
@@ -334,6 +339,21 @@ document.getElementById('darkModeToggle').addEventListener('click', ()=>{
   applyTheme(current === 'dark' ? 'light' : 'dark');
 });
 
+/* ---------------- Mobile sidebar toggle ---------------- */
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarBackdrop').classList.add('open');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('open');
+}
+document.getElementById('sidebarToggle').addEventListener('click', ()=>{
+  const sidebar = document.getElementById('sidebar');
+  sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+});
+document.getElementById('sidebarBackdrop').addEventListener('click', closeSidebar);
+
 /* ---------------- Sidebar / navigation ---------------- */
 function buildSidebar(){
   const list = document.getElementById('navList');
@@ -358,6 +378,7 @@ const VIEW_TITLES = {
 };
 function navigate(view){
   currentView = view;
+  closeSidebar();
   document.querySelectorAll('#navList button').forEach(b=>b.classList.toggle('active', b.dataset.view === view));
   const [title, sub] = VIEW_TITLES[view];
   document.getElementById('pageTitle').textContent = title;

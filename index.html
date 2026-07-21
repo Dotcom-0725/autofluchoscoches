@@ -18,17 +18,15 @@
   1. Car photos and the hero background (images/*.webp, images/hero-tetouan.webp) are
      AI-generated representative renders — replace each with a real photo (of the agency's
      actual vehicles, and of Tétouan) as soon as available. The logo (images/logo.webp) IS
-     the real logo. .team-photo is still an emoji placeholder — add a real photo there too.
+     the real logo.
   2. Fix the Google Business Profile name: this site says "COCHES", the current Google Maps
      listing says "COOHES" -> both MUST match exactly (NAP consistency = local SEO).
   3. Update the canonical URL if the domain changes.
   4. Replace the Instagram link with the real account.
   5. If you run Meta/Facebook ads, add the Pixel snippet just before </head>.
-  6. "David Jhonson / Manager" in the Team section is placeholder content copied from the
-     original site's template — replace with a real team member or remove the section.
-  7. Testimonials are 2 real Google reviews (Jules Pesci, Pierre Faure), translated from
+  6. Testimonials are 2 real Google reviews (Jules Pesci, Pierre Faure), translated from
      the original French. Update periodically as new reviews come in.
-  8. IMPORTANT — car availability backend: set APPS_SCRIPT_URL (search for it in the
+  7. IMPORTANT — car availability backend: set APPS_SCRIPT_URL (search for it in the
      <script> below) to your deployed Google Apps Script Web App URL, so "Not Available"
      is shared across every visitor instead of just the browser that booked. See
      apps-script.gs.txt in this project for the script and step-by-step deploy guide.
@@ -93,7 +91,7 @@
     "reviewCount": "484",
     "bestRating": "5"
   },
-  "areaServed": ["Tétouan","Tangier","Chefchaouen","Rabat","Casablanca","Marrakech","Agadir"],
+  "areaServed": ["Tétouan","Tangier","Chefchaouen"],
   "sameAs": [
     "https://www.tiktok.com/@auto.fluchos.cars"
   ]
@@ -276,7 +274,7 @@ header{
 .topbar-strip{display:none}
 @media (max-width:1080px){
   .topbar-strip{
-    display:block;background:#0b0d10;color:#fff;font-size:.78rem;position:relative;z-index:120;
+    display:block;background:linear-gradient(135deg,#123a7a,var(--blue-500));color:#fff;font-size:.78rem;position:relative;z-index:120;
   }
   .topbar-strip-inner{
     display:flex;justify-content:space-between;align-items:center;
@@ -332,7 +330,7 @@ header{
 .hero-bg-img{
   width:100%;height:100%;object-fit:cover;
   animation:heroKenBurns 26s ease-in-out infinite alternate;
-  opacity:.6;
+  opacity:1;
 }
 @keyframes heroKenBurns{
   0%{transform:scale(1) translate(0,0)}
@@ -488,21 +486,6 @@ header{
 .testi-avatar{width:42px;height:42px;border-radius:50%;background:var(--navy-700);display:flex;align-items:center;justify-content:center;font-weight:800}
 .testi-who b{display:block;font-size:.9rem}
 .testi-who span{font-size:.78rem;color:var(--ink-dim)}
-
-/* ---------- Team ---------- */
-.team-wrap{display:flex;justify-content:center}
-.team-card{
-  background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);
-  padding:30px;text-align:center;max-width:280px;
-}
-.team-photo{
-  width:96px;height:96px;border-radius:50%;margin:0 auto 16px;
-  background:linear-gradient(135deg,var(--navy-600),var(--navy-800));
-  display:flex;align-items:center;justify-content:center;font-size:2.4rem;
-}
-/* TODO: replace .team-photo with a real <img src="team-member.jpg" alt="..."> */
-.team-card h3{font-size:1.05rem;margin-bottom:4px}
-.team-card span{color:var(--blue-400);font-weight:700;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase}
 
 /* ---------- FAQ ---------- */
 .faq-item{
@@ -850,7 +833,6 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
   <div class="container">
     <div class="item"><b>5.0 / 5 ⭐</b><span data-i18n="trust_google">Google rating (484 reviews)</span></div>
     <div class="item"><b data-i18n="trust_open">Open 24/7</b></div>
-    <div class="item"><b data-i18n="trust_deposit">$300 / $500</b><span data-i18n="trust_deposit_sub">Reservation guarantee</span></div>
     <div class="item"><b data-i18n="trust_age">25 years</b><span data-i18n="trust_age_sub">Minimum driver age</span></div>
   </div>
 </div>
@@ -979,15 +961,11 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
 <section style="background:var(--navy-800)">
   <div class="container">
     <div class="section-eyebrow" data-i18n="cities_eyebrow">Service area</div>
-    <h2 class="section-title" data-i18n="cities_title">We travel with you across Northern &amp; Central Morocco</h2>
+    <h2 class="section-title" data-i18n="cities_title">We travel with you across Northern Morocco</h2>
     <div class="cities-wrap">
       <span class="city-chip">📍 Tétouan</span>
       <span class="city-chip">📍 Tangier</span>
       <span class="city-chip">📍 Chefchaouen</span>
-      <span class="city-chip">📍 Rabat</span>
-      <span class="city-chip">📍 Casablanca</span>
-      <span class="city-chip">📍 Marrakech</span>
-      <span class="city-chip">📍 Agadir</span>
     </div>
   </div>
 </section>
@@ -1029,21 +1007,6 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
     </div>
   </div>
 </div>
-
-<!-- ================= TEAM ================= -->
-<section style="background:var(--navy-800)">
-  <div class="container">
-    <div class="section-eyebrow" data-i18n="team_eyebrow">Our expert people</div>
-    <h2 class="section-title" data-i18n="team_title">Meet Our Professional Team Members</h2>
-    <div class="team-wrap">
-      <div class="team-card">
-        <div class="team-photo">👤</div>
-        <h3>David Jhonson</h3>
-        <span data-i18n="team_role">Manager</span>
-      </div>
-    </div>
-  </div>
-</section>
 
 <!-- ================= FAQ ================= -->
 <section id="faq">
@@ -1694,7 +1657,6 @@ const I18N = {
     feat_easier:'Easier & Faster Bookings', feat_pickup:'Too Many Pickup Locations',
     hero_card_sub:'Call anytime',
     trust_google:'Google rating (484 reviews)', trust_open:'Open 24/7',
-    trust_deposit:'€500 or €0+10€/day', trust_deposit_sub:'Reservation guarantee',
     trust_age:'25 years', trust_age_sub:'Minimum driver age',
     fleet_eyebrow:"Checkout our new cars", fleet_title:"Cars We're Offering for Rentals",
     filter_all:'All Cars', filter_petrol_hybrid:'Petrol &amp; Hybrid', filter_diesel:'Diesel', filter_manual:'Manual', filter_automatic:'Automatic', filter_suv:'SUV', filter_family:'7 Seats', filter_luxury:'Luxury', filter_economy:'Economy',
@@ -1721,7 +1683,7 @@ const I18N = {
     why4_title:'Comprehensive insurance options',
     why5_title:'24/7 customer support',
     why6_title:'Fast and easy booking process',
-    cities_eyebrow:'Service area', cities_title:'We travel with you across Northern & Central Morocco',
+    cities_eyebrow:'Service area', cities_title:'We travel with you across Northern Morocco',
     testi_eyebrow:'Gallery', testi_title:'Trusted & Reliable Car Rentals',
     testi_sub:'⭐ 5.0/5 — 484 reviews on Google',
     testi1:'"Very good car rental experience. The vehicle was clean and comfortable! Pick-up and return were quick and easy. The owner was available, professional, friendly and responsive throughout the rental. I recommend this rental without hesitation and will happily come back."',
@@ -1730,7 +1692,6 @@ const I18N = {
     testi2_role:'Google review',
     banner2_title:'Save Time & Money with Top Rent Car Service in Town',
     cta_discover:'Discover More', cta_book_car:'Book Your Car',
-    team_eyebrow:'Our expert people', team_title:'Meet Our Professional Team Members', team_role:'Manager',
     faq_eyebrow:'Frequently asked questions', faq_title:'Question & Answers',
     faq_items:[
       ['What guarantees do you require for car reservations?','A refundable €500 deposit (cash or bank transfer, returned after inspection), or no deposit with a non-refundable €10/day surcharge. Please contact us via WhatsApp for further inquiries.'],
@@ -1806,7 +1767,6 @@ const I18N = {
     feat_easier:'Réservations plus faciles et rapides', feat_pickup:'De nombreux points de retrait',
     hero_card_sub:'Appelez à tout moment',
     trust_google:'Note Google (484 avis)', trust_open:'Ouvert 24h/24',
-    trust_deposit:'500€ ou 0€+10€/j', trust_deposit_sub:'Garantie de réservation',
     trust_age:'25 ans', trust_age_sub:'Âge minimum du conducteur',
     fleet_eyebrow:'Découvrez nos nouvelles voitures', fleet_title:'Les voitures que nous proposons à la location',
     filter_all:'Toutes les voitures', filter_petrol_hybrid:'Essence &amp; Hybride', filter_diesel:'Diesel', filter_manual:'Manuelle', filter_automatic:'Automatique', filter_suv:'SUV', filter_family:'7 Places', filter_luxury:'Luxe', filter_economy:'Économique',
@@ -1833,7 +1793,7 @@ const I18N = {
     why4_title:"Options d'assurance complètes",
     why5_title:'Support client 24h/24',
     why6_title:'Processus de réservation rapide et simple',
-    cities_eyebrow:'Zone de service', cities_title:'Nous vous accompagnons dans tout le Nord et le Centre du Maroc',
+    cities_eyebrow:'Zone de service', cities_title:'Nous vous accompagnons dans le Nord du Maroc',
     testi_eyebrow:'Galerie', testi_title:'Location de voitures fiable et de confiance',
     testi_sub:'⭐ 5.0/5 — 484 avis sur Google',
     testi1:"« Très bonne expérience de location de voiture. Le véhicule était propre, confortable ! La prise en charge et le retour se sont faits facilement et rapidement. Le propriétaire a été disponible, professionnel, agréable et réactif tout au long de la location. Je recommande sans hésitation cette location et je reviendrai avec plaisir. »",
@@ -1842,7 +1802,6 @@ const I18N = {
     testi2_role:'Avis Google',
     banner2_title:"Gagnez du temps et de l'argent avec le meilleur service de location de voiture de la ville",
     cta_discover:'En savoir plus', cta_book_car:'Réservez votre voiture',
-    team_eyebrow:'Nos experts', team_title:'Rencontrez notre équipe professionnelle', team_role:'Gérant',
     faq_eyebrow:'Questions fréquentes', faq_title:'Questions & Réponses',
     faq_items:[
       ['Quelles garanties demandez-vous pour les réservations de voiture ?','Une caution remboursable de 500€ (espèces ou virement bancaire, restituée après inspection), ou sans caution avec un supplément non remboursable de 10€/jour. Contactez-nous sur WhatsApp pour plus de renseignements.'],
@@ -1918,7 +1877,6 @@ const I18N = {
     feat_easier:'Reservas más fáciles y rápidas', feat_pickup:'Muchos puntos de recogida',
     hero_card_sub:'Llame en cualquier momento',
     trust_google:'Valoración Google (484 reseñas)', trust_open:'Abierto 24h',
-    trust_deposit:'500€ o 0€+10€/día', trust_deposit_sub:'Garantía de reserva',
     trust_age:'25 años', trust_age_sub:'Edad mínima del conductor',
     fleet_eyebrow:'Descubra nuestros coches nuevos', fleet_title:'Coches que ofrecemos en alquiler',
     filter_all:'Todos los coches', filter_petrol_hybrid:'Gasolina e Híbrido', filter_diesel:'Diésel', filter_manual:'Manual', filter_automatic:'Automático', filter_suv:'SUV', filter_family:'7 Plazas', filter_luxury:'Lujo', filter_economy:'Económico',
@@ -1945,7 +1903,7 @@ const I18N = {
     why4_title:'Opciones de seguro completas',
     why5_title:'Atención al cliente 24/7',
     why6_title:'Proceso de reserva rápido y sencillo',
-    cities_eyebrow:'Zona de servicio', cities_title:'Le acompañamos por todo el norte y centro de Marruecos',
+    cities_eyebrow:'Zona de servicio', cities_title:'Le acompañamos por todo el norte de Marruecos',
     testi_eyebrow:'Galería', testi_title:'Alquiler de coches fiable y de confianza',
     testi_sub:'⭐ 5.0/5 — 484 reseñas en Google',
     testi1:'"Muy buena experiencia de alquiler de coche. ¡El vehículo estaba limpio y cómodo! La recogida y la devolución fueron rápidas y sencillas. El propietario estuvo disponible, profesional, amable y receptivo durante todo el alquiler. Recomiendo este alquiler sin dudarlo y volveré con gusto."',
@@ -2030,7 +1988,6 @@ const I18N = {
     feat_easier:'حجوزات أسهل وأسرع', feat_pickup:'نقط استلام متعددة',
     hero_card_sub:'اتصل بنا في أي وقت',
     trust_google:'تقييم غوغل (484 تقييم)', trust_open:'مفتوح 24/24',
-    trust_deposit:'500€ أو 0€+10€/يوم', trust_deposit_sub:'ضمان الحجز',
     trust_age:'25 سنة', trust_age_sub:'السن الأدنى للسائق',
     fleet_eyebrow:'اكتشف سياراتنا الجديدة', fleet_title:'السيارات المتوفرة للكراء',
     filter_all:'كل السيارات', filter_petrol_hybrid:'بنزين وهجين', filter_diesel:'ديزل', filter_manual:'يدوي', filter_automatic:'أوتوماتيكي', filter_suv:'SUV (دفع رباعي)', filter_family:'7 مقاعد', filter_luxury:'فاخرة', filter_economy:'اقتصادية',
@@ -2057,7 +2014,7 @@ const I18N = {
     why4_title:'خيارات تأمين شاملة',
     why5_title:'دعم للزبناء على مدار الساعة',
     why6_title:'إجراءات حجز سريعة وسهلة',
-    cities_eyebrow:'منطقة الخدمة', cities_title:'نرافقك في شمال ووسط المغرب',
+    cities_eyebrow:'منطقة الخدمة', cities_title:'نرافقك في شمال المغرب',
     testi_eyebrow:'المعرض', testi_title:'كراء سيارات موثوق وذو مصداقية',
     testi_sub:'⭐ 5.0/5 — 484 تقييم على غوغل',
     testi1:'"تجربة كراء سيارة ممتازة جداً. كانت السيارة نظيفة ومريحة! تم الاستلام والإرجاع بسهولة وسرعة. كان صاحب الوكالة متوفراً، محترفاً، لطيفاً ومتجاوباً طوال فترة الكراء. أنصح بهذا الكراء بدون تردد وسأعود بكل سرور."',
