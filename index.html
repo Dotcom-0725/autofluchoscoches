@@ -22,11 +22,10 @@
   2. Fix the Google Business Profile name: this site says "COCHES", the current Google Maps
      listing says "COOHES" -> both MUST match exactly (NAP consistency = local SEO).
   3. Update the canonical URL if the domain changes.
-  4. Replace the Instagram link with the real account.
-  5. If you run Meta/Facebook ads, add the Pixel snippet just before </head>.
-  6. Testimonials are 2 real Google reviews (Jules Pesci, Pierre Faure), translated from
+  4. If you run Meta/Facebook ads, add the Pixel snippet just before </head>.
+  5. Testimonials are 2 real Google reviews (Jules Pesci, Pierre Faure), translated from
      the original French. Update periodically as new reviews come in.
-  7. IMPORTANT — car availability backend: set APPS_SCRIPT_URL (search for it in the
+  6. IMPORTANT — car availability backend: set APPS_SCRIPT_URL (search for it in the
      <script> below) to your deployed Google Apps Script Web App URL, so "Not Available"
      is shared across every visitor instead of just the browser that booked. See
      apps-script.gs.txt in this project for the script and step-by-step deploy guide.
@@ -93,7 +92,8 @@
   },
   "areaServed": ["Tétouan","Tangier","Chefchaouen"],
   "sameAs": [
-    "https://www.tiktok.com/@auto.fluchos.cars"
+    "https://www.tiktok.com/@auto.fluchos.cars",
+    "https://www.instagram.com/auto_fluchos_coches"
   ]
 }
 </script>
@@ -531,9 +531,14 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
 .footer-grid ul a:hover{color:var(--blue-500)}
 .footer-social{display:flex;gap:10px;margin-top:16px}
 .footer-social a{
-  width:38px;height:38px;border-radius:10px;background:var(--navy-700);
+  width:38px;height:38px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;
+  transition:transform .15s;
 }
+.footer-social a:hover{transform:translateY(-2px)}
+.footer-social a svg{width:20px;height:20px;flex:none}
+.footer-social-tiktok{background:#000}
+.footer-social-ig{background:radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%)}
 /* Always stacked and centered (not just on mobile): the floating WhatsApp
    button is fixed to the bottom-right corner on every screen size, so at max
    scroll it can sit on top of whatever is last in the document. Keeping this
@@ -1091,9 +1096,20 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
           <div class="logo-text">AUTO FLUCHOS <span style="color:var(--blue-400)">COCHES</span></div>
         </div>
         <div class="footer-social">
-          <!-- TODO: replace with the real social media links -->
-          <a href="https://www.tiktok.com/@auto.fluchos.cars" target="_blank" rel="noopener" aria-label="TikTok">🎵</a>
-          <a href="#" target="_blank" rel="noopener" aria-label="Instagram">📷</a>
+          <a class="footer-social-tiktok" href="https://www.tiktok.com/@auto.fluchos.cars" target="_blank" rel="noopener" aria-label="TikTok">
+            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path fill="#25F4EE" transform="translate(-1.2,-1.2)" d="M41.5 17.5c-3 0-5.8-1-8-2.8v14.7c0 7.9-6.4 14.3-14.3 14.3S4.9 37.3 4.9 29.4 11.3 15.1 19.2 15.1c.8 0 1.6.1 2.3.2v7.2a7.4 7.4 0 1 0 5.1 7V.9h7a11.6 11.6 0 0 0 4.9 8.6c1.6 1.1 3.4 1.8 5.3 2v6z"/>
+              <path fill="#FE2C55" transform="translate(1.2,1.2)" d="M41.5 17.5c-3 0-5.8-1-8-2.8v14.7c0 7.9-6.4 14.3-14.3 14.3S4.9 37.3 4.9 29.4 11.3 15.1 19.2 15.1c.8 0 1.6.1 2.3.2v7.2a7.4 7.4 0 1 0 5.1 7V.9h7a11.6 11.6 0 0 0 4.9 8.6c1.6 1.1 3.4 1.8 5.3 2v6z"/>
+              <path fill="#fff" d="M41.5 17.5c-3 0-5.8-1-8-2.8v14.7c0 7.9-6.4 14.3-14.3 14.3S4.9 37.3 4.9 29.4 11.3 15.1 19.2 15.1c.8 0 1.6.1 2.3.2v7.2a7.4 7.4 0 1 0 5.1 7V.9h7a11.6 11.6 0 0 0 4.9 8.6c1.6 1.1 3.4 1.8 5.3 2v6z"/>
+            </svg>
+          </a>
+          <a class="footer-social-ig" href="https://www.instagram.com/auto_fluchos_coches" target="_blank" rel="noopener" aria-label="Instagram">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#fff" stroke-width="1.8" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="5"/>
+              <circle cx="12" cy="12" r="4"/>
+              <circle cx="17.2" cy="6.8" r="1.1" fill="#fff" stroke="none"/>
+            </svg>
+          </a>
         </div>
       </div>
       <div>
