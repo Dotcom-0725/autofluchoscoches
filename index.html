@@ -659,6 +659,12 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
 .modal-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:520px){.modal-grid-2{grid-template-columns:1fr}}
 
+.phone-input-group{display:flex;gap:8px}
+.phone-input-group .phone-country-code{
+  flex:0 0 auto;width:auto;max-width:118px;padding-inline-end:6px;
+}
+.phone-input-group input{flex:1;min-width:0}
+
 .modal-check-row{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
   background:var(--navy-900);border:1px solid var(--card-border);border-radius:10px;
@@ -1174,7 +1180,10 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       <label data-i18n="modal_name_label">Full Name</label>
       <input type="text" id="bkName" required>
       <label data-i18n="modal_phone_label">Phone Number</label>
-      <input type="tel" id="bkPhone" required>
+      <div class="phone-input-group">
+        <select id="bkPhoneCode" class="phone-country-code" aria-label="Country code"></select>
+        <input type="tel" id="bkPhone" required>
+      </div>
 
       <h4 class="modal-section-title" data-i18n="modal_resources_title">Resources</h4>
       <label class="modal-check-row">
@@ -1251,7 +1260,10 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       <label data-i18n="modal_email_label">Email</label>
       <input type="email" id="eqEmail">
       <label data-i18n="modal_phone_label">Phone</label>
-      <input type="tel" id="eqPhone" required>
+      <div class="phone-input-group">
+        <select id="eqPhoneCode" class="phone-country-code" aria-label="Country code"></select>
+        <input type="tel" id="eqPhone" required>
+      </div>
       <label data-i18n="modal_address_label">Address</label>
       <input type="text" id="eqAddress">
 
@@ -1488,6 +1500,29 @@ const OUTSIDE_HOURS_FEE = 10;
 // PDF the client shared). Update here if these numbers ever change.
 const LEGAL_FOOTER_TEXT = 'RC : 29173 - Pattente : 51405048 - ICE : 002803339000014';
 
+// Country codes for the phone fields — Morocco first (default) since that's the
+// agency's country, followed by the other countries customers most commonly book from.
+const COUNTRY_CODES = [
+  { code: '+212', flag: '🇲🇦' }, // Morocco (default)
+  { code: '+33', flag: '🇫🇷' },  // France
+  { code: '+34', flag: '🇪🇸' },  // Spain
+  { code: '+32', flag: '🇧🇪' },  // Belgium
+  { code: '+31', flag: '🇳🇱' },  // Netherlands
+  { code: '+49', flag: '🇩🇪' },  // Germany
+  { code: '+39', flag: '🇮🇹' },  // Italy
+  { code: '+44', flag: '🇬🇧' },  // United Kingdom
+  { code: '+1', flag: '🇺🇸' },   // USA/Canada
+  { code: '+213', flag: '🇩🇿' }, // Algeria
+  { code: '+216', flag: '🇹🇳' }, // Tunisia
+];
+function populatePhoneCodeSelects(){
+  document.querySelectorAll('select.phone-country-code').forEach(sel=>{
+    if(sel.dataset.populated) return;
+    sel.innerHTML = COUNTRY_CODES.map(c => `<option value="${c.code}">${c.flag} ${c.code}</option>`).join('');
+    sel.dataset.populated = '1';
+  });
+}
+populatePhoneCodeSelects();
 function locationOptionLabel(loc, dict){
   return loc.fee > 0 ? `${loc.label} (+€${loc.fee})` : `${loc.label} (€0)`;
 }
@@ -1496,11 +1531,13 @@ function depositOptionLabel(dep, dict){
   return `${dict.deposit_no_deposit} (+€${dep.surcharge}${dict.deposit_per_day}, ${dict.deposit_non_refundable})`;
 }
 function populateLocationAndDepositSelects(dict){
+  const officeIndex = LOCATIONS.findIndex(l => l.label.includes('Agency Office'));
   document.querySelectorAll('select.loc-select').forEach(sel=>{
     const prev = sel.value;
     sel.innerHTML = LOCATIONS.map((loc, i) =>
       `<option value="${i}">${locationOptionLabel(loc, dict)}</option>`).join('');
     if(prev) sel.value = prev;
+    else if(officeIndex !== -1) sel.value = String(officeIndex);
   });
   document.querySelectorAll('select.deposit-select').forEach(sel=>{
     const prev = sel.value;
@@ -2592,7 +2629,19 @@ async function openBookingModal(carId){
   document.getElementById('modalCarSelect').value = activeBookingCar.id;
   refreshPickupMin();
   setDefaultBookingDates();
+  setDefaultBookingLocations();
   updateTotal();
+}
+// bookingForm.reset() above reverts <select> elements to their first option
+// (no `selected` attribute is set on the dynamically generated ones), so the
+// pickup/return location must be re-defaulted to the agency office afterwards.
+function setDefaultBookingLocations(){
+  const officeIndex = LOCATIONS.findIndex(l => l.label.includes('Agency Office'));
+  if(officeIndex === -1) return;
+  const pickupLoc = document.getElementById('bkPickupLoc');
+  const dropoffLoc = document.getElementById('bkDropoffLoc');
+  if(pickupLoc) pickupLoc.value = String(officeIndex);
+  if(dropoffLoc) dropoffLoc.value = String(officeIndex);
 }
 // Default the booking form to today (10:00) for pickup and today+3 days (10:00) for
 // return, so the customer immediately sees the 3-day minimum rental period.
@@ -3171,7 +3220,8 @@ bookingForm.addEventListener('submit', async e=>{
   e.preventDefault();
   const dict = I18N[currentLang];
   const name = document.getElementById('bkName').value.trim();
-  const phone = document.getElementById('bkPhone').value.trim();
+  const bkPhoneNumber = document.getElementById('bkPhone').value.trim();
+  const phone = bkPhoneNumber ? `${document.getElementById('bkPhoneCode').value} ${bkPhoneNumber}` : '';
   const pickup = document.getElementById('bkPickup').value;
   const ret = document.getElementById('bkReturn').value;
   const termsChecked = document.getElementById('bkTerms').checked;
@@ -3261,7 +3311,8 @@ enquiryForm.addEventListener('submit', e=>{
   e.preventDefault();
   const dict = I18N[currentLang];
   const name = document.getElementById('eqName').value.trim();
-  const phone = document.getElementById('eqPhone').value.trim();
+  const eqPhoneNumber = document.getElementById('eqPhone').value.trim();
+  const phone = eqPhoneNumber ? `${document.getElementById('eqPhoneCode').value} ${eqPhoneNumber}` : '';
   const email = document.getElementById('eqEmail').value.trim();
   const address = document.getElementById('eqAddress').value.trim();
   const pickup = document.getElementById('eqPickup').value;
