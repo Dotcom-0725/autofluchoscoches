@@ -99,6 +99,10 @@ tr:last-child td{border-bottom:none}
 .pill-green{background:rgba(18,161,80,.12);color:var(--success)}
 .pill-red{background:rgba(229,72,77,.12);color:var(--danger)}
 .pill-gray{background:rgba(107,114,128,.12);color:var(--ink-dim)}
+.payment-status-select{
+  padding:5px 8px;border-radius:7px;border:1px solid var(--card-border);
+  background:var(--card);color:var(--ink);font-size:.76rem;font-weight:600;
+}
 
 .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
@@ -678,7 +682,7 @@ function renderReservations(){
     <div class="section-note">Manual reservations (phone, office, walk-in) use the same booking engine as the website — inventory updates automatically and overbooking is prevented.</div>
     <div class="card"><div class="table-wrap">
       <table>
-        <thead><tr><th>Ref</th><th>Customer</th><th>Phone</th><th>Vehicle</th><th>Pickup</th><th>Return</th><th>Total</th><th>Source</th><th>Status</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Ref</th><th>Customer</th><th>Phone</th><th>Vehicle</th><th>Pickup</th><th>Return</th><th>Total</th><th>Source</th><th>Status</th><th>Payment</th><th>Actions</th></tr></thead>
         <tbody id="reservationsBody"></tbody>
       </table>
     </div></div>
@@ -686,24 +690,53 @@ function renderReservations(){
   renderReservationsRows();
   document.getElementById('newBookingBtn').addEventListener('click', openManualBookingModal);
 }
+const PAYMENT_STATUS_OPTIONS = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'awaiting_verification', label: 'Awaiting Verification' },
+  { value: 'paid', label: 'Paid' },
+  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'refunded', label: 'Refunded' },
+];
+function paymentMethodLabel(method){
+  return { bank_transfer: 'Bank Transfer', wise: 'Wise', none: '—' }[method] || method || '—';
+}
 function renderReservationsRows(){
   const tbody = document.getElementById('reservationsBody');
   const sorted = [...state.bookings].sort((a,b)=> new Date(a.pickup) - new Date(b.pickup));
   tbody.innerHTML = sorted.map(b=>{
     const st = bookingStatus(b);
+    const paymentStatus = b.paymentStatus || 'pending';
     return `<tr>
       <td>${b.ref||'—'}</td><td>${b.customerName||'—'}</td><td>${b.phone||'—'}</td><td>${b.carName||'—'}</td>
       <td>${fmtDate(b.pickup)}</td><td>${fmtDate(b.ret)}</td><td>${b.total||'—'}</td>
       <td><span class="pill pill-gray">${b.source||'website'}</span></td>
       <td><span class="pill ${st.cls}">${st.label}</span></td>
+      <td>
+        <div style="font-size:.7rem;color:var(--ink-dim);margin-bottom:3px">${paymentMethodLabel(b.paymentMethod)}</div>
+        <select class="payment-status-select" data-ref="${b.ref}" ${b.ref ? '' : 'disabled'}>
+          ${PAYMENT_STATUS_OPTIONS.map(o=> `<option value="${o.value}" ${o.value===paymentStatus?'selected':''}>${o.label}</option>`).join('')}
+        </select>
+      </td>
       <td><button class="btn btn-danger btn-sm" data-cancel="${b.row}">Cancel</button></td>
     </tr>`;
-  }).join('') || `<tr><td colspan="10" class="empty-state">No reservations yet.</td></tr>`;
+  }).join('') || `<tr><td colspan="11" class="empty-state">No reservations yet.</td></tr>`;
   tbody.querySelectorAll('[data-cancel]').forEach(btn => btn.addEventListener('click', async ()=>{
     if(!confirm('Cancel this booking and free up the vehicle?')) return;
     const r = await apiPost({ action: 'cancel', row: btn.dataset.cancel });
     if(r.success){ toast('Booking cancelled'); await refreshAdminData(); renderReservationsRows(); }
     else toast(r.error || 'Failed');
+  }));
+  tbody.querySelectorAll('.payment-status-select').forEach(sel => sel.addEventListener('change', async ()=>{
+    const ref = sel.dataset.ref;
+    const paymentStatus = sel.value;
+    sel.disabled = true;
+    const r = await apiPost({ action: 'adminSetPaymentStatus', ref, paymentStatus });
+    sel.disabled = false;
+    if(r.success){
+      toast(paymentStatus === 'paid' ? 'Marked as paid — confirmation email sent' : 'Payment status updated');
+      await refreshAdminData();
+      renderReservationsRows();
+    } else toast(r.error || 'Failed');
   }));
 }
 function openManualBookingModal(){

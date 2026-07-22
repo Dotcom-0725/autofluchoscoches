@@ -2,13 +2,18 @@
    AUTO FLUCHOS COCHES — Booking engine + Admin Dashboard backend
    (Google Apps Script Web App, backed by a Google Sheet)
 
-   WHAT THIS DOES (v4 — adds the admin dashboard's data layer)
-   - Everything from v3 (stock-aware inventory, overbooking prevention,
-     auto-expiry, seasonal pricing, automatic confirmation email).
-   - Fleet data (the car catalog) now lives in a "Cars" sheet tab instead
-     of being hardcoded in index.html, so the new admin dashboard
-     (admin.html) can actually create/edit/delete/duplicate vehicles.
-   - Single shared admin password (full access) — see ADMIN_ROLES below.
+   WHAT THIS DOES (v5 — adds the payment system)
+   - Everything from v4 (admin dashboard data layer: Cars/Settings/ActivityLog
+     sheets, single shared admin password, stock-aware inventory, overbooking
+     prevention, auto-expiry, seasonal pricing, automatic confirmation email).
+   - Bookings now carry payment_method/payment_status/booking_status (plus an
+     optional customer_email) so the payment step in index.html (Bank Transfer
+     or Wise) and the admin dashboard's payment-status control both read/write
+     the same fields. See `setBookingPayment` (customer-facing) and
+     `adminSetPaymentStatus` (admin dashboard) below.
+   - Fleet data (the car catalog) lives in a "Cars" sheet tab instead of being
+     hardcoded in index.html, so the admin dashboard (admin.html) can actually
+     create/edit/delete/duplicate vehicles.
    - "Settings" sheet stores SEO meta title/description overrides that
      index.html applies at runtime.
    - "ActivityLog" sheet records every mutating admin action (who did
@@ -163,6 +168,46 @@ function doPost(e) {
     return jsonResponse_({ success: true });
   }
 
+  // Customer-initiated: called right after they pick a payment method in the
+  // payment step (Bank Transfer "I've paid" click, or Wise "Pay with Wise"
+  // click). No password — the customer isn't authenticated at this point.
+  if (body.action === 'setBookingPayment') {
+    if (!body.ref) return jsonResponse_({ success: false, error: 'Missing ref' });
+    const row = findBookingRowByRef_(body.ref);
+    if (row === -1) return jsonResponse_({ success: false, error: 'Booking not found' });
+    const sheet = getBookingsSheet_();
+    sheet.getRange(row, 13, 1, 3).setValues([[
+      body.paymentMethod || 'none',
+      body.paymentStatus || 'pending',
+      body.bookingStatus || 'pending_payment',
+    ]]);
+    return jsonResponse_({ success: true });
+  }
+
+  // Admin-only: change a booking's payment status from the dashboard
+  // (Pending / Awaiting Verification / Paid / Cancelled / Refunded).
+  // Marking it Paid auto-confirms the booking and emails the customer.
+  if (body.action === 'adminSetPaymentStatus') {
+    const role = roleForPassword_(body.password);
+    if (!role) return jsonResponse_({ success: false, error: 'Wrong password' });
+    if (!body.ref || !body.paymentStatus) return jsonResponse_({ success: false, error: 'Missing fields' });
+    const row = findBookingRowByRef_(body.ref);
+    if (row === -1) return jsonResponse_({ success: false, error: 'Booking not found' });
+    const sheet = getBookingsSheet_();
+    sheet.getRange(row, 14).setValue(body.paymentStatus);
+    let bookingStatus = sheet.getRange(row, 15).getValue() || 'pending_payment';
+    if (body.paymentStatus === 'paid') {
+      bookingStatus = 'confirmed';
+      sheet.getRange(row, 15).setValue(bookingStatus);
+      sendPaymentConfirmedEmail_(sheet.getRange(row, 1, 1, 15).getValues()[0]);
+    } else if (body.paymentStatus === 'cancelled') {
+      bookingStatus = 'cancelled';
+      sheet.getRange(row, 15).setValue(bookingStatus);
+    }
+    logActivity_(role, 'set_payment_status', body.ref + ' — ' + body.paymentStatus);
+    return jsonResponse_({ success: true });
+  }
+
   // Default action: record a new booking (website checkout OR a manual
   // reservation created from the admin dashboard — same code path, so
   // inventory updates automatically either way).
@@ -177,7 +222,8 @@ function doPost(e) {
     if (currentlyBooked >= stock) {
       return jsonResponse_({ success: false, error: 'sold_out' });
     }
-    getBookingsSheet_().appendRow([
+    const bookingsSheet = getBookingsSheet_();
+    bookingsSheet.appendRow([
       body.carId,
       body.carName || '',
       body.customerName || '',
@@ -189,7 +235,16 @@ function doPost(e) {
       stock,
       body.total || '',
       body.source || 'website',
+      body.email || '',
+      'none',
+      'pending',
+      'pending_payment',
     ]);
+    // Phone numbers start with "+" (country code, e.g. "+212 6..."), which
+    // Google Sheets auto-parses as the start of a formula/number and shows
+    // as "#ERROR!" — force that cell to plain text and rewrite it so it
+    // displays exactly as entered.
+    bookingsSheet.getRange(bookingsSheet.getLastRow(), 4).setNumberFormat('@').setValue(body.phone || '');
     sendBookingEmail_(body);
     if (body.adminPassword) {
       const role = roleForPassword_(body.adminPassword);
@@ -233,9 +288,22 @@ function listActiveBookings_() {
       stock: rows[i][8],
       total: rows[i][9],
       source: rows[i][10] || 'website',
+      email: rows[i][11] || '',
+      paymentMethod: rows[i][12] || 'none',
+      paymentStatus: rows[i][13] || 'pending',
+      bookingStatus: rows[i][14] || 'pending_payment',
     });
   }
   return bookings;
+}
+/* Finds a booking row by its reference code (unique per booking). Returns
+   the 1-indexed sheet row number, or -1 if not found. */
+function findBookingRowByRef_(ref) {
+  const rows = getBookingsSheet_().getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][6] === ref) return i + 1;
+  }
+  return -1;
 }
 
 function listSeasons_() {
@@ -410,12 +478,37 @@ function sendBookingEmail_(body) {
   } catch (e) { /* don't fail the booking over an email quota/error */ }
 }
 
+/* Sent to the CUSTOMER (not the agency) once an admin marks a booking's
+   payment as "Paid" from the dashboard. Silently does nothing if the
+   customer didn't leave an email address (it's an optional field). */
+function sendPaymentConfirmedEmail_(row) {
+  const email = row[11];
+  if (!email) return;
+  try {
+    const ref = row[6];
+    const subject = 'Payment Confirmed - Reservation #' + ref;
+    const lines = [
+      'Good news — your payment has been verified and your booking is now confirmed!',
+      '',
+      'Reservation: ' + ref,
+      'Vehicle: ' + row[1],
+      'Customer: ' + row[2],
+      'Pickup: ' + row[4],
+      'Return: ' + row[5],
+      'Total: ' + row[9],
+      '',
+      'Thank you for choosing Auto Fluchos Coches.',
+    ];
+    MailApp.sendEmail(email, subject, lines.join('\n'));
+  } catch (e) { /* don't fail the status update over an email quota/error */ }
+}
+
 function getBookingsSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(BOOKINGS_SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(BOOKINGS_SHEET_NAME);
-    sheet.appendRow(['car_id', 'car_name', 'customer_name', 'phone', 'pickup_date', 'return_date', 'reference', 'booked_at', 'stock', 'total', 'source']);
+    sheet.appendRow(['car_id', 'car_name', 'customer_name', 'phone', 'pickup_date', 'return_date', 'reference', 'booked_at', 'stock', 'total', 'source', 'customer_email', 'payment_method', 'payment_status', 'booking_status']);
   }
   return sheet;
 }
@@ -464,7 +557,10 @@ function jsonResponse_(obj) {
 
 /* ------------------------------------------------------------
    Manual edits are still fine if you ever prefer them over the dashboard:
-   - Bookings tab: delete a row to free up that car's stock.
+   - Bookings tab: delete a row to free up that car's stock. Columns added
+     for the payment system: customer_email (optional), payment_method
+     (none|bank_transfer|wise), payment_status (pending|awaiting_verification|
+     paid|cancelled|refunded), booking_status (pending_payment|confirmed|cancelled).
    - Seasons tab: name, start_date, end_date, type (percent|fixed), value.
    - Cars tab: id, name, price, seats, gearKey (auto|manual), doors, fuelKey
      (essence|diesel|hybride), body (comma-separated tags e.g. "suv"),

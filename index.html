@@ -196,6 +196,7 @@ h2.section-title{
   white-space:nowrap;
 }
 .btn:hover{transform:translateY(-2px)}
+.btn[hidden]{display:none}
 .btn-primary{
   background:linear-gradient(135deg,#25d366,#1ebe5d);
   color:#fff;
@@ -714,6 +715,19 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
 .confirm-success-box p:last-child{margin-bottom:0}
 .confirm-success-box .confirm-thanks{font-weight:700;margin-top:10px}
 
+/* ---------- Payment step ---------- */
+.payment-panel{display:none;margin-top:18px}
+.payment-panel.active{display:block}
+.bank-detail-row{
+  display:flex;align-items:center;gap:10px;justify-content:space-between;
+  padding:12px 0;border-bottom:1px solid var(--card-border);
+}
+.bank-detail-row:last-of-type{border-bottom:none}
+.bank-detail-label{font-size:.72rem;font-weight:700;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.03em;flex:0 0 auto}
+.bank-detail-value{font-weight:700;flex:1;text-align:end;word-break:break-word}
+.payment-panel .btn-block{margin-top:16px}
+.payment-panel .confirm-success-box{margin-top:16px}
+
 /* ---------- RTL specific ---------- */
 html[dir="rtl"] .car-offer{inset-inline-start:auto;inset-inline-end:10px}
 html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
@@ -1200,6 +1214,8 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
         <select id="bkPhoneCode" class="phone-country-code" aria-label="Country code"></select>
         <input type="tel" id="bkPhone" required>
       </div>
+      <label data-i18n="modal_email_optional_label">Email (optional, for payment confirmation)</label>
+      <input type="email" id="bkEmail">
 
       <h4 class="modal-section-title" data-i18n="modal_resources_title">Resources</h4>
       <label class="modal-check-row">
@@ -1440,6 +1456,51 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
         <div id="adminSeasonsList"></div>
         <p id="adminSeasonsEmpty" data-i18n="admin_no_seasons" style="display:none">No seasonal pricing periods yet.</p>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PAYMENT MODAL ================= -->
+<div class="modal-overlay" id="paymentOverlay">
+  <div class="modal-box">
+    <button class="modal-close" id="paymentClose" aria-label="Close">✕</button>
+    <h3 data-i18n="payment_title">Choose a Payment Method</h3>
+    <p data-i18n="payment_subtitle">Your booking is reserved — complete payment to confirm it.</p>
+
+    <div class="modal-tabs">
+      <button type="button" class="modal-tab active" data-payment-tab="bank_transfer" data-i18n="payment_tab_bank">Bank Transfer</button>
+      <button type="button" class="modal-tab" data-payment-tab="wise" data-i18n="payment_tab_wise">Wise</button>
+    </div>
+
+    <div class="payment-panel active" data-payment-panel="bank_transfer">
+      <div class="bank-detail-row">
+        <span class="bank-detail-label" data-i18n="payment_account_holder">Account Holder</span>
+        <span class="bank-detail-value" id="bankAccountHolder"></span>
+      </div>
+      <div class="bank-detail-row">
+        <span class="bank-detail-label" data-i18n="payment_iban">IBAN</span>
+        <span class="bank-detail-value" id="bankIban"></span>
+        <button type="button" class="btn btn-outline btn-sm" data-copy-target="bankIban" data-i18n="payment_copy">Copy</button>
+      </div>
+      <div class="bank-detail-row">
+        <span class="bank-detail-label" data-i18n="payment_swift">SWIFT/BIC</span>
+        <span class="bank-detail-value" id="bankSwift"></span>
+        <button type="button" class="btn btn-outline btn-sm" data-copy-target="bankSwift" data-i18n="payment_copy">Copy</button>
+      </div>
+      <div class="bank-detail-row">
+        <span class="bank-detail-label" data-i18n="payment_bank_name">Bank</span>
+        <span class="bank-detail-value" id="bankBankName"></span>
+      </div>
+      <button type="button" class="btn btn-blue btn-block" id="bankTransferDoneBtn" data-i18n="payment_transfer_done">I have completed the transfer</button>
+    </div>
+
+    <div class="payment-panel" data-payment-panel="wise">
+      <p data-i18n="payment_wise_intro">Pay securely online with Wise, then come back to this page.</p>
+      <button type="button" class="btn btn-blue btn-block" id="wisePayBtn" data-i18n="payment_pay_wise">Pay with Wise</button>
+      <div class="confirm-success-box" id="wiseSuccessBox" hidden>
+        <p>✅ <span data-i18n="payment_wise_success">Your booking has been received. Payment will be verified shortly.</span></p>
+      </div>
+      <button type="button" class="btn btn-outline btn-block" id="wiseCloseBtn" data-i18n="confirm_close" hidden>Close</button>
     </div>
   </div>
 </div>
@@ -1826,6 +1887,17 @@ const I18N = {
     confirm_email_btn:'📧 Send via Email', confirm_whatsapp_btn:'Send via WhatsApp',
     confirm_attach_note:'Please attach the downloaded PDF file to your message before sending.',
     confirm_close:'Close',
+    payment_title:'Choose a Payment Method', payment_subtitle:'Your booking is reserved — complete payment to confirm it.',
+    payment_tab_bank:'Bank Transfer', payment_tab_wise:'Wise',
+    payment_account_holder:'Account Holder', payment_iban:'IBAN', payment_swift:'SWIFT/BIC', payment_bank_name:'Bank',
+    payment_copy:'Copy', payment_copied:'Copied!',
+    payment_transfer_done:'I have completed the transfer',
+    payment_wise_intro:'Pay securely online with Wise, then come back to this page.',
+    payment_pay_wise:'Pay with Wise',
+    payment_wise_success:'Your booking has been received. Payment will be verified shortly.',
+    payment_method_label:'Payment Method', payment_method_bank_transfer:'Bank Transfer', payment_method_wise:'Wise',
+    payment_confirmation_subject:'Payment Confirmation - Reservation',
+    modal_email_optional_label:'Email (optional, for payment confirmation)',
     pdf_title:'BOOKING CONFIRMATION', pdf_ref:'Booking Reference', pdf_date:'Date',
     pdf_customer:'Customer', pdf_phone:'Phone', pdf_car:'Vehicle', pdf_price:'Price / Day',
     pdf_pickup:'Pick-up Date', pdf_return:'Return Date', pdf_notes:'Notes',
@@ -1942,6 +2014,17 @@ const I18N = {
     confirm_email_btn:'📧 Envoyer par Email', confirm_whatsapp_btn:'Envoyer par WhatsApp',
     confirm_attach_note:'Merci de joindre le fichier PDF téléchargé à votre message avant de l\'envoyer.',
     confirm_close:'Fermer',
+    payment_title:'Choisissez un mode de paiement', payment_subtitle:'Votre réservation est en attente — finalisez le paiement pour la confirmer.',
+    payment_tab_bank:'Virement bancaire', payment_tab_wise:'Wise',
+    payment_account_holder:'Titulaire du compte', payment_iban:'IBAN', payment_swift:'SWIFT/BIC', payment_bank_name:'Banque',
+    payment_copy:'Copier', payment_copied:'Copié !',
+    payment_transfer_done:'J\'ai effectué le virement',
+    payment_wise_intro:'Payez en ligne en toute sécurité avec Wise, puis revenez sur cette page.',
+    payment_pay_wise:'Payer avec Wise',
+    payment_wise_success:'Votre réservation a été reçue. Le paiement sera vérifié sous peu.',
+    payment_method_label:'Mode de paiement', payment_method_bank_transfer:'Virement bancaire', payment_method_wise:'Wise',
+    payment_confirmation_subject:'Confirmation de paiement - Réservation',
+    modal_email_optional_label:'Email (facultatif, pour la confirmation de paiement)',
     pdf_title:'CONFIRMATION DE RÉSERVATION', pdf_ref:'Référence de réservation', pdf_date:'Date',
     pdf_customer:'Client', pdf_phone:'Téléphone', pdf_car:'Véhicule', pdf_price:'Prix / Jour',
     pdf_pickup:'Date de prise en charge', pdf_return:'Date de retour', pdf_notes:'Remarques',
@@ -2059,6 +2142,17 @@ const I18N = {
     confirm_email_btn:'📧 Enviar por Email', confirm_whatsapp_btn:'Enviar por WhatsApp',
     confirm_attach_note:'Por favor adjunte el archivo PDF descargado a su mensaje antes de enviarlo.',
     confirm_close:'Cerrar',
+    payment_title:'Elija un método de pago', payment_subtitle:'Su reserva está pendiente — complete el pago para confirmarla.',
+    payment_tab_bank:'Transferencia bancaria', payment_tab_wise:'Wise',
+    payment_account_holder:'Titular de la cuenta', payment_iban:'IBAN', payment_swift:'SWIFT/BIC', payment_bank_name:'Banco',
+    payment_copy:'Copiar', payment_copied:'¡Copiado!',
+    payment_transfer_done:'He realizado la transferencia',
+    payment_wise_intro:'Pague de forma segura en línea con Wise, luego vuelva a esta página.',
+    payment_pay_wise:'Pagar con Wise',
+    payment_wise_success:'Su reserva ha sido recibida. El pago se verificará en breve.',
+    payment_method_label:'Método de pago', payment_method_bank_transfer:'Transferencia bancaria', payment_method_wise:'Wise',
+    payment_confirmation_subject:'Confirmación de pago - Reserva',
+    modal_email_optional_label:'Email (opcional, para la confirmación de pago)',
     pdf_title:'CONFIRMACIÓN DE RESERVA', pdf_ref:'Referencia de reserva', pdf_date:'Fecha',
     pdf_customer:'Cliente', pdf_phone:'Teléfono', pdf_car:'Vehículo', pdf_price:'Precio / Día',
     pdf_pickup:'Fecha de recogida', pdf_return:'Fecha de devolución', pdf_notes:'Notas',
@@ -2176,6 +2270,17 @@ const I18N = {
     confirm_email_btn:'📧 إرسال عبر البريد الإلكتروني', confirm_whatsapp_btn:'إرسال عبر واتساب',
     confirm_attach_note:'يرجى إرفاق ملف PDF الذي تم تحميله برسالتك قبل الإرسال.',
     confirm_close:'إغلاق',
+    payment_title:'اختر طريقة الدفع', payment_subtitle:'تم حجز طلبكم — أكملوا الدفع لتأكيده.',
+    payment_tab_bank:'تحويل بنكي', payment_tab_wise:'Wise',
+    payment_account_holder:'صاحب الحساب', payment_iban:'IBAN', payment_swift:'SWIFT/BIC', payment_bank_name:'البنك',
+    payment_copy:'نسخ', payment_copied:'تم النسخ!',
+    payment_transfer_done:'لقد أتممت التحويل',
+    payment_wise_intro:'ادفع بأمان عبر الإنترنت باستخدام Wise، ثم عد إلى هذه الصفحة.',
+    payment_pay_wise:'الدفع عبر Wise',
+    payment_wise_success:'تم استلام حجزكم. سيتم التحقق من الدفع قريباً.',
+    payment_method_label:'طريقة الدفع', payment_method_bank_transfer:'تحويل بنكي', payment_method_wise:'Wise',
+    payment_confirmation_subject:'تأكيد الدفع - الحجز',
+    modal_email_optional_label:'البريد الإلكتروني (اختياري، لتأكيد الدفع)',
     pdf_title:'تأكيد الحجز', pdf_ref:'رقم الحجز', pdf_date:'التاريخ',
     pdf_customer:'الزبون', pdf_phone:'الهاتف', pdf_car:'السيارة', pdf_price:'الثمن / اليوم',
     pdf_doc_title:'Reservation', pdf_reservation_label:'Reservation:', pdf_reservation_date_label:'Reservation date:',
@@ -2372,6 +2477,38 @@ async function addBookedCar(carId, details){
     return data;
   } catch(e){
     return { success: false, error: 'network' }; // offline or backend unreachable — booking wasn't recorded, don't proceed
+  }
+}
+
+/* ---------------------------------------------------------------
+   PAYMENT — configuration-driven so a new method (Stripe, PayPal, ...)
+   can be added later just by adding an entry here + a matching panel
+   in #paymentOverlay, without touching the booking flow itself.
+--------------------------------------------------------------- */
+const PAYMENT_METHODS = {
+  bank_transfer: {
+    enabled: true,
+    accountHolder: 'NADIR ES SGHIAR',
+    iban: 'BE20 9678 0637 9756',
+    swift: 'TRWIBEB1XXX',
+    bankName: 'Wise Belgium',
+  },
+  wise: {
+    enabled: true,
+    payLink: 'https://wise.com/pay/me/nadire59',
+  },
+};
+async function setBookingPayment(ref, paymentMethod, paymentStatus, bookingStatus){
+  if(APPS_SCRIPT_URL.startsWith('PASTE_')) return { success: true };
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action: 'setBookingPayment', ref, paymentMethod, paymentStatus, bookingStatus }),
+    });
+    return await res.json();
+  } catch(e){
+    return { success: false, error: 'network' };
   }
 }
 
@@ -3238,6 +3375,7 @@ bookingForm.addEventListener('submit', async e=>{
   const name = document.getElementById('bkName').value.trim();
   const bkPhoneNumber = document.getElementById('bkPhone').value.trim();
   const phone = bkPhoneNumber ? `${document.getElementById('bkPhoneCode').value} ${bkPhoneNumber}` : '';
+  const email = document.getElementById('bkEmail').value.trim();
   const pickup = document.getElementById('bkPickup').value;
   const ret = document.getElementById('bkReturn').value;
   const termsChecked = document.getElementById('bkTerms').checked;
@@ -3277,7 +3415,7 @@ bookingForm.addEventListener('submit', async e=>{
   // bookings) — only generate/download the PDF once the vehicle is confirmed as
   // actually still available, so two customers can't both "win" the last unit.
   const bookingResult = await addBookedCar(activeBookingCar.id, {
-    ref, carName: activeBookingCar.name, customerName: name, phone, pickup, ret,
+    ref, carName: activeBookingCar.name, customerName: name, phone, email, pickup, ret,
     stock: activeBookingCar.stock || 1, total,
   });
   if(submitBtn) submitBtn.disabled = false;
@@ -3308,18 +3446,88 @@ bookingForm.addEventListener('submit', async e=>{
   const doc = await generateBookingPdf(dict, pdfData);
   doc.save(`booking-${ref}.pdf`);
 
-  const summary = `${dict.pdf_title} ${ref}\n${dict.pdf_car}: ${activeBookingCar.name}\n${dict.pdf_customer}: ${name}\n${dict.pdf_phone}: ${phone}\n${dict.pdf_pickup}: ${pickup}\n${dict.pdf_return}: ${ret}\n${dict.modal_total_label}: ${total}`;
+  closeBookingModal();
+  openPaymentModal({ ref, dict, name, phone, email, carName: activeBookingCar.name, pickup, ret, total });
+});
 
+/* ---------------------------------------------------------------
+   PAYMENT STEP — shown right after a booking is recorded. The customer
+   picks Bank Transfer (shows account details + "I've paid" confirmation
+   step) or Wise (opens the pay link, then shows a pending-verification
+   message). Either path updates payment_method/payment_status/
+   booking_status on the booking record via setBookingPayment().
+--------------------------------------------------------------- */
+let currentPaymentBooking = null;
+function buildBookingSummaryText(data, paymentMethodLabel){
+  const dict = data.dict;
+  let text = `${dict.pdf_title} ${data.ref}\n${dict.pdf_car}: ${data.carName}\n${dict.pdf_customer}: ${data.name}\n${dict.pdf_phone}: ${data.phone}\n${dict.pdf_pickup}: ${data.pickup}\n${dict.pdf_return}: ${data.ret}\n${dict.modal_total_label}: ${data.total}`;
+  if(paymentMethodLabel) text += `\n${dict.payment_method_label}: ${paymentMethodLabel}`;
+  return text;
+}
+function openPaymentModal(data){
+  currentPaymentBooking = data;
+  const bank = PAYMENT_METHODS.bank_transfer;
+  document.getElementById('bankAccountHolder').textContent = bank.accountHolder;
+  document.getElementById('bankIban').textContent = bank.iban;
+  document.getElementById('bankSwift').textContent = bank.swift;
+  document.getElementById('bankBankName').textContent = bank.bankName;
+  document.getElementById('wiseSuccessBox').hidden = true;
+  document.getElementById('wisePayBtn').hidden = false;
+  document.getElementById('wiseCloseBtn').hidden = true;
+  document.getElementById('bankTransferDoneBtn').disabled = false;
+  switchPaymentTab('bank_transfer');
+  document.getElementById('paymentOverlay').classList.add('open');
+}
+function closePaymentModal(){ document.getElementById('paymentOverlay').classList.remove('open'); }
+function switchPaymentTab(tab){
+  document.querySelectorAll('#paymentOverlay .modal-tab').forEach(b=> b.classList.toggle('active', b.dataset.paymentTab === tab));
+  document.querySelectorAll('#paymentOverlay .payment-panel').forEach(p=> p.classList.toggle('active', p.dataset.paymentPanel === tab));
+}
+document.querySelectorAll('#paymentOverlay .modal-tab').forEach(btn=>{
+  btn.addEventListener('click', ()=> switchPaymentTab(btn.dataset.paymentTab));
+});
+document.getElementById('paymentClose').addEventListener('click', closePaymentModal);
+document.getElementById('paymentOverlay').addEventListener('click', e=>{ if(e.target === document.getElementById('paymentOverlay')) closePaymentModal(); });
+
+document.querySelectorAll('#paymentOverlay [data-copy-target]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const text = document.getElementById(btn.dataset.copyTarget).textContent;
+    navigator.clipboard?.writeText(text).catch(()=>{});
+    const original = btn.textContent;
+    btn.textContent = I18N[currentLang].payment_copied;
+    setTimeout(()=>{ btn.textContent = original; }, 1500);
+  });
+});
+
+document.getElementById('bankTransferDoneBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('bankTransferDoneBtn');
+  btn.disabled = true;
+  const data = currentPaymentBooking;
+  const dict = data.dict;
+  await setBookingPayment(data.ref, 'bank_transfer', 'awaiting_verification', 'pending_payment');
+
+  const summary = buildBookingSummaryText(data, dict.payment_method_bank_transfer);
   document.getElementById('confirmWhatsappBtn').href =
     'https://wa.me/212661304574?text=' + encodeURIComponent(summary);
   document.getElementById('confirmEmailBtn').href =
     'mailto:Auto.fluchos@gmail.com?subject=' +
-    encodeURIComponent(`${dict.pdf_title} ${ref}`) +
+    encodeURIComponent(`${dict.payment_confirmation_subject} #${data.ref}`) +
     '&body=' + encodeURIComponent(summary + '\n\n' + dict.confirm_attach_note);
 
-  closeBookingModal();
+  closePaymentModal();
   confirmOverlay.classList.add('open');
+  btn.disabled = false;
 });
+
+document.getElementById('wisePayBtn').addEventListener('click', async ()=>{
+  const data = currentPaymentBooking;
+  window.open(PAYMENT_METHODS.wise.payLink, '_blank', 'noopener');
+  await setBookingPayment(data.ref, 'wise', 'pending', 'pending_payment');
+  document.getElementById('wisePayBtn').hidden = true;
+  document.getElementById('wiseSuccessBox').hidden = false;
+  document.getElementById('wiseCloseBtn').hidden = false;
+});
+document.getElementById('wiseCloseBtn').addEventListener('click', closePaymentModal);
 
 /* Enquiry Form: a lightweight question sent directly via WhatsApp — no PDF, no availability change,
    matching the original site's "Enquiry Form" tab (a request, not a firm reservation). */
