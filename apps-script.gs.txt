@@ -89,11 +89,19 @@ function doGet(e) {
     return jsonResponse_({ settings: listSettings_() });
   }
 
+  // Public: for each car, how many units are currently booked, plus every
+  // active booking's return date (sorted earliest-first) so the site can
+  // tell a customer when a sold-out car frees up again — the Nth soonest
+  // return date is the moment the (N+1)th unit becomes free.
   const bookedCounts = {};
+  const bookedReturns = {};
   listActiveBookings_().forEach(b => {
     bookedCounts[b.carId] = (bookedCounts[b.carId] || 0) + 1;
+    if (!bookedReturns[b.carId]) bookedReturns[b.carId] = [];
+    if (b.ret) bookedReturns[b.carId].push(new Date(b.ret).toISOString());
   });
-  return jsonResponse_({ bookedCounts: bookedCounts });
+  Object.keys(bookedReturns).forEach(carId => bookedReturns[carId].sort());
+  return jsonResponse_({ bookedCounts: bookedCounts, bookedReturns: bookedReturns });
 }
 
 function doPost(e) {

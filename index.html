@@ -446,6 +446,11 @@ header{
 .car-specs{display:flex;flex-wrap:wrap;gap:8px;font-size:.75rem;color:var(--ink-dim)}
 .car-specs span{background:var(--navy-700);padding:5px 9px;border-radius:8px}
 .car-card .btn{margin-top:auto;font-size:.85rem;padding:11px 20px}
+.car-card .btn[data-check-availability]{cursor:pointer;opacity:1}
+.availability-note{
+  margin:10px 0 0;padding:9px 12px;border-radius:10px;font-size:.78rem;text-align:center;
+  background:rgba(200,134,13,.1);color:var(--gold);border:1px solid rgba(200,134,13,.3);
+}
 
 /* ---------- CTA banner ---------- */
 .cta-banner{
@@ -1876,6 +1881,7 @@ const I18N = {
     terms_title:'General Conditions',
     terms_body:'Minimum age 25. Minimum rental period 3 days. A refundable €500 deposit (cash or bank transfer, returned after inspection) is required at pick-up, or you may choose no deposit with a non-refundable €10/day surcharge instead. Please bring a valid driving license and passport/ID. Contact us on WhatsApp for the complete terms.',
     unavailable_badge:'Not Available', unavailable_btn:'Not Available',
+    availability_known:'This car will be available starting from:', availability_unknown:'Availability date will be updated soon, or contact us for the nearest available date.',
     stock_available_label:'available',
     required_field:'Please fill in all required fields.',
     confirm_title:'Booking Confirmed!', confirm_text:'Your booking PDF has been downloaded. Choose how you want to send it to us:',
@@ -2003,6 +2009,7 @@ const I18N = {
     terms_title:'Conditions générales',
     terms_body:"Âge minimum 25 ans. Durée minimale de location 3 jours. Une caution remboursable de 500€ (espèces ou virement bancaire, restituée après inspection) est requise à la prise en charge, ou vous pouvez choisir l'option sans caution avec un supplément non remboursable de 10€/jour. Merci d'apporter un permis de conduire et un passeport/pièce d'identité valides. Contactez-nous sur WhatsApp pour les conditions complètes.",
     unavailable_badge:'Indisponible', unavailable_btn:'Indisponible',
+    availability_known:'Cette voiture sera disponible à partir du :', availability_unknown:'La date de disponibilité sera mise à jour prochainement, ou contactez-nous pour connaître la date la plus proche.',
     stock_available_label:'disponibles',
     required_field:'Merci de remplir tous les champs obligatoires.',
     confirm_title:'Réservation confirmée !', confirm_text:'Votre PDF de réservation a été téléchargé. Choisissez comment nous l\'envoyer :',
@@ -2131,6 +2138,7 @@ const I18N = {
     terms_title:'Condiciones generales',
     terms_body:'Edad mínima 25 años. Duración mínima del alquiler 3 días. Se requiere un depósito reembolsable de 500€ (efectivo o transferencia bancaria, devuelto tras la inspección) al recoger el coche, o puede elegir la opción sin depósito con un recargo no reembolsable de 10€/día. Traiga un carné de conducir y pasaporte/DNI válidos. Contáctenos por WhatsApp para las condiciones completas.',
     unavailable_badge:'No disponible', unavailable_btn:'No disponible',
+    availability_known:'Este coche estará disponible a partir del:', availability_unknown:'La fecha de disponibilidad se actualizará pronto, o contáctenos para conocer la fecha más próxima disponible.',
     stock_available_label:'disponibles',
     required_field:'Por favor complete todos los campos obligatorios.',
     confirm_title:'¡Reserva confirmada!', confirm_text:'Su PDF de reserva se ha descargado. Elija cómo enviárnoslo:',
@@ -2259,6 +2267,7 @@ const I18N = {
     terms_title:'الشروط العامة',
     terms_body:'السن الأدنى 25 سنة. أقل مدة للكراء 3 أيام. يتطلب ضمان قابل للاسترجاع بقيمة 500€ (نقداً أو تحويلاً بنكياً، يُرجع بعد المعاينة) عند الاستلام، أو يمكنك اختيار عدم الضمان مقابل رسم إضافي غير قابل للاسترجاع 10€/اليوم. يرجى إحضار رخصة سياقة وجواز سفر/بطاقة تعريف سارية المفعول. تواصل معنا عبر واتساب للشروط الكاملة.',
     unavailable_badge:'غير متوفرة', unavailable_btn:'غير متوفرة',
+    availability_known:'هذه السيارة ستكون متوفرة ابتداءً من:', availability_unknown:'سيتم تحديث موعد التوفر قريباً، أو تواصلوا معنا لمعرفة أقرب موعد متاح.',
     stock_available_label:'متوفرة',
     required_field:'يرجى ملء جميع الحقول المطلوبة.',
     confirm_title:'تم تأكيد الحجز!', confirm_text:'تم تحميل ملف PDF الخاص بحجزك. اختر طريقة إرساله لنا:',
@@ -2430,6 +2439,7 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxKZk3f58C67EZA
    car's CARS[].stock to know how many units remain. A car with stock:1 (the
    default) behaves exactly like the old binary booked/not-booked system. */
 let remoteBookedCounts = null; // null until the first successful fetch; then the shared source of truth
+let remoteBookedReturns = {}; // carId -> sorted (ascending) ISO return-date strings of its active bookings
 
 async function fetchBookedCars(){
   if(APPS_SCRIPT_URL.startsWith('PASTE_')) return; // not deployed yet — stay on local fallback
@@ -2437,9 +2447,21 @@ async function fetchBookedCars(){
     const res = await fetch(APPS_SCRIPT_URL);
     const data = await res.json();
     remoteBookedCounts = (data && typeof data.bookedCounts === 'object' && data.bookedCounts) ? data.bookedCounts : {};
+    remoteBookedReturns = (data && typeof data.bookedReturns === 'object' && data.bookedReturns) ? data.bookedReturns : {};
   } catch(e){
     remoteBookedCounts = null; // offline or backend unreachable — fall back to local-only for this visit
   }
+}
+/* The Nth soonest return date among a car's active bookings is the moment
+   its (N+1)th unit frees up — so once a car is sold out, the date its stock
+   count would return to 1 free unit is at index (bookedCount - stock). */
+function getNextAvailableDate(car){
+  const bookedCount = getBookedCounts()[car.id] || 0;
+  const returns = remoteBookedReturns[car.id];
+  if(!returns || !returns.length) return null;
+  const idx = bookedCount - (car.stock || 1);
+  if(idx < 0 || idx >= returns.length) return null;
+  return returns[idx];
 }
 
 function getBookedCounts(){
@@ -2542,7 +2564,8 @@ function renderFleet(dict, cat){
           <span>♾️ ${dict.unlimited_mileage}</span>
         </div>
         ${isBooked
-          ? `<button type="button" class="btn btn-block" disabled>🚫 ${dict.unavailable_btn}</button>`
+          ? `<button type="button" class="btn btn-block" data-check-availability="${c.id}">🚫 ${dict.unavailable_btn}</button>
+             <p class="availability-note" id="availNote-${c.id}" hidden></p>`
           : `<button type="button" class="btn btn-blue btn-block" data-book-id="${c.id}">${dict.book_now}</button>`}
       </div>`;
     grid.appendChild(card);
@@ -2813,9 +2836,26 @@ function closeConfirmModal(){ confirmOverlay.classList.remove('open'); }
 
 document.getElementById('fleetGrid').addEventListener('click', e=>{
   const btn = e.target.closest('button[data-book-id]');
-  if(!btn) return;
-  openBookingModal(btn.dataset.bookId);
+  if(btn){ openBookingModal(btn.dataset.bookId); return; }
+  const availBtn = e.target.closest('button[data-check-availability]');
+  if(!availBtn) return;
+  const car = CARS.find(c => c.id === availBtn.dataset.checkAvailability);
+  const note = document.getElementById('availNote-' + availBtn.dataset.checkAvailability);
+  if(!car || !note) return;
+  const dict = I18N[currentLang];
+  const nextDate = car ? getNextAvailableDate(car) : null;
+  note.textContent = nextDate
+    ? `${dict.availability_known} ${formatAvailabilityDate(nextDate, dict.htmlLang)}`
+    : dict.availability_unknown;
+  note.hidden = false;
 });
+function formatAvailabilityDate(isoValue, locale){
+  const d = new Date(isoValue);
+  if(isNaN(d)) return isoValue;
+  const datePart = d.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' });
+  const timePart = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  return `${datePart}, ${timePart}`;
+}
 document.getElementById('bookingClose').addEventListener('click', closeBookingModal);
 document.getElementById('bookingCancel').addEventListener('click', closeBookingModal);
 document.getElementById('enquiryCancel').addEventListener('click', closeBookingModal);
