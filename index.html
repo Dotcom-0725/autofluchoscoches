@@ -1178,11 +1178,6 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
     <label class="modal-car-select-label" data-i18n="modal_car_select_label">Selected vehicle (change anytime)</label>
     <select id="modalCarSelect" class="modal-car-select"></select>
 
-    <div class="modal-tabs" id="modalTabs">
-      <button type="button" class="modal-tab active" data-tab="booking" data-i18n="tab_booking">Booking Form</button>
-      <button type="button" class="modal-tab" data-tab="enquiry" data-i18n="tab_enquiry">Enquiry Form</button>
-    </div>
-
     <!-- ---- Booking Form (fields verified against the live original site's product page) ---- -->
     <form id="bookingForm" class="modal-panel active" data-panel="booking">
       <div class="modal-grid-2">
@@ -1297,122 +1292,6 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       <div class="modal-actions">
         <button type="button" class="btn btn-outline" id="bookingCancel" data-i18n="modal_cancel">Cancel</button>
         <button type="submit" class="btn btn-blue" data-i18n="modal_submit">Booking</button>
-      </div>
-    </form>
-
-    <!-- ---- Enquiry Form (same fields as the Booking Form on the original site, plus contact details) ---- -->
-    <form id="enquiryForm" class="modal-panel" data-panel="enquiry">
-      <label data-i18n="modal_name_label">Full Name</label>
-      <input type="text" id="eqName" required>
-      <label data-i18n="modal_email_label">Email</label>
-      <input type="email" id="eqEmail">
-      <label data-i18n="modal_phone_label">Phone</label>
-      <div class="phone-input-group">
-        <select id="eqPhoneCode" class="phone-country-code" aria-label="Country code"></select>
-        <input type="tel" id="eqPhone" required>
-      </div>
-      <label data-i18n="modal_address_label">Address</label>
-      <input type="text" id="eqAddress">
-
-      <div class="modal-grid-2">
-        <div>
-          <label data-i18n="modal_pickup_label">Pick-up Date</label>
-          <input type="datetime-local" id="eqPickup">
-        </div>
-        <div>
-          <label data-i18n="modal_return_label">Drop-off Date</label>
-          <input type="datetime-local" id="eqReturn">
-        </div>
-      </div>
-      <label data-i18n="modal_quantity_label">Quantity</label>
-      <input type="number" id="eqQuantity" min="1" value="1">
-
-      <div class="modal-grid-2">
-        <div>
-          <label data-i18n="modal_license_label">Driving license</label>
-          <div class="file-picker" data-field="eqLicense">
-            <button type="button" data-action="camera">📷 <span data-i18n="file_take_photo">Take Photo</span></button>
-            <button type="button" data-action="upload">📁 <span data-i18n="file_upload">Upload File</span></button>
-            <input type="file" class="file-input-camera" accept="image/*" capture="environment" hidden>
-            <input type="file" class="file-input-upload" accept="image/*,.pdf" hidden>
-          </div>
-          <span class="file-chosen-name" data-i18n="file_none_chosen">No file chosen</span>
-        </div>
-        <div>
-          <label data-i18n="modal_passport_label">Passport</label>
-          <div class="file-picker" data-field="eqPassport">
-            <button type="button" data-action="camera">📷 <span data-i18n="file_take_photo">Take Photo</span></button>
-            <button type="button" data-action="upload">📁 <span data-i18n="file_upload">Upload File</span></button>
-            <input type="file" class="file-input-camera" accept="image/*" capture="environment" hidden>
-            <input type="file" class="file-input-upload" accept="image/*,.pdf" hidden>
-          </div>
-          <span class="file-chosen-name" data-i18n="file_none_chosen">No file chosen</span>
-        </div>
-      </div>
-      <label data-i18n="modal_license_years_label">Years of obtaining a driver's license</label>
-      <input type="number" id="eqLicenseYears" min="0" placeholder="2">
-
-      <h4 class="modal-section-title" data-i18n="modal_resources_title">Resources</h4>
-      <label class="modal-check-row">
-        <span><input type="checkbox" id="eqSecondDriver"> <span data-i18n="res_second_driver">Second driver</span></span>
-        <span>€10.00 <span data-i18n="res_total">/ Total</span></span>
-      </label>
-      <label class="modal-check-row">
-        <span><input type="checkbox" id="eqBabySeat1chk"> <span data-i18n="res_baby_0_15">Baby seat Birth to 15 Months</span></span>
-        <span class="modal-qty-fee">
-          <input type="number" id="eqBabySeat1qty" min="1" value="1" class="modal-qty-input">
-          €10.00 <span data-i18n="res_total">/ Total</span>
-        </span>
-      </label>
-      <label class="modal-check-row">
-        <span><input type="checkbox" id="eqBabySeat2chk"> <span data-i18n="res_baby_1_4">Baby seat 1 to 4 years</span></span>
-        <span class="modal-qty-fee">
-          <input type="number" id="eqBabySeat2qty" min="1" value="1" class="modal-qty-input">
-          €10.00 <span data-i18n="res_total">/ Total</span>
-        </span>
-      </label>
-      <label class="modal-check-row">
-        <span><input type="checkbox" id="eqBabySeat3chk"> <span data-i18n="res_baby_4_12">Baby seat 4 to 12 years</span></span>
-        <span class="modal-qty-fee">
-          <input type="number" id="eqBabySeat3qty" min="1" value="1" class="modal-qty-input">
-          €10.00 <span data-i18n="res_total">/ Total</span>
-        </span>
-      </label>
-
-      <h4 class="modal-section-title" data-i18n="modal_services_title">Services</h4>
-      <div class="modal-grid-2">
-        <div>
-          <label data-i18n="modal_pickup_location_label">Pick-up Location</label>
-          <select id="eqPickupLoc" class="loc-select"></select>
-        </div>
-        <div>
-          <label data-i18n="modal_dropoff_location_label">Drop-off Location</label>
-          <select id="eqDropoffLoc" class="loc-select"></select>
-        </div>
-      </div>
-      <label data-i18n="modal_deposit_label">Deposit</label>
-      <select id="eqDeposit" class="deposit-select"></select>
-
-      <div class="modal-check-row modal-washing-row">
-        <span data-i18n="modal_washing_label">Car Washing</span>
-        <span>€5.00 <span data-i18n="washing_mandatory">(mandatory)</span></span>
-      </div>
-
-      <label data-i18n="modal_extra_info_label">Extra Information</label>
-      <textarea id="eqExtra" rows="3"></textarea>
-
-      <label class="modal-check-row modal-terms-row">
-        <span>
-          <input type="checkbox" id="eqTerms" required>
-          <span data-i18n="modal_terms_label">I have read and agree to the website</span>
-          <a href="#terms" id="eqTermsLink" data-i18n="modal_terms_link">terms and conditions</a> *
-        </span>
-      </label>
-
-      <p class="modal-error" id="enquiryError" data-i18n="required_field">Please fill in all required fields.</p>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-outline" id="enquiryCancel" data-i18n="modal_cancel">Cancel</button>
-        <button type="submit" class="btn btn-blue" data-i18n="modal_send_enquiry">Send Enquiry</button>
       </div>
     </form>
   </div>
@@ -1869,8 +1748,7 @@ const I18N = {
     modal_title:'Book This Car', modal_car_label:'Car', modal_car_select_label:'Selected vehicle (change anytime)', modal_name_label:'Full Name', modal_phone_label:'Phone Number',
     modal_pickup_label:'Pick-up Date', modal_return_label:'Drop-off Date', modal_notes_label:'Notes (optional)',
     modal_submit:'Generate Booking (PDF)', modal_cancel:'Cancel',
-    tab_booking:'Booking Form', tab_enquiry:'Enquiry Form',
-    modal_quantity_label:'Quantity', modal_license_years_label:"Years of obtaining a driver's license",
+    modal_license_years_label:"Years of obtaining a driver's license",
     modal_license_label:'Driving license', modal_passport_label:'Passport',
     file_take_photo:'Take Photo', file_upload:'Upload File', file_none_chosen:'No file chosen',
     modal_services_title:'Services', modal_pickup_location_label:'Pick-up Location', modal_dropoff_location_label:'Drop-off Location',
@@ -1883,11 +1761,9 @@ const I18N = {
     pickup_delay_error:'For a booking today, the earliest pickup time is 2 hours from now.',
     min_rental_error:'The minimum car rental period is 3 days.',
     sold_out_error:'Sorry, this vehicle was just booked by someone else. Please pick another car.',
-    modal_address_label:'Address', modal_extra_info_label:'Extra Information',
     modal_resources_title:'Resources', res_second_driver:'Second driver', res_baby_0_15:'Baby seat Birth to 15 Months',
     res_baby_1_4:'Baby seat 1 to 4 years', res_baby_4_12:'Baby seat 4 to 12 years', res_total:'/ Total',
     modal_total_label:'Estimated Total', modal_terms_label:'I have read and agree to the', modal_terms_link:'terms and conditions',
-    modal_email_label:'Email', modal_message_label:'Your Question', modal_send_enquiry:'Send Enquiry',
     terms_title:'General Conditions',
     terms_body:'Minimum age 25. Minimum rental period 3 days. A refundable €500 deposit (cash or bank transfer, returned after inspection) is required at pick-up, or you may choose no deposit with a non-refundable €10/day surcharge instead. Please bring a valid driving license and passport/ID. Contact us on WhatsApp for the complete terms.',
     unavailable_badge:'Not Available',
@@ -1999,8 +1875,7 @@ const I18N = {
     modal_title:'Réserver cette voiture', modal_car_label:'Voiture', modal_car_select_label:'Véhicule sélectionné (modifiable à tout moment)', modal_name_label:'Nom complet', modal_phone_label:'Numéro de téléphone',
     modal_pickup_label:'Date de prise en charge', modal_return_label:'Date de retour', modal_notes_label:'Remarques (facultatif)',
     modal_submit:'Générer la réservation (PDF)', modal_cancel:'Annuler',
-    tab_booking:'Formulaire de réservation', tab_enquiry:'Formulaire de demande',
-    modal_quantity_label:'Quantité', modal_license_years_label:"Années d'obtention du permis de conduire",
+    modal_license_years_label:"Années d'obtention du permis de conduire",
     modal_license_label:'Permis de conduire', modal_passport_label:'Passeport',
     file_take_photo:'Prendre une photo', file_upload:'Téléverser un fichier', file_none_chosen:'Aucun fichier choisi',
     modal_services_title:'Services', modal_pickup_location_label:'Lieu de prise en charge', modal_dropoff_location_label:'Lieu de retour',
@@ -2013,11 +1888,9 @@ const I18N = {
     pickup_delay_error:'Pour une réservation aujourd\'hui, l\'heure de prise en charge la plus proche est dans 2 heures.',
     min_rental_error:'La durée minimale de location est de 3 jours.',
     sold_out_error:'Désolé, ce véhicule vient d\'être réservé par quelqu\'un d\'autre. Veuillez choisir une autre voiture.',
-    modal_address_label:'Adresse', modal_extra_info_label:'Informations complémentaires',
     modal_resources_title:'Ressources', res_second_driver:'Deuxième conducteur', res_baby_0_15:'Siège bébé Naissance à 15 mois',
     res_baby_1_4:'Siège enfant 1 à 4 ans', res_baby_4_12:'Siège enfant 4 à 12 ans', res_total:'/ Total',
     modal_total_label:'Total estimé', modal_terms_label:"J'ai lu et j'accepte les", modal_terms_link:'conditions générales',
-    modal_email_label:'Email', modal_message_label:'Votre question', modal_send_enquiry:'Envoyer la demande',
     terms_title:'Conditions générales',
     terms_body:"Âge minimum 25 ans. Durée minimale de location 3 jours. Une caution remboursable de 500€ (espèces ou virement bancaire, restituée après inspection) est requise à la prise en charge, ou vous pouvez choisir l'option sans caution avec un supplément non remboursable de 10€/jour. Merci d'apporter un permis de conduire et un passeport/pièce d'identité valides. Contactez-nous sur WhatsApp pour les conditions complètes.",
     unavailable_badge:'Indisponible',
@@ -2130,8 +2003,7 @@ const I18N = {
     modal_title:'Reservar este coche', modal_car_label:'Coche', modal_car_select_label:'Vehículo seleccionado (puede cambiarlo en cualquier momento)', modal_name_label:'Nombre completo', modal_phone_label:'Número de teléfono',
     modal_pickup_label:'Fecha de recogida', modal_return_label:'Fecha de devolución', modal_notes_label:'Notas (opcional)',
     modal_submit:'Generar reserva (PDF)', modal_cancel:'Cancelar',
-    tab_booking:'Formulario de reserva', tab_enquiry:'Formulario de consulta',
-    modal_quantity_label:'Cantidad', modal_license_years_label:'Años de obtención del carné de conducir',
+    modal_license_years_label:'Años de obtención del carné de conducir',
     modal_license_label:'Carné de conducir', modal_passport_label:'Pasaporte',
     file_take_photo:'Tomar foto', file_upload:'Subir archivo', file_none_chosen:'Ningún archivo seleccionado',
     modal_services_title:'Servicios', modal_pickup_location_label:'Lugar de recogida', modal_dropoff_location_label:'Lugar de devolución',
@@ -2144,11 +2016,9 @@ const I18N = {
     pickup_delay_error:'Para una reserva de hoy, la hora de recogida más próxima es dentro de 2 horas.',
     min_rental_error:'La duración mínima del alquiler es de 3 días.',
     sold_out_error:'Lo sentimos, este vehículo acaba de ser reservado por otra persona. Elija otro coche.',
-    modal_address_label:'Dirección', modal_extra_info_label:'Información adicional',
     modal_resources_title:'Recursos', res_second_driver:'Segundo conductor', res_baby_0_15:'Silla bebé Nacimiento a 15 meses',
     res_baby_1_4:'Silla infantil 1 a 4 años', res_baby_4_12:'Silla infantil 4 a 12 años', res_total:'/ Total',
     modal_total_label:'Total estimado', modal_terms_label:'He leído y acepto los', modal_terms_link:'términos y condiciones',
-    modal_email_label:'Correo', modal_message_label:'Su pregunta', modal_send_enquiry:'Enviar consulta',
     terms_title:'Condiciones generales',
     terms_body:'Edad mínima 25 años. Duración mínima del alquiler 3 días. Se requiere un depósito reembolsable de 500€ (efectivo o transferencia bancaria, devuelto tras la inspección) al recoger el coche, o puede elegir la opción sin depósito con un recargo no reembolsable de 10€/día. Traiga un carné de conducir y pasaporte/DNI válidos. Contáctenos por WhatsApp para las condiciones completas.',
     unavailable_badge:'No disponible',
@@ -2261,8 +2131,7 @@ const I18N = {
     modal_title:'احجز هذه السيارة', modal_car_label:'السيارة', modal_car_select_label:'السيارة المختارة (يمكن تغييرها في أي وقت)', modal_name_label:'الاسم الكامل', modal_phone_label:'رقم الهاتف',
     modal_pickup_label:'تاريخ الاستلام', modal_return_label:'تاريخ الإرجاع', modal_notes_label:'ملاحظات (اختياري)',
     modal_submit:'إنشاء الحجز (PDF)', modal_cancel:'إلغاء',
-    tab_booking:'استمارة الحجز', tab_enquiry:'استمارة الاستفسار',
-    modal_quantity_label:'العدد', modal_license_years_label:'سنوات الحصول على رخصة السياقة',
+    modal_license_years_label:'سنوات الحصول على رخصة السياقة',
     modal_license_label:'رخصة السياقة', modal_passport_label:'جواز السفر',
     file_take_photo:'التقط صورة', file_upload:'رفع ملف', file_none_chosen:'لم يتم اختيار أي ملف',
     modal_services_title:'الخدمات', modal_pickup_location_label:'مكان الاستلام', modal_dropoff_location_label:'مكان الإرجاع',
@@ -2275,11 +2144,9 @@ const I18N = {
     pickup_delay_error:'بالنسبة لحجز اليوم، أقرب وقت للاستلام هو بعد ساعتين من الآن.',
     min_rental_error:'الحد الأدنى لمدة كراء السيارة هو 3 أيام.',
     sold_out_error:'عذراً، تم حجز هذه السيارة للتو من طرف شخص آخر. يرجى اختيار سيارة أخرى.',
-    modal_address_label:'العنوان', modal_extra_info_label:'معلومات إضافية',
     modal_resources_title:'إضافات', res_second_driver:'سائق ثاني', res_baby_0_15:'مقعد طفل من الولادة إلى 15 شهر',
     res_baby_1_4:'مقعد طفل من 1 إلى 4 سنوات', res_baby_4_12:'مقعد طفل من 4 إلى 12 سنة', res_total:'/ المجموع',
     modal_total_label:'المجموع التقديري', modal_terms_label:'لقد قرأت ووافقت على', modal_terms_link:'الشروط والأحكام',
-    modal_email_label:'البريد الإلكتروني', modal_message_label:'سؤالك', modal_send_enquiry:'إرسال الاستفسار',
     terms_title:'الشروط العامة',
     terms_body:'السن الأدنى 25 سنة. أقل مدة للكراء 3 أيام. يتطلب ضمان قابل للاسترجاع بقيمة 500€ (نقداً أو تحويلاً بنكياً، يُرجع بعد المعاينة) عند الاستلام، أو يمكنك اختيار عدم الضمان مقابل رسم إضافي غير قابل للاسترجاع 10€/اليوم. يرجى إحضار رخصة سياقة وجواز سفر/بطاقة تعريف سارية المفعول. تواصل معنا عبر واتساب للشروط الكاملة.',
     unavailable_badge:'غير متوفرة',
@@ -2736,9 +2603,7 @@ const bookingOverlay = document.getElementById('bookingOverlay');
 const confirmOverlay = document.getElementById('confirmOverlay');
 const termsOverlay = document.getElementById('termsOverlay');
 const bookingForm = document.getElementById('bookingForm');
-const enquiryForm = document.getElementById('enquiryForm');
 const bookingError = document.getElementById('bookingError');
-const enquiryError = document.getElementById('enquiryError');
 
 const RESOURCE_FEE = 10; // € per selected resource (second driver / baby seat) — matches the original site
 
@@ -2773,17 +2638,7 @@ function resetFilePicker(fieldKey, dict){
   nameEl.setAttribute('data-i18n', 'file_none_chosen');
   nameEl.textContent = dict.file_none_chosen;
 }
-['bkLicense','bkPassport','eqLicense','eqPassport'].forEach(setupFilePicker);
-
-function switchModalTab(tab){
-  document.querySelectorAll('.modal-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  document.querySelectorAll('.modal-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === tab));
-}
-document.getElementById('modalTabs').addEventListener('click', e=>{
-  const btn = e.target.closest('.modal-tab');
-  if(!btn) return;
-  switchModalTab(btn.dataset.tab);
-});
+['bkLicense','bkPassport'].forEach(setupFilePicker);
 
 /* Lets the customer change their mind about which car they're booking without closing
    the form: the <select> is populated with every car (booked ones shown but disabled)
@@ -2810,11 +2665,8 @@ async function openBookingModal(carId){
   activeBookingCar = CARS.find(c => c.id === carId);
   if(!activeBookingCar) return;
   bookingForm.reset();
-  enquiryForm.reset();
   bookingError.classList.remove('show');
-  enquiryError.classList.remove('show');
-  ['bkLicense','bkPassport','eqLicense','eqPassport'].forEach(k => resetFilePicker(k, I18N[currentLang]));
-  switchModalTab('booking');
+  ['bkLicense','bkPassport'].forEach(k => resetFilePicker(k, I18N[currentLang]));
   bookingOverlay.classList.add('open');
 
   // Refresh availability from the shared backend before letting the customer pick a car,
@@ -2937,7 +2789,6 @@ async function submitAvailabilityRequest(carId, carName, contact){
 }
 document.getElementById('bookingClose').addEventListener('click', closeBookingModal);
 document.getElementById('bookingCancel').addEventListener('click', closeBookingModal);
-document.getElementById('enquiryCancel').addEventListener('click', closeBookingModal);
 bookingOverlay.addEventListener('click', e=>{ if(e.target === bookingOverlay) closeBookingModal(); });
 document.getElementById('confirmClose').addEventListener('click', closeConfirmModal);
 document.getElementById('confirmCloseBtn').addEventListener('click', closeConfirmModal);
@@ -2945,7 +2796,6 @@ confirmOverlay.addEventListener('click', e=>{ if(e.target === confirmOverlay) cl
 
 function openTerms(e){ e.preventDefault(); termsOverlay.classList.add('open'); }
 document.getElementById('bkTermsLink').addEventListener('click', openTerms);
-document.getElementById('eqTermsLink').addEventListener('click', openTerms);
 document.getElementById('termsClose').addEventListener('click', ()=> termsOverlay.classList.remove('open'));
 document.getElementById('termsCloseBtn').addEventListener('click', ()=> termsOverlay.classList.remove('open'));
 termsOverlay.addEventListener('click', e=>{ if(e.target === termsOverlay) termsOverlay.classList.remove('open'); });
@@ -3647,50 +3497,6 @@ document.getElementById('wisePayBtn').addEventListener('click', async ()=>{
   document.getElementById('wiseCloseBtn').hidden = false;
 });
 document.getElementById('wiseCloseBtn').addEventListener('click', closePaymentModal);
-
-/* Enquiry Form: a lightweight question sent directly via WhatsApp — no PDF, no availability change,
-   matching the original site's "Enquiry Form" tab (a request, not a firm reservation). */
-enquiryForm.addEventListener('submit', e=>{
-  e.preventDefault();
-  const dict = I18N[currentLang];
-  const name = document.getElementById('eqName').value.trim();
-  const eqPhoneNumber = document.getElementById('eqPhone').value.trim();
-  const phone = eqPhoneNumber ? `${document.getElementById('eqPhoneCode').value} ${eqPhoneNumber}` : '';
-  const email = document.getElementById('eqEmail').value.trim();
-  const address = document.getElementById('eqAddress').value.trim();
-  const pickup = document.getElementById('eqPickup').value;
-  const ret = document.getElementById('eqReturn').value;
-  const extra = document.getElementById('eqExtra').value.trim();
-  const termsChecked = document.getElementById('eqTerms').checked;
-
-  if(!name || !phone || !termsChecked){
-    enquiryError.classList.add('show');
-    return;
-  }
-  enquiryError.classList.remove('show');
-
-  const quantity = document.getElementById('eqQuantity').value;
-  const pickupLocData = LOCATIONS[document.getElementById('eqPickupLoc').value || 0];
-  const dropoffLocData = LOCATIONS[document.getElementById('eqDropoffLoc').value || 0];
-  const depositData = DEPOSITS[document.getElementById('eqDeposit').value || 0];
-  const resources = getResourcesBreakdown('eq').text;
-  const carLabel = activeBookingCar ? activeBookingCar.name : '';
-
-  let text = `${dict.tab_enquiry}\n${dict.pdf_car}: ${carLabel}\n${dict.pdf_customer}: ${name}\n${dict.pdf_phone}: ${phone}`;
-  if(email) text += `\n${dict.modal_email_label}: ${email}`;
-  if(address) text += `\n${dict.modal_address_label}: ${address}`;
-  if(pickup) text += `\n${dict.pdf_pickup}: ${pickup}`;
-  if(ret) text += `\n${dict.pdf_return}: ${ret}`;
-  text += `\n${dict.modal_quantity_label}: ${quantity}`;
-  text += `\n${dict.modal_pickup_location_label}: ${locationOptionLabel(pickupLocData, dict)}`;
-  text += `\n${dict.modal_dropoff_location_label}: ${locationOptionLabel(dropoffLocData, dict)}`;
-  text += `\n${dict.modal_deposit_label}: ${depositOptionLabel(depositData, dict)}`;
-  if(resources) text += `\n${dict.modal_resources_title}: ${resources}`;
-  if(extra) text += `\n${dict.modal_extra_info_label}: ${extra}`;
-
-  window.open('https://wa.me/212661304574?text=' + encodeURIComponent(text), '_blank');
-  closeBookingModal();
-});
 
 applyLang(currentLang);
 document.querySelectorAll('.currency-switch-group button').forEach(b=>{
