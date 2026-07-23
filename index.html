@@ -462,6 +462,55 @@ header{
   background:rgba(18,161,80,.1);color:var(--success,#12a150);border:1px solid rgba(18,161,80,.3);
 }
 
+/* ---------- Custom date picker (native <input type=date/datetime-local>
+   calendar popups always render in the BROWSER's own UI language, not the
+   page's — there is no way to localize them via HTML/CSS/JS. This overlay
+   replaces that native calendar with one built from our own I18N month/
+   weekday names, so it always matches the site's current language. ---- */
+.custom-datepicker{
+  position:absolute;z-index:400;background:var(--card);border:1px solid var(--card-border);
+  border-radius:14px;box-shadow:0 16px 40px rgba(20,24,43,.22);padding:14px;width:266px;
+  font-family:var(--font-lat);
+}
+html[dir="rtl"] .custom-datepicker{font-family:var(--font-ar)}
+.custom-datepicker-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.custom-datepicker-header .cdp-label{font-weight:800;font-size:.88rem}
+.custom-datepicker-header button{
+  background:var(--navy-800);border:1px solid var(--card-border);color:var(--ink);
+  width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:.85rem;line-height:1;
+}
+.custom-datepicker-header button:hover{border-color:var(--blue-400);color:var(--blue-500)}
+.custom-datepicker-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}
+.custom-datepicker-grid .cdp-dow{color:var(--ink-dim);font-weight:700;font-size:.68rem;padding:4px 0;text-transform:uppercase}
+.custom-datepicker-grid button{
+  background:none;border:none;padding:7px 0;border-radius:8px;cursor:pointer;color:var(--ink);font-size:.8rem;
+}
+.custom-datepicker-grid button:hover:not(:disabled){background:var(--navy-700)}
+.custom-datepicker-grid button.cdp-selected{background:var(--blue-500);color:#fff;font-weight:700}
+.custom-datepicker-grid button.cdp-other-month{color:var(--ink-dim);opacity:.4}
+.custom-datepicker-grid button:disabled{opacity:.25;cursor:not-allowed}
+.custom-datepicker-time{
+  display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--card-border);
+}
+.custom-datepicker-time input{
+  flex:1;min-width:0;padding:8px 10px;border-radius:9px;border:1px solid var(--card-border);
+  background:var(--navy-800);color:var(--ink);font-size:.82rem;
+}
+.custom-datepicker-done{
+  width:100%;margin-top:12px;padding:8px;border-radius:9px;border:none;
+  background:var(--blue-500);color:#fff;font-weight:700;font-size:.8rem;cursor:pointer;
+}
+/* The native calendar icon would still open the browser's own (unlocalized)
+   picker even with the input set readonly, so it's hidden and click-through
+   (pointer-events:none) — the click reaches the input itself, which our own
+   JS listener intercepts to open the custom popup instead. */
+input[type="date"][data-custom-picker]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"][data-custom-picker]::-webkit-calendar-picker-indicator{
+  opacity:0;pointer-events:none;
+}
+input[type="date"][data-custom-picker],
+input[type="datetime-local"][data-custom-picker]{cursor:pointer}
+
 /* ---------- CTA banner ---------- */
 .cta-banner{
   background:linear-gradient(120deg,var(--navy-700),var(--navy-800));
@@ -1678,6 +1727,9 @@ populateBrandSelect();
 const I18N = {
   en:{
     dir:'ltr', htmlLang:'en',
+    months:['January','February','March','April','May','June','July','August','September','October','November','December'],
+    weekdaysMin:['Su','Mo','Tu','We','Th','Fr','Sa'],
+    datepicker_done:'Done',
     logo_sub:'CAR RENTAL TÉTOUAN — TANGIER',
     nav_home:'Home', nav_fleet:'Cars List', nav_why:'About', nav_reviews:'Reviews', nav_faq:'FAQ', nav_contact:'Contact',
     badge_know_us:'GET TO KNOW US',
@@ -1806,6 +1858,9 @@ const I18N = {
   },
   fr:{
     dir:'ltr', htmlLang:'fr',
+    months:['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'],
+    weekdaysMin:['Di','Lu','Ma','Me','Je','Ve','Sa'],
+    datepicker_done:'Valider',
     logo_sub:'LOCATION DE VOITURE TÉTOUAN — TANGER',
     nav_home:'Accueil', nav_fleet:'Liste des voitures', nav_why:'À propos', nav_reviews:'Avis', nav_faq:'FAQ', nav_contact:'Contact',
     badge_know_us:'FAITES CONNAISSANCE',
@@ -1934,6 +1989,9 @@ const I18N = {
   },
   es:{
     dir:'ltr', htmlLang:'es',
+    months:['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'],
+    weekdaysMin:['Do','Lu','Ma','Mi','Ju','Vi','Sá'],
+    datepicker_done:'Aceptar',
     logo_sub:'ALQUILER DE COCHES TETUÁN — TÁNGER',
     nav_home:'Inicio', nav_fleet:'Lista de coches', nav_why:'Sobre nosotros', nav_reviews:'Opiniones', nav_faq:'Preguntas', nav_contact:'Contacto',
     badge_know_us:'CONÓZCANOS',
@@ -2063,6 +2121,9 @@ const I18N = {
   },
   ar:{
     dir:'rtl', htmlLang:'ar',
+    months:['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+    weekdaysMin:['أحد','إثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'],
+    datepicker_done:'تم',
     logo_sub:'كراء السيارات تطوان — طنجة',
     nav_home:'الرئيسية', nav_fleet:'لائحة السيارات', nav_why:'من نحن', nav_reviews:'آراء الزبناء', nav_faq:'الأسئلة الشائعة', nav_contact:'اتصل بنا',
     badge_know_us:'تعرف علينا',
@@ -3633,6 +3694,163 @@ loadCarsFromBackend().then(()=>{
 });
 fetchSeasonalPeriods();
 loadSeoSettings();
+
+/* =========================================================
+   CUSTOM DATE PICKER
+   Native <input type="date"> / <input type="datetime-local"> calendar
+   popups are drawn by the BROWSER itself in the browser/OS's own display
+   language — the page's language switcher has no way to affect that,
+   which is exactly the bug being fixed here. Instead, every date/datetime
+   input on the site is made read-only (so the native calendar never opens)
+   and paired with this fully custom, site-language-aware calendar popup,
+   built from I18N[currentLang].months/weekdaysMin so it always matches
+   whatever language is currently active — including on every future
+   language switch, since it reads I18N[currentLang] fresh each time it
+   opens rather than being built once at page load.
+========================================================= */
+let activeDatePicker = null;
+function closeCustomDatePicker(){
+  if(activeDatePicker){ activeDatePicker.remove(); activeDatePicker = null; }
+}
+document.addEventListener('click', e=>{
+  if(activeDatePicker && !activeDatePicker.contains(e.target) && !e.target.closest('input[data-custom-picker]')){
+    closeCustomDatePicker();
+  }
+});
+document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeCustomDatePicker(); });
+
+function parseDateValue(input){
+  const isDateTime = input.type === 'datetime-local';
+  const v = input.value;
+  if(v){
+    const [datePart, timePart] = v.split('T');
+    const [y, m, d] = datePart.split('-').map(Number);
+    return { date: new Date(y, m - 1, d), time: isDateTime ? (timePart || '10:00') : null };
+  }
+  const base = input.min ? new Date(input.min.split('T')[0]) : new Date();
+  return { date: base, time: isDateTime ? '10:00' : null };
+}
+function writeDateValue(input, date, time){
+  const pad = n => String(n).padStart(2, '0');
+  const dateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  input.value = input.type === 'datetime-local' ? `${dateStr}T${time}` : dateStr;
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+function openCustomDatePicker(input){
+  closeCustomDatePicker();
+  const dict = I18N[currentLang];
+  const isDateTime = input.type === 'datetime-local';
+  const { date: selected, time: initialTime } = parseDateValue(input);
+  let viewYear = selected.getFullYear();
+  let viewMonth = selected.getMonth();
+  let currentTime = initialTime;
+  const minDate = input.min ? new Date(input.min.split('T')[0]) : null;
+
+  const popup = document.createElement('div');
+  popup.className = 'custom-datepicker';
+  document.body.appendChild(popup);
+  activeDatePicker = popup;
+
+  function render(){
+    popup.innerHTML = '';
+    const header = document.createElement('div');
+    header.className = 'custom-datepicker-header';
+    const prevBtn = document.createElement('button');
+    prevBtn.type = 'button'; prevBtn.textContent = '‹';
+    const label = document.createElement('span');
+    label.className = 'cdp-label';
+    label.textContent = `${dict.months[viewMonth]} ${viewYear}`;
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button'; nextBtn.textContent = '›';
+    header.appendChild(prevBtn); header.appendChild(label); header.appendChild(nextBtn);
+    popup.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.className = 'custom-datepicker-grid';
+    dict.weekdaysMin.forEach(dow=>{
+      const el = document.createElement('div');
+      el.className = 'cdp-dow';
+      el.textContent = dow;
+      grid.appendChild(el);
+    });
+    const firstOfMonth = new Date(viewYear, viewMonth, 1);
+    const startOffset = firstOfMonth.getDay();
+    const gridStart = new Date(viewYear, viewMonth, 1 - startOffset);
+    for(let i = 0; i < 42; i++){
+      const cellDate = new Date(gridStart);
+      cellDate.setDate(gridStart.getDate() + i);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = cellDate.getDate();
+      if(cellDate.getMonth() !== viewMonth) btn.classList.add('cdp-other-month');
+      if(cellDate.toDateString() === selected.toDateString()) btn.classList.add('cdp-selected');
+      if(minDate){
+        const cmpCell = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+        const cmpMin = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+        if(cmpCell < cmpMin) btn.disabled = true;
+      }
+      btn.addEventListener('click', e=>{
+        // Re-rendering the popup below replaces this very button in the DOM
+        // before the click event finishes bubbling — without stopping
+        // propagation here, the document-level "click outside" listener
+        // would see a now-detached e.target and incorrectly close the popup.
+        e.stopPropagation();
+        writeDateValue(input, cellDate, currentTime || '10:00');
+        if(!isDateTime){ closeCustomDatePicker(); }
+        else {
+          selected.setFullYear(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+          render();
+        }
+      });
+      grid.appendChild(btn);
+    }
+    popup.appendChild(grid);
+
+    if(isDateTime){
+      const timeRow = document.createElement('div');
+      timeRow.className = 'custom-datepicker-time';
+      const timeInput = document.createElement('input');
+      timeInput.type = 'time';
+      timeInput.value = currentTime || '10:00';
+      timeInput.addEventListener('change', ()=>{
+        currentTime = timeInput.value;
+        writeDateValue(input, selected, currentTime);
+      });
+      timeRow.appendChild(timeInput);
+      popup.appendChild(timeRow);
+
+      const doneBtn = document.createElement('button');
+      doneBtn.type = 'button';
+      doneBtn.className = 'custom-datepicker-done';
+      doneBtn.textContent = dict.datepicker_done;
+      doneBtn.addEventListener('click', closeCustomDatePicker);
+      popup.appendChild(doneBtn);
+    }
+
+    prevBtn.addEventListener('click', e=>{ e.stopPropagation(); viewMonth--; if(viewMonth < 0){ viewMonth = 11; viewYear--; } render(); });
+    nextBtn.addEventListener('click', e=>{ e.stopPropagation(); viewMonth++; if(viewMonth > 11){ viewMonth = 0; viewYear++; } render(); });
+  }
+  render();
+
+  const rect = input.getBoundingClientRect();
+  const top = window.scrollY + rect.bottom + 6;
+  let left = window.scrollX + rect.left;
+  const maxLeft = window.scrollX + document.documentElement.clientWidth - 280;
+  if(left > maxLeft) left = Math.max(8, maxLeft);
+  popup.style.top = top + 'px';
+  popup.style.left = left + 'px';
+}
+function initCustomDatePickers(){
+  document.querySelectorAll('input[type="date"], input[type="datetime-local"]').forEach(input=>{
+    if(input.dataset.customPicker) return;
+    input.dataset.customPicker = '1';
+    input.readOnly = true;
+    input.addEventListener('click', ()=> openCustomDatePicker(input));
+    input.addEventListener('focus', ()=> openCustomDatePicker(input));
+  });
+}
+initCustomDatePickers();
 </script>
 
 </body>
