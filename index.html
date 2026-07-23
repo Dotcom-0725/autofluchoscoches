@@ -612,7 +612,6 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
 }
 
 /* ---------- Unavailable car state ---------- */
-.car-card.is-unavailable{opacity:.55}
 .car-card.is-unavailable .car-photo{filter:grayscale(1)}
 .car-offer.is-unavailable-badge{background:#5b6478}
 .car-card .btn[disabled]{
@@ -2495,6 +2494,7 @@ function renderFleet(dict, cat){
           <span>⛽ ${fuelLabel}</span>
           <span>♾️ ${dict.unlimited_mileage}</span>
         </div>
+        <button type="button" class="btn btn-blue btn-block" data-book-id="${c.id}">${dict.book_now}</button>
         ${isBooked
           ? `<button type="button" class="btn btn-outline btn-block" data-check-availability="${c.id}">🔔 ${dict.notify_btn}</button>
              <div class="availability-panel" id="availPanel-${c.id}" hidden>
@@ -2505,7 +2505,7 @@ function renderFleet(dict, cat){
                </div>
                <p class="availability-success" id="availSuccess-${c.id}" hidden>✅ ${dict.notify_success}</p>
              </div>`
-          : `<button type="button" class="btn btn-blue btn-block" data-book-id="${c.id}">${dict.book_now}</button>`}
+          : ''}
       </div>`;
     grid.appendChild(card);
   });
@@ -2727,13 +2727,10 @@ async function openBookingModal(carId){
   // so a car someone else just booked shows as unavailable here too.
   await fetchBookedCars();
   renderFleet(I18N[currentLang], document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
-  const qbRange = getQuickBookingRange();
-  if(getRemainingStockForRange(activeBookingCar, qbRange.pickup, qbRange.ret) <= 0){
-    // the car this button was for just got booked by someone else for these exact
-    // dates — bump to the first car that's actually free for this date range
-    const fallback = CARS.find(c => getRemainingStockForRange(c, qbRange.pickup, qbRange.ret) > 0);
-    if(fallback) activeBookingCar = fallback;
-  }
+  // Stay on whichever car the customer clicked, even if it's not free for the
+  // Quick Booking widget's current dates — checkSelectedCarAvailability()
+  // (wired below via updateTotal) will warn them and let them adjust the
+  // dates for THIS car instead of silently swapping to a different vehicle.
   populateCarSelect(I18N[currentLang]);
   document.getElementById('modalCarSelect').value = activeBookingCar.id;
   refreshPickupMin();
@@ -3207,9 +3204,9 @@ function checkSelectedCarAvailability(){
   if(!activeBookingCar || !warningEl) return true;
   const pickup = document.getElementById('bkPickup').value;
   const ret = document.getElementById('bkReturn').value;
-  if(!pickup || !ret){ warningEl.hidden = true; return true; }
+  if(!pickup || !ret){ warningEl.classList.remove('show'); return true; }
   const available = getRemainingStockForRange(activeBookingCar, pickup, ret) > 0;
-  warningEl.hidden = available;
+  warningEl.classList.toggle('show', !available);
   if(submitBtn) submitBtn.disabled = !available;
   populateCarSelect(I18N[currentLang]);
   return available;
