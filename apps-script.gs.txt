@@ -99,19 +99,40 @@ function doGet(e) {
     return jsonResponse_({ settings: listSettings_() });
   }
 
-  // Public: for each car, how many units are currently booked, plus every
-  // active booking's return date (sorted earliest-first) so the site can
-  // tell a customer when a sold-out car frees up again — the Nth soonest
-  // return date is the moment the (N+1)th unit becomes free.
+  // Public: for each car, how many units are currently booked overall (kept
+  // for backward compatibility), every active booking's return date
+  // (bookedReturns — the Nth soonest return date is the moment the (N+1)th
+  // unit becomes free, used by the "notify me" feature), AND the full
+  // pickup/return interval of each active booking (bookedIntervals) so the
+  // site can tell whether a car is free for a SPECIFIC requested date range
+  // rather than just "is it booked right now overall" — a car with a
+  // booking next week must still be bookable for a period that doesn't
+  // overlap it.
   const bookedCounts = {};
   const bookedReturns = {};
+  const bookedIntervals = {};
   listActiveBookings_().forEach(b => {
     bookedCounts[b.carId] = (bookedCounts[b.carId] || 0) + 1;
     if (!bookedReturns[b.carId]) bookedReturns[b.carId] = [];
     if (b.ret) bookedReturns[b.carId].push(new Date(b.ret).toISOString());
+    if (!bookedIntervals[b.carId]) bookedIntervals[b.carId] = [];
+    if (b.pickup && b.ret) {
+      bookedIntervals[b.carId].push({
+        pickup: new Date(b.pickup).toISOString(),
+        ret: new Date(b.ret).toISOString(),
+      });
+    }
   });
   Object.keys(bookedReturns).forEach(carId => bookedReturns[carId].sort());
-  return jsonResponse_({ bookedCounts: bookedCounts, bookedReturns: bookedReturns });
+  return jsonResponse_({ bookedCounts: bookedCounts, bookedReturns: bookedReturns, bookedIntervals: bookedIntervals });
+}
+
+/* True if [startA, endA) overlaps [startB, endB) — the standard interval
+   overlap test. Two bookings for the same car conflict only if their date
+   ranges actually overlap; a booking ending July 25 does not conflict with
+   one starting July 25 or later. */
+function rangesOverlap_(startA, endA, startB, endB) {
+  return new Date(startA) < new Date(endB) && new Date(startB) < new Date(endA);
 }
 
 function doPost(e) {
@@ -247,8 +268,17 @@ function doPost(e) {
   lock.waitLock(10000);
   try {
     const stock = Number(body.stock) || 1;
-    const currentlyBooked = listActiveBookings_().filter(b => b.carId === body.carId).length;
-    if (currentlyBooked >= stock) {
+    // Only count bookings whose date range actually overlaps the one being
+    // requested — a car with an existing booking that ends before this one
+    // starts (or starts after this one ends) is NOT a conflict, so it must
+    // stay bookable for any other free date range instead of being treated
+    // as fully sold out.
+    const overlapping = body.pickup && body.ret
+      ? listActiveBookings_().filter(b =>
+          b.carId === body.carId && rangesOverlap_(body.pickup, body.ret, b.pickup, b.ret)
+        ).length
+      : listActiveBookings_().filter(b => b.carId === body.carId).length;
+    if (overlapping >= stock) {
       return jsonResponse_({ success: false, error: 'sold_out' });
     }
     const bookingsSheet = getBookingsSheet_();

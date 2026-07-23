@@ -1190,6 +1190,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
           <input type="datetime-local" id="bkReturn" required>
         </div>
       </div>
+      <p class="modal-error" id="bkDatesUnavailable" data-i18n="dates_unavailable_error" hidden>These dates are not available for this car. Please choose a different date range or vehicle.</p>
 
       <div class="modal-grid-2">
         <div>
@@ -1760,6 +1761,7 @@ const I18N = {
     hours_warning:'Outside business hours (08:00–20:00): a €10 surcharge has been added per pickup/return outside these hours.',
     pickup_delay_error:'For a booking today, the earliest pickup time is 2 hours from now.',
     min_rental_error:'The minimum car rental period is 3 days.',
+    dates_unavailable_error:'These dates are not available for this car. Please choose a different date range or vehicle.',
     sold_out_error:'Sorry, this vehicle was just booked by someone else. Please pick another car.',
     modal_resources_title:'Resources', res_second_driver:'Second driver', res_baby_0_15:'Baby seat Birth to 15 Months',
     res_baby_1_4:'Baby seat 1 to 4 years', res_baby_4_12:'Baby seat 4 to 12 years', res_total:'/ Total',
@@ -1887,6 +1889,7 @@ const I18N = {
     hours_warning:'En dehors des heures d\'ouverture (08h00–20h00) : un supplément de 10€ a été ajouté par prise en charge/retour hors de ces heures.',
     pickup_delay_error:'Pour une réservation aujourd\'hui, l\'heure de prise en charge la plus proche est dans 2 heures.',
     min_rental_error:'La durée minimale de location est de 3 jours.',
+    dates_unavailable_error:'Ces dates ne sont pas disponibles pour cette voiture. Merci de choisir une autre période ou un autre véhicule.',
     sold_out_error:'Désolé, ce véhicule vient d\'être réservé par quelqu\'un d\'autre. Veuillez choisir une autre voiture.',
     modal_resources_title:'Ressources', res_second_driver:'Deuxième conducteur', res_baby_0_15:'Siège bébé Naissance à 15 mois',
     res_baby_1_4:'Siège enfant 1 à 4 ans', res_baby_4_12:'Siège enfant 4 à 12 ans', res_total:'/ Total',
@@ -2015,6 +2018,7 @@ const I18N = {
     hours_warning:'Fuera del horario comercial (08:00–20:00): se ha añadido un recargo de 10€ por cada recogida/devolución fuera de este horario.',
     pickup_delay_error:'Para una reserva de hoy, la hora de recogida más próxima es dentro de 2 horas.',
     min_rental_error:'La duración mínima del alquiler es de 3 días.',
+    dates_unavailable_error:'Estas fechas no están disponibles para este coche. Elija otro periodo u otro vehículo.',
     sold_out_error:'Lo sentimos, este vehículo acaba de ser reservado por otra persona. Elija otro coche.',
     modal_resources_title:'Recursos', res_second_driver:'Segundo conductor', res_baby_0_15:'Silla bebé Nacimiento a 15 meses',
     res_baby_1_4:'Silla infantil 1 a 4 años', res_baby_4_12:'Silla infantil 4 a 12 años', res_total:'/ Total',
@@ -2143,6 +2147,7 @@ const I18N = {
     hours_warning:'خارج ساعات العمل (08:00–20:00): تمت إضافة 10€ لكل عملية استلام/إرجاع خارج هذه الساعات.',
     pickup_delay_error:'بالنسبة لحجز اليوم، أقرب وقت للاستلام هو بعد ساعتين من الآن.',
     min_rental_error:'الحد الأدنى لمدة كراء السيارة هو 3 أيام.',
+    dates_unavailable_error:'هذه التواريخ غير متاحة لهذه السيارة. يرجى اختيار فترة أخرى أو سيارة أخرى.',
     sold_out_error:'عذراً، تم حجز هذه السيارة للتو من طرف شخص آخر. يرجى اختيار سيارة أخرى.',
     modal_resources_title:'إضافات', res_second_driver:'سائق ثاني', res_baby_0_15:'مقعد طفل من الولادة إلى 15 شهر',
     res_baby_1_4:'مقعد طفل من 1 إلى 4 سنوات', res_baby_4_12:'مقعد طفل من 4 إلى 12 سنة', res_total:'/ المجموع',
@@ -2325,6 +2330,7 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxKZk3f58C67EZA
    default) behaves exactly like the old binary booked/not-booked system. */
 let remoteBookedCounts = null; // null until the first successful fetch; then the shared source of truth
 let remoteBookedReturns = {}; // carId -> sorted (ascending) ISO return-date strings of its active bookings
+let remoteBookedIntervals = {}; // carId -> [{pickup, ret}] ISO strings of every active booking for that car
 
 async function fetchBookedCars(){
   if(APPS_SCRIPT_URL.startsWith('PASTE_')) return; // not deployed yet — stay on local fallback
@@ -2333,9 +2339,45 @@ async function fetchBookedCars(){
     const data = await res.json();
     remoteBookedCounts = (data && typeof data.bookedCounts === 'object' && data.bookedCounts) ? data.bookedCounts : {};
     remoteBookedReturns = (data && typeof data.bookedReturns === 'object' && data.bookedReturns) ? data.bookedReturns : {};
+    remoteBookedIntervals = (data && typeof data.bookedIntervals === 'object' && data.bookedIntervals) ? data.bookedIntervals : {};
   } catch(e){
     remoteBookedCounts = null; // offline or backend unreachable — fall back to local-only for this visit
   }
+}
+/* True if [startA, endA) overlaps [startB, endB) — mirrors the backend's
+   rangesOverlap_ so the client can pre-check availability for a specific
+   date range instead of only knowing a car's overall current booked count. */
+function rangesOverlap(startA, endA, startB, endB){
+  return new Date(startA) < new Date(endB) && new Date(startB) < new Date(endA);
+}
+/* How many of a car's active bookings actually overlap the given [pickup, ret)
+   range — the count that matters for "is this car free for THESE dates",
+   as opposed to getRemainingStock() which only reflects the car's overall
+   current booked count regardless of which dates are involved. */
+function getOverlapCount(carId, pickupVal, retVal){
+  const intervals = remoteBookedIntervals[carId];
+  if(!intervals || !pickupVal || !retVal) return getBookedCounts()[carId] || 0;
+  return intervals.filter(iv => rangesOverlap(pickupVal, retVal, iv.pickup, iv.ret)).length;
+}
+/* Remaining units of `car` for a specific [pickupVal, retVal) range. Falls
+   back to the global getRemainingStock() when no date range is supplied or
+   interval data isn't available (e.g. local-only offline fallback). */
+function getRemainingStockForRange(car, pickupVal, retVal){
+  if(!pickupVal || !retVal) return getRemainingStock(car);
+  const overlap = getOverlapCount(car.id, pickupVal, retVal);
+  return Math.max(0, (car.stock || 1) - overlap);
+}
+/* Reads the hero Quick Booking widget's currently selected pickup/return
+   datetimes (as datetime-local-style strings), if present, so fleet
+   availability can reflect "is this car free for the dates the customer
+   actually chose" rather than just "is it booked right now". */
+function getQuickBookingRange(){
+  const pickupDate = document.getElementById('qbPickupDate')?.value;
+  const pickupTime = document.getElementById('qbPickupTime')?.value;
+  const returnDate = document.getElementById('qbReturnDate')?.value;
+  const returnTime = document.getElementById('qbReturnTime')?.value;
+  if(!pickupDate || !pickupTime || !returnDate || !returnTime) return { pickup: null, ret: null };
+  return { pickup: `${pickupDate}T${pickupTime}`, ret: `${returnDate}T${returnTime}` };
 }
 /* The Nth soonest return date among a car's active bookings is the moment
    its (N+1)th unit frees up — so once a car is sold out, the date its stock
@@ -2425,17 +2467,22 @@ function renderFleet(dict, cat){
   const matching = applyFleetFiltersAndSort(CARS.filter(c => carMatchesCategory(c, cat)));
   const emptyEl = document.getElementById('fleetEmpty');
   if(emptyEl) emptyEl.hidden = matching.length > 0;
+  // Availability shown here reflects the specific dates picked in the Quick
+  // Booking widget (if any) — a car with a booking that doesn't overlap
+  // those dates must still show as bookable, not "Not Available".
+  const qbRange = getQuickBookingRange();
   matching.forEach(c=>{
     const gearLabel = c.gearKey === 'auto' ? dict.gear_auto : dict.gear_manual;
     const fuelLabel = dict['fuel_' + c.fuelKey];
-    const isBooked = getRemainingStock(c) <= 0;
+    const remainingForRange = getRemainingStockForRange(c, qbRange.pickup, qbRange.ret);
+    const isBooked = remainingForRange <= 0;
     const altText = `${c.name} rental car in Tétouan &amp; Tangier — ${c.seats} seats, ${gearLabel}, ${fuelLabel} — Auto Fluchos Coches`;
     const card = document.createElement('div');
     card.className = 'car-card' + (isBooked ? ' is-unavailable' : '');
     card.innerHTML = `
       <div class="car-photo">
         <span class="car-offer${isBooked ? ' is-unavailable-badge' : ''}">${isBooked ? dict.unavailable_badge : c.offer}</span>
-        ${!isBooked ? `<span class="car-stock-badge">🚗 ${getRemainingStock(c)} ${dict.stock_available_label}</span>` : ''}
+        ${!isBooked ? `<span class="car-stock-badge">🚗 ${remainingForRange} ${dict.stock_available_label}</span>` : ''}
         <img src="${c.imgSrc}" alt="${altText}" loading="lazy">
       </div>
       <div class="car-body">
@@ -2647,8 +2694,15 @@ function resetFilePicker(fieldKey, dict){
 function populateCarSelect(dict){
   const sel = document.getElementById('modalCarSelect');
   const prev = sel.value;
+  // Prefer whatever dates are currently in the booking form itself; fall back
+  // to the Quick Booking widget's dates when the form hasn't been dated yet
+  // (e.g. right when the modal first opens), so "unavailable" here always
+  // means "for the dates actually being requested", not just "ever booked".
+  const bkPickup = document.getElementById('bkPickup')?.value;
+  const bkReturn = document.getElementById('bkReturn')?.value;
+  const range = (bkPickup && bkReturn) ? { pickup: bkPickup, ret: bkReturn } : getQuickBookingRange();
   sel.innerHTML = CARS.map(c=>{
-    const isBooked = getRemainingStock(c) <= 0;
+    const isBooked = getRemainingStockForRange(c, range.pickup, range.ret) <= 0;
     const label = `${c.name} — ${fmtPrice(c.price)}${dict.per_day}${isBooked ? ' (' + dict.unavailable_badge + ')' : ''}`;
     return `<option value="${c.id}" ${isBooked ? 'disabled' : ''}>${label}</option>`;
   }).join('');
@@ -2673,9 +2727,11 @@ async function openBookingModal(carId){
   // so a car someone else just booked shows as unavailable here too.
   await fetchBookedCars();
   renderFleet(I18N[currentLang], document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
-  if(getRemainingStock(activeBookingCar) <= 0){
-    // the car this button was for just got booked by someone else — bump to the first free one
-    const fallback = CARS.find(c => getRemainingStock(c) > 0);
+  const qbRange = getQuickBookingRange();
+  if(getRemainingStockForRange(activeBookingCar, qbRange.pickup, qbRange.ret) <= 0){
+    // the car this button was for just got booked by someone else for these exact
+    // dates — bump to the first car that's actually free for this date range
+    const fallback = CARS.find(c => getRemainingStockForRange(c, qbRange.pickup, qbRange.ret) > 0);
     if(fallback) activeBookingCar = fallback;
   }
   populateCarSelect(I18N[currentLang]);
@@ -3137,6 +3193,26 @@ function updateTotal(){
 
   totalEl.textContent = total.toFixed(2) + ' €';
   updateBookingWarnings(outsideHoursFee);
+  checkSelectedCarAvailability();
+}
+/* Live-checks whether activeBookingCar is actually free for the exact
+   [bkPickup, bkReturn) range currently entered — a car can be fully valid
+   to book overall while still conflicting with this specific date range if
+   another customer already has it reserved for part of that window. Shows
+   an inline warning and disables the submit button when that happens,
+   instead of only finding out after the customer fills in the whole form. */
+function checkSelectedCarAvailability(){
+  const warningEl = document.getElementById('bkDatesUnavailable');
+  const submitBtn = bookingForm.querySelector('button[type="submit"]');
+  if(!activeBookingCar || !warningEl) return true;
+  const pickup = document.getElementById('bkPickup').value;
+  const ret = document.getElementById('bkReturn').value;
+  if(!pickup || !ret){ warningEl.hidden = true; return true; }
+  const available = getRemainingStockForRange(activeBookingCar, pickup, ret) > 0;
+  warningEl.hidden = available;
+  if(submitBtn) submitBtn.disabled = !available;
+  populateCarSelect(I18N[currentLang]);
+  return available;
 }
 ['bkPickup','bkReturn','bkPickupLoc','bkDropoffLoc','bkDeposit',
  'bkSecondDriver','bkBabySeat1chk','bkBabySeat1qty','bkBabySeat2chk','bkBabySeat2qty','bkBabySeat3chk','bkBabySeat3qty'
@@ -3361,6 +3437,11 @@ bookingForm.addEventListener('submit', async e=>{
   }
   if(computeDays('bkPickup', 'bkReturn') < MIN_RENTAL_DAYS){
     bookingError.textContent = dict.min_rental_error;
+    bookingError.classList.add('show');
+    return;
+  }
+  if(!checkSelectedCarAvailability()){
+    bookingError.textContent = dict.dates_unavailable_error;
     bookingError.classList.add('show');
     return;
   }
