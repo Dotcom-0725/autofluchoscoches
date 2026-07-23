@@ -504,12 +504,7 @@ html[dir="rtl"] .custom-datepicker{font-family:var(--font-ar)}
    picker even with the input set readonly, so it's hidden and click-through
    (pointer-events:none) — the click reaches the input itself, which our own
    JS listener intercepts to open the custom popup instead. */
-input[type="date"][data-custom-picker]::-webkit-calendar-picker-indicator,
-input[type="datetime-local"][data-custom-picker]::-webkit-calendar-picker-indicator{
-  opacity:0;pointer-events:none;
-}
-input[type="date"][data-custom-picker],
-input[type="datetime-local"][data-custom-picker]{cursor:pointer}
+input[data-custom-picker]{cursor:pointer}
 
 /* ---------- CTA banner ---------- */
 .cta-banner{
@@ -3185,7 +3180,12 @@ function refreshPickupMin(){
   const input = document.getElementById('bkPickup');
   if(!input) return;
   const minAllowed = new Date(Date.now() + 2 * 60 * 60 * 1000);
-  input.min = toDatetimeLocalString(minAllowed);
+  // Using setAttribute rather than the .min IDL property: these inputs are
+  // switched to type="text" (see initCustomDatePickers) so our own calendar
+  // popup fully replaces the native one, and the .min *property* only exists
+  // for the browser's native date/datetime-local input types — the plain
+  // "min" attribute still works fine as a value our own popup code reads.
+  input.setAttribute('min', toDatetimeLocalString(minAllowed));
 }
 function isPickupTooSoon(pickupValue){
   if(!pickupValue) return false;
@@ -3674,7 +3674,7 @@ document.querySelectorAll('.currency-switch-group button').forEach(b=>{
   const qbPickupTime = document.getElementById('qbPickupTime');
   const qbReturnDate = document.getElementById('qbReturnDate');
   const qbReturnTime = document.getElementById('qbReturnTime');
-  if(qbPickupDate){ qbPickupDate.value = toDateStr(pickup); qbPickupDate.min = toDateStr(new Date()); }
+  if(qbPickupDate){ qbPickupDate.value = toDateStr(pickup); qbPickupDate.setAttribute('min', toDateStr(new Date())); }
   if(qbPickupTime) qbPickupTime.value = toTimeStr(pickup);
   if(qbReturnDate) qbReturnDate.value = toDateStr(ret);
   if(qbReturnTime) qbReturnTime.value = toTimeStr(pickup);
@@ -3720,32 +3720,34 @@ document.addEventListener('click', e=>{
 document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeCustomDatePicker(); });
 
 function parseDateValue(input){
-  const isDateTime = input.type === 'datetime-local';
+  const isDateTime = input.dataset.origType === 'datetime-local';
   const v = input.value;
   if(v){
     const [datePart, timePart] = v.split('T');
     const [y, m, d] = datePart.split('-').map(Number);
     return { date: new Date(y, m - 1, d), time: isDateTime ? (timePart || '10:00') : null };
   }
-  const base = input.min ? new Date(input.min.split('T')[0]) : new Date();
+  const minAttr = input.getAttribute('min');
+  const base = minAttr ? new Date(minAttr.split('T')[0]) : new Date();
   return { date: base, time: isDateTime ? '10:00' : null };
 }
 function writeDateValue(input, date, time){
   const pad = n => String(n).padStart(2, '0');
   const dateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-  input.value = input.type === 'datetime-local' ? `${dateStr}T${time}` : dateStr;
+  input.value = input.dataset.origType === 'datetime-local' ? `${dateStr}T${time}` : dateStr;
   input.dispatchEvent(new Event('input', { bubbles: true }));
   input.dispatchEvent(new Event('change', { bubbles: true }));
 }
 function openCustomDatePicker(input){
   closeCustomDatePicker();
   const dict = I18N[currentLang];
-  const isDateTime = input.type === 'datetime-local';
+  const isDateTime = input.dataset.origType === 'datetime-local';
   const { date: selected, time: initialTime } = parseDateValue(input);
   let viewYear = selected.getFullYear();
   let viewMonth = selected.getMonth();
   let currentTime = initialTime;
-  const minDate = input.min ? new Date(input.min.split('T')[0]) : null;
+  const minAttrOpen = input.getAttribute('min');
+  const minDate = minAttrOpen ? new Date(minAttrOpen.split('T')[0]) : null;
 
   const popup = document.createElement('div');
   popup.className = 'custom-datepicker';
@@ -3797,11 +3799,11 @@ function openCustomDatePicker(input){
         // would see a now-detached e.target and incorrectly close the popup.
         e.stopPropagation();
         writeDateValue(input, cellDate, currentTime || '10:00');
-        if(!isDateTime){ closeCustomDatePicker(); }
-        else {
-          selected.setFullYear(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
-          render();
-        }
+        // Selecting a day never auto-closes the popup anymore — for both
+        // date-only and datetime-local fields the user must tap the Done
+        // button below to confirm, so re-render to reflect the new selection.
+        selected.setFullYear(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+        render();
       });
       grid.appendChild(btn);
     }
@@ -3819,14 +3821,14 @@ function openCustomDatePicker(input){
       });
       timeRow.appendChild(timeInput);
       popup.appendChild(timeRow);
-
-      const doneBtn = document.createElement('button');
-      doneBtn.type = 'button';
-      doneBtn.className = 'custom-datepicker-done';
-      doneBtn.textContent = dict.datepicker_done;
-      doneBtn.addEventListener('click', closeCustomDatePicker);
-      popup.appendChild(doneBtn);
     }
+
+    const doneBtn = document.createElement('button');
+    doneBtn.type = 'button';
+    doneBtn.className = 'custom-datepicker-done';
+    doneBtn.textContent = dict.datepicker_done;
+    doneBtn.addEventListener('click', closeCustomDatePicker);
+    popup.appendChild(doneBtn);
 
     prevBtn.addEventListener('click', e=>{ e.stopPropagation(); viewMonth--; if(viewMonth < 0){ viewMonth = 11; viewYear--; } render(); });
     nextBtn.addEventListener('click', e=>{ e.stopPropagation(); viewMonth++; if(viewMonth > 11){ viewMonth = 0; viewYear++; } render(); });
@@ -3845,7 +3847,15 @@ function initCustomDatePickers(){
   document.querySelectorAll('input[type="date"], input[type="datetime-local"]').forEach(input=>{
     if(input.dataset.customPicker) return;
     input.dataset.customPicker = '1';
+    input.dataset.origType = input.type;
+    // Switching the real type to "text" (not just readonly) is required: on
+    // mobile Chrome/Android a readonly date/datetime-local input still opens
+    // the native OS picker on tap, which showed the browser's own locale
+    // instead of the site's selected language. A text input has no native
+    // picker UI on any platform, so our custom popup is the only one that opens.
+    input.type = 'text';
     input.readOnly = true;
+    input.setAttribute('inputmode', 'none');
     input.addEventListener('click', ()=> openCustomDatePicker(input));
     input.addEventListener('focus', ()=> openCustomDatePicker(input));
   });
