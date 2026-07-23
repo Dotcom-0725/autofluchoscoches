@@ -2831,6 +2831,7 @@ async function openBookingModal(carId){
   refreshPickupMin();
   setDefaultBookingDates();
   setDefaultBookingLocations();
+  copyQuickBookingIntoBookingForm();
   updateTotal();
 }
 // bookingForm.reset() above reverts <select> elements to their first option
@@ -2855,6 +2856,23 @@ function setDefaultBookingDates(){
   returnDate.setDate(returnDate.getDate() + MIN_RENTAL_DAYS);
   pickupInput.value = toDatetimeLocalString(today);
   returnInput.value = toDatetimeLocalString(returnDate);
+}
+// Carries whatever the customer already picked in the hero's Quick Booking
+// widget (dates/times/locations) into the final booking form, so they never
+// have to re-enter information they already gave — only the remaining
+// fields (name, phone, documents, ...) are left blank.
+function copyQuickBookingIntoBookingForm(){
+  const qbPickupDate = document.getElementById('qbPickupDate')?.value;
+  const qbPickupTime = document.getElementById('qbPickupTime')?.value;
+  const qbReturnDate = document.getElementById('qbReturnDate')?.value;
+  const qbReturnTime = document.getElementById('qbReturnTime')?.value;
+  if(qbPickupDate && qbPickupTime) document.getElementById('bkPickup').value = `${qbPickupDate}T${qbPickupTime}`;
+  if(qbReturnDate && qbReturnTime) document.getElementById('bkReturn').value = `${qbReturnDate}T${qbReturnTime}`;
+
+  const qbLoc = document.getElementById('qbLocation');
+  const qbLocReturn = document.getElementById('qbLocationReturn');
+  if(qbLoc && qbLoc.value !== '') document.getElementById('bkPickupLoc').value = qbLoc.value;
+  if(qbLocReturn && qbLocReturn.value !== '') document.getElementById('bkDropoffLoc').value = qbLocReturn.value;
 }
 function closeBookingModal(){ bookingOverlay.classList.remove('open'); }
 function closeConfirmModal(){ confirmOverlay.classList.remove('open'); }
@@ -3696,19 +3714,25 @@ document.querySelectorAll('.currency-switch-group button').forEach(b=>{
   if(qbLocReturn) qbLocReturn.value = String(officeIndex);
 })();
 
-// Quick Booking widget: default the pickup date to today and the return date to
-// today + MIN_RENTAL_DAYS, so the customer sees the 3-day minimum rental period
-// straight away (pickup/return time stay at their 10:00 default).
-(function setQuickBookingDefaultDates(){
+// Quick Booking widget: default pickup to today at (now + 2h) — matching the
+// site-wide "earliest pickup is 2h from now" rule — and return to pickup+
+// MIN_RENTAL_DAYS at the same time, so the customer sees a valid 3-day
+// minimum rental window straight away.
+(function setQuickBookingDefaults2(){
   const pad = n => String(n).padStart(2, '0');
   const toDateStr = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const today = new Date();
-  const returnDate = new Date(today);
-  returnDate.setDate(returnDate.getDate() + MIN_RENTAL_DAYS);
+  const toTimeStr = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const pickup = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  const ret = new Date(pickup);
+  ret.setDate(ret.getDate() + MIN_RENTAL_DAYS);
   const qbPickupDate = document.getElementById('qbPickupDate');
+  const qbPickupTime = document.getElementById('qbPickupTime');
   const qbReturnDate = document.getElementById('qbReturnDate');
-  if(qbPickupDate){ qbPickupDate.value = toDateStr(today); qbPickupDate.min = toDateStr(today); }
-  if(qbReturnDate) qbReturnDate.value = toDateStr(returnDate);
+  const qbReturnTime = document.getElementById('qbReturnTime');
+  if(qbPickupDate){ qbPickupDate.value = toDateStr(pickup); qbPickupDate.min = toDateStr(new Date()); }
+  if(qbPickupTime) qbPickupTime.value = toTimeStr(pickup);
+  if(qbReturnDate) qbReturnDate.value = toDateStr(ret);
+  if(qbReturnTime) qbReturnTime.value = toTimeStr(pickup);
 })();
 
 // Load the shared availability list from the backend, then re-render with real data
