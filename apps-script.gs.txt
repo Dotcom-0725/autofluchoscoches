@@ -2,15 +2,23 @@
    AUTO FLUCHOS COCHES — Booking engine + Admin Dashboard backend
    (Google Apps Script Web App, backed by a Google Sheet)
 
-   WHAT THIS DOES (v5 — adds the payment system)
+   WHAT THIS DOES (v6 — adds sold-out availability notifications)
+   - Everything from v5 (payment system: payment_method/payment_status/
+     booking_status + optional customer_email on bookings, Bank Transfer/Wise
+     payment step, `setBookingPayment` + `adminSetPaymentStatus`).
+   - When a car is sold out, a visitor can leave their email/phone in a
+     "Notify me" panel (see `requestAvailabilityNotification` below), stored
+     in a new "AvailabilityRequests" sheet. The existing hourly
+     autoExpireBookings trigger now also calls `notifyAvailabilityRequests_`
+     right after freeing expired bookings, since that's exactly the moment a
+     sold-out car might have stock again — it emails any pending request
+     whose contact looks like an email address, then clears it.
+   - Also exposes each car's active bookings' return dates (`bookedReturns`)
+     from the public (no-action) endpoint, so the site can tell a customer
+     the specific date a sold-out car frees up, not just that it's sold out.
    - Everything from v4 (admin dashboard data layer: Cars/Settings/ActivityLog
      sheets, single shared admin password, stock-aware inventory, overbooking
      prevention, auto-expiry, seasonal pricing, automatic confirmation email).
-   - Bookings now carry payment_method/payment_status/booking_status (plus an
-     optional customer_email) so the payment step in index.html (Bank Transfer
-     or Wise) and the admin dashboard's payment-status control both read/write
-     the same fields. See `setBookingPayment` (customer-facing) and
-     `adminSetPaymentStatus` (admin dashboard) below.
    - Fleet data (the car catalog) lives in a "Cars" sheet tab instead of being
      hardcoded in index.html, so the admin dashboard (admin.html) can actually
      create/edit/delete/duplicate vehicles.
@@ -42,6 +50,7 @@ const SEASONS_SHEET_NAME = 'Seasons';
 const CARS_SHEET_NAME = 'Cars';
 const SETTINGS_SHEET_NAME = 'Settings';
 const ACTIVITY_SHEET_NAME = 'ActivityLog';
+const AVAILABILITY_SHEET_NAME = 'AvailabilityRequests';
 
 // Single shared admin password — full access (super_admin role), no separate
 // Manager/Employee tiers. Change it here any time; redeploy afterwards.
@@ -51,6 +60,7 @@ const ADMIN_ROLES = {
 const EDITOR_ROLES = ['super_admin', 'manager']; // allowed to edit fleet/pricing/settings
 
 const NOTIFICATION_EMAIL = 'Contact@autofluchoscoches.com';
+const SITE_URL = 'https://autofluchoscoches.com/';
 
 function roleForPassword_(password) {
   return ADMIN_ROLES[password] || null;
@@ -216,6 +226,17 @@ function doPost(e) {
     return jsonResponse_({ success: true });
   }
 
+  // Customer-initiated: a visitor asked to be told when a sold-out car frees
+  // up. No password — stored for autoExpireBookings (see below) to pick up
+  // and auto-email once the car has free stock again.
+  if (body.action === 'requestAvailabilityNotification') {
+    if (!body.carId || !body.contact) return jsonResponse_({ success: false, error: 'Missing fields' });
+    getAvailabilityRequestsSheet_().appendRow([
+      body.carId, body.carName || '', body.contact, new Date(), '',
+    ]);
+    return jsonResponse_({ success: true });
+  }
+
   // Default action: record a new booking (website checkout OR a manual
   // reservation created from the admin dashboard — same code path, so
   // inventory updates automatically either way).
@@ -265,7 +286,9 @@ function doPost(e) {
 }
 
 /* Frees up stock automatically once a booking's return date has passed.
-   Installed as an hourly time-driven trigger (see v3 setup notes). */
+   Installed as an hourly time-driven trigger (see v3 setup notes). Also
+   checks pending "notify me" requests afterwards, since freeing stock here
+   is exactly the moment a sold-out car might become bookable again. */
 function autoExpireBookings() {
   const sheet = getBookingsSheet_();
   const rows = sheet.getDataRange().getValues();
@@ -275,6 +298,39 @@ function autoExpireBookings() {
     if (ret && new Date(ret) < now) {
       sheet.deleteRow(i + 1);
     }
+  }
+  notifyAvailabilityRequests_();
+}
+
+/* For each pending "notify me when available" request, checks whether that
+   car currently has free stock; if so, emails the requester (when their
+   contact looks like an email — no SMS integration for phone numbers) and
+   removes the request so it isn't processed again. Phone-only requests are
+   just removed once available, for the team to follow up manually. */
+function notifyAvailabilityRequests_() {
+  const sheet = getAvailabilityRequestsSheet_();
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return;
+  const cars = listCars_();
+  const bookedCounts = {};
+  listActiveBookings_().forEach(b => { bookedCounts[b.carId] = (bookedCounts[b.carId] || 0) + 1; });
+  for (let i = rows.length - 1; i >= 1; i--) {
+    const carId = rows[i][0];
+    const car = cars.find(c => c.id === carId);
+    if (!car) continue;
+    const remaining = (car.stock || 1) - (bookedCounts[carId] || 0);
+    if (remaining <= 0) continue;
+    const contact = rows[i][2];
+    if (contact && contact.indexOf('@') !== -1) {
+      try {
+        MailApp.sendEmail(
+          contact,
+          'Good news — ' + (rows[i][1] || carId) + ' is available again!',
+          'The car you asked about, ' + (rows[i][1] || carId) + ', is now available for booking.\n\nBook it here before it\'s gone: ' + (SITE_URL || '')
+        );
+      } catch (e) { /* don't fail the whole batch over one email quota/error */ }
+    }
+    sheet.deleteRow(i + 1);
   }
 }
 
@@ -557,6 +613,16 @@ function getActivitySheet_() {
   return sheet;
 }
 
+function getAvailabilityRequestsSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(AVAILABILITY_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(AVAILABILITY_SHEET_NAME);
+    sheet.appendRow(['car_id', 'car_name', 'contact', 'requested_at', 'notified']);
+  }
+  return sheet;
+}
+
 function jsonResponse_(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
@@ -574,4 +640,6 @@ function jsonResponse_(obj) {
      (essence|diesel|hybride), body (comma-separated tags e.g. "suv"),
      cat, stock, imgSrc (path under images/), offer, sortOrder (lower = first).
    - Settings tab: key/value pairs (meta_title, meta_description, etc.).
+   - AvailabilityRequests tab: car_id, car_name, contact, requested_at,
+     notified (unused placeholder — rows are deleted once notified instead).
 ------------------------------------------------------------ */
