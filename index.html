@@ -1441,6 +1441,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       <div class="bank-detail-row">
         <span class="bank-detail-label" data-i18n="payment_account_holder">Account Holder</span>
         <span class="bank-detail-value" id="bankAccountHolder"></span>
+        <button type="button" class="btn btn-outline btn-sm" data-copy-target="bankAccountHolder" data-i18n="payment_copy">Copy</button>
       </div>
       <div class="bank-detail-row">
         <span class="bank-detail-label" data-i18n="payment_iban">IBAN</span>
@@ -3728,6 +3729,34 @@ document.getElementById('previewBackBtn').addEventListener('click', ()=>{
 document.getElementById('previewPayNowBtn').addEventListener('click', ()=> finalizeBooking('now'));
 document.getElementById('previewPayPickupBtn').addEventListener('click', ()=> finalizeBooking('pickup'));
 
+// Fire-and-forget: builds and downloads the booking PDF without the caller
+// awaiting it, so the UI can move straight to the next step (payment modal or
+// confirmation screen) as soon as the booking itself is recorded.
+async function schedulePdfGeneration(dict, data, ref, choice){
+  try {
+    const licenseFile = selectedFiles.bkLicense;
+    const passportFile = selectedFiles.bkPassport;
+    const [carImg, logoImg] = await Promise.all([
+      imageUrlToPngDataUrl(data.car.imgSrc, { maxWidth: 400, format: 'image/jpeg', quality: 0.8 }),
+      imageUrlToPngDataUrl('images/logo.webp', { maxWidth: 200, format: 'image/png' })
+    ]);
+    const pdfData = {
+      ref, date: new Date().toLocaleDateString(dict.htmlLang, { year: 'numeric', month: 'long', day: 'numeric' }),
+      name: data.name, phone: data.phone, carName: data.car.name,
+      pickup: formatDateTimeForPdf(data.pickup, dict.htmlLang), ret: formatDateTimeForPdf(data.ret, dict.htmlLang),
+      quantity: 1, licenseYears: data.licenseYears, pickupLoc: data.pickupLoc, dropoffLoc: data.dropoffLoc,
+      deposit: data.deposit, resources: data.resources, total: data.total,
+      licenseFileName: licenseFile?.name || '', passportFileName: passportFile?.name || '',
+      carImg, logoImg,
+      paymentMethodLabel: choice === 'pickup' ? dict.pdf_payment_cash : dict.pdf_payment_online,
+    };
+    const doc = await generateBookingPdf(dict, pdfData);
+    doc.save(`booking-${ref}.pdf`);
+  } catch(e){
+    console.error('Booking PDF generation failed', e);
+  }
+}
+
 async function finalizeBooking(choice){
   const data = pendingBookingData;
   if(!data) return;
@@ -3753,28 +3782,14 @@ async function finalizeBooking(choice){
     return;
   }
   renderFleet(dict, document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
-
-  const licenseFile = selectedFiles.bkLicense;
-  const passportFile = selectedFiles.bkPassport;
-  const [carImg, logoImg] = await Promise.all([
-    imageUrlToPngDataUrl(data.car.imgSrc, { maxWidth: 400, format: 'image/jpeg', quality: 0.8 }),
-    imageUrlToPngDataUrl('images/logo.webp', { maxWidth: 200, format: 'image/png' })
-  ]);
-
-  const pdfData = {
-    ref, date: new Date().toLocaleDateString(dict.htmlLang, { year: 'numeric', month: 'long', day: 'numeric' }),
-    name: data.name, phone: data.phone, carName: data.car.name,
-    pickup: formatDateTimeForPdf(data.pickup, dict.htmlLang), ret: formatDateTimeForPdf(data.ret, dict.htmlLang),
-    quantity: 1, licenseYears: data.licenseYears, pickupLoc: data.pickupLoc, dropoffLoc: data.dropoffLoc,
-    deposit: data.deposit, resources: data.resources, total: data.total,
-    licenseFileName: licenseFile?.name || '', passportFileName: passportFile?.name || '',
-    carImg, logoImg,
-    paymentMethodLabel: choice === 'pickup' ? dict.pdf_payment_cash : dict.pdf_payment_online,
-  };
-  const doc = await generateBookingPdf(dict, pdfData);
-  doc.save(`booking-${ref}.pdf`);
-
   closePreviewModal();
+
+  // Generate the PDF in the background instead of awaiting it here. It re-encodes
+  // images and draws dozens of text/label pairs, which is comparatively slow —
+  // doing it before routing to the next step made the payment buttons feel
+  // laggy. The booking itself is already recorded above, so the customer can
+  // move on immediately; the PDF still finishes and downloads a moment later.
+  schedulePdfGeneration(dict, data, ref, choice);
 
   if(choice === 'pickup'){
     // Paid at pickup: no online payment step needed — confirm the booking right away.
