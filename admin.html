@@ -698,7 +698,7 @@ const PAYMENT_STATUS_OPTIONS = [
   { value: 'refunded', label: 'Refunded' },
 ];
 function paymentMethodLabel(method){
-  return { bank_transfer: 'Bank Transfer', wise: 'Wise', none: '—' }[method] || method || '—';
+  return { bank_transfer: 'Bank Transfer', wise: 'Wise', cash_on_pickup: 'Cash on Pickup', none: '—' }[method] || method || '—';
 }
 function renderReservationsRows(){
   const tbody = document.getElementById('reservationsBody');

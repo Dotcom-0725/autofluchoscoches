@@ -786,6 +786,17 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
 .payment-panel .btn-block{margin-top:16px}
 .payment-panel .confirm-success-box{margin-top:16px}
 
+/* ---------- Booking preview step ---------- */
+.preview-details{margin-bottom:6px}
+.preview-row{
+  display:flex;align-items:flex-start;gap:10px;justify-content:space-between;
+  padding:10px 0;border-bottom:1px solid var(--card-border);
+}
+.preview-row:last-of-type{border-bottom:none}
+.preview-row .preview-label{font-size:.72rem;font-weight:700;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.03em;flex:0 0 auto}
+.preview-row .preview-value{font-weight:700;flex:1;text-align:end;word-break:break-word}
+.preview-row.preview-total .preview-value{color:var(--gold);font-size:1.1rem}
+
 /* ---------- RTL specific ---------- */
 html[dir="rtl"] .car-offer{inset-inline-start:auto;inset-inline-end:10px}
 html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
@@ -1398,6 +1409,22 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
   </div>
 </div>
 
+<!-- ================= BOOKING PREVIEW MODAL ================= -->
+<div class="modal-overlay" id="previewOverlay">
+  <div class="modal-box">
+    <button class="modal-close" id="previewClose" aria-label="Close">✕</button>
+    <h3 data-i18n="preview_title">Booking Summary</h3>
+    <p data-i18n="preview_subtitle">Please review your booking details, then choose how you'd like to pay.</p>
+    <div class="preview-details" id="previewDetails"></div>
+    <p class="modal-error" id="previewError" data-i18n="required_field">Please fill in all required fields.</p>
+    <div class="modal-actions" style="flex-direction:column">
+      <button type="button" class="btn btn-blue btn-block" id="previewPayNowBtn" data-i18n="preview_pay_now">💳 Pay Now</button>
+      <button type="button" class="btn btn-primary btn-block" id="previewPayPickupBtn" data-i18n="preview_pay_pickup">🚗 Pay on Pickup</button>
+      <button type="button" class="btn btn-outline btn-block" id="previewBackBtn" data-i18n="preview_edit">← Edit Details</button>
+    </div>
+  </div>
+</div>
+
 <!-- ================= PAYMENT MODAL ================= -->
 <div class="modal-overlay" id="paymentOverlay">
   <div class="modal-box">
@@ -1838,8 +1865,12 @@ const I18N = {
     payment_pay_wise:'Pay with Wise',
     payment_wise_success:'Your booking has been received. Payment will be verified shortly.',
     payment_method_label:'Payment Method', payment_method_bank_transfer:'Bank Transfer', payment_method_wise:'Wise',
+    payment_method_cash_pickup:'Cash on Pickup',
     payment_confirmation_subject:'Payment Confirmation - Reservation',
     modal_email_optional_label:'Email (optional, for payment confirmation)',
+    preview_title:'Booking Summary', preview_subtitle:"Please review your booking details, then choose how you'd like to pay.",
+    preview_pay_now:'💳 Pay Now', preview_pay_pickup:'🚗 Pay on Pickup', preview_edit:'← Edit Details',
+    pdf_payment_online:'Online Payment',
     pdf_title:'BOOKING CONFIRMATION', pdf_ref:'Booking Reference', pdf_date:'Date',
     pdf_customer:'Customer', pdf_phone:'Phone', pdf_car:'Vehicle', pdf_price:'Price / Day',
     pdf_pickup:'Pick-up Date', pdf_return:'Return Date', pdf_notes:'Notes',
@@ -1969,8 +2000,12 @@ const I18N = {
     payment_pay_wise:'Payer avec Wise',
     payment_wise_success:'Votre réservation a été reçue. Le paiement sera vérifié sous peu.',
     payment_method_label:'Mode de paiement', payment_method_bank_transfer:'Virement bancaire', payment_method_wise:'Wise',
+    payment_method_cash_pickup:'Paiement à la prise en charge',
     payment_confirmation_subject:'Confirmation de paiement - Réservation',
     modal_email_optional_label:'Email (facultatif, pour la confirmation de paiement)',
+    preview_title:'Récapitulatif de la réservation', preview_subtitle:'Merci de vérifier les détails de votre réservation, puis choisissez votre mode de paiement.',
+    preview_pay_now:'💳 Payer maintenant', preview_pay_pickup:'🚗 Payer à la prise en charge', preview_edit:'← Modifier les détails',
+    pdf_payment_online:'Paiement en ligne',
     pdf_title:'CONFIRMATION DE RÉSERVATION', pdf_ref:'Référence de réservation', pdf_date:'Date',
     pdf_customer:'Client', pdf_phone:'Téléphone', pdf_car:'Véhicule', pdf_price:'Prix / Jour',
     pdf_pickup:'Date de prise en charge', pdf_return:'Date de retour', pdf_notes:'Remarques',
@@ -2101,8 +2136,12 @@ const I18N = {
     payment_pay_wise:'Pagar con Wise',
     payment_wise_success:'Su reserva ha sido recibida. El pago se verificará en breve.',
     payment_method_label:'Método de pago', payment_method_bank_transfer:'Transferencia bancaria', payment_method_wise:'Wise',
+    payment_method_cash_pickup:'Pago al recoger',
     payment_confirmation_subject:'Confirmación de pago - Reserva',
     modal_email_optional_label:'Email (opcional, para la confirmación de pago)',
+    preview_title:'Resumen de la reserva', preview_subtitle:'Revise los detalles de su reserva y elija cómo desea pagar.',
+    preview_pay_now:'💳 Pagar ahora', preview_pay_pickup:'🚗 Pagar al recoger', preview_edit:'← Editar detalles',
+    pdf_payment_online:'Pago en línea',
     pdf_title:'CONFIRMACIÓN DE RESERVA', pdf_ref:'Referencia de reserva', pdf_date:'Fecha',
     pdf_customer:'Cliente', pdf_phone:'Teléfono', pdf_car:'Vehículo', pdf_price:'Precio / Día',
     pdf_pickup:'Fecha de recogida', pdf_return:'Fecha de devolución', pdf_notes:'Notas',
@@ -2233,8 +2272,12 @@ const I18N = {
     payment_pay_wise:'الدفع عبر Wise',
     payment_wise_success:'تم استلام حجزكم. سيتم التحقق من الدفع قريباً.',
     payment_method_label:'طريقة الدفع', payment_method_bank_transfer:'تحويل بنكي', payment_method_wise:'Wise',
+    payment_method_cash_pickup:'الدفع عند الاستلام',
     payment_confirmation_subject:'تأكيد الدفع - الحجز',
     modal_email_optional_label:'البريد الإلكتروني (اختياري، لتأكيد الدفع)',
+    preview_title:'ملخص الحجز', preview_subtitle:'يرجى مراجعة تفاصيل حجزك، ثم اختر طريقة الدفع.',
+    preview_pay_now:'💳 ادفع الآن', preview_pay_pickup:'🚗 ادفع عند الاستلام', preview_edit:'← تعديل التفاصيل',
+    pdf_payment_online:'الدفع الإلكتروني',
     pdf_title:'تأكيد الحجز', pdf_ref:'رقم الحجز', pdf_date:'التاريخ',
     pdf_customer:'الزبون', pdf_phone:'الهاتف', pdf_car:'السيارة', pdf_price:'الثمن / اليوم',
     pdf_doc_title:'Reservation', pdf_reservation_label:'Reservation:', pdf_reservation_date_label:'Reservation date:',
@@ -3460,7 +3503,7 @@ async function generateBookingPdf(dict, data){
   };
   bar(dict.pdf_subtotal, data.total);
   bar(dict.pdf_total_row, data.total);
-  bar(dict.pdf_payment_method, dict.pdf_payment_cash);
+  bar(dict.pdf_payment_method, data.paymentMethodLabel || dict.pdf_payment_cash);
 
   // ---- legal footer: business registration numbers ----
   y += 10;
@@ -3515,21 +3558,82 @@ bookingForm.addEventListener('submit', async e=>{
   const resources = getResourcesBreakdown('bk').text;
   const total = document.getElementById('bkTotalDisplay').textContent;
 
-  const ref = 'AFC-' + Date.now().toString().slice(-8);
-  const submitBtn = e.target.querySelector('button[type="submit"]');
-  if(submitBtn) submitBtn.disabled = true;
+  pendingBookingData = {
+    car: activeBookingCar, name, phone, email, pickup, ret,
+    licenseYears, pickupLoc, dropoffLoc, deposit, resources, total,
+  };
+  openBookingPreview(pendingBookingData);
+});
 
+/* ---------------------------------------------------------------
+   BOOKING PREVIEW STEP — shown once the booking form passes validation,
+   before anything is recorded or any PDF exists. Lets the customer double-
+   check every detail, then choose Pay Now (existing Bank Transfer/Wise
+   flow) or Pay on Pickup (books immediately as cash-on-pickup, no online
+   payment step). Only after that choice do we record the booking and
+   generate the PDF, so the PDF's "Payment method" line always matches
+   what the customer actually picked.
+--------------------------------------------------------------- */
+let pendingBookingData = null;
+function openBookingPreview(data){
+  const dict = I18N[currentLang];
+  const rows = [
+    [dict.pdf_car, data.car.name],
+    [dict.pdf_customer, data.name],
+    [dict.pdf_phone, data.phone],
+    [dict.pdf_pickup, formatDateTimeForPdf(data.pickup, dict.htmlLang)],
+    [dict.pdf_return, formatDateTimeForPdf(data.ret, dict.htmlLang)],
+    [dict.modal_pickup_location_label, data.pickupLoc],
+    [dict.modal_dropoff_location_label, data.dropoffLoc],
+    [dict.modal_deposit_label, data.deposit],
+  ];
+  if(data.resources) rows.push([dict.modal_resources_title, data.resources]);
+  const detailsEl = document.getElementById('previewDetails');
+  detailsEl.innerHTML = rows.map(([label, value])=>
+    `<div class="preview-row"><span class="preview-label">${label}</span><span class="preview-value">${value}</span></div>`
+  ).join('') + `<div class="preview-row preview-total"><span class="preview-label">${dict.modal_total_label}</span><span class="preview-value">${data.total}</span></div>`;
+  document.getElementById('previewError').classList.remove('show');
+  setPreviewButtonsEnabled(true);
+  closeBookingModal();
+  document.getElementById('previewOverlay').classList.add('open');
+}
+function closePreviewModal(){ document.getElementById('previewOverlay').classList.remove('open'); }
+function setPreviewButtonsEnabled(enabled){
+  document.getElementById('previewPayNowBtn').disabled = !enabled;
+  document.getElementById('previewPayPickupBtn').disabled = !enabled;
+  document.getElementById('previewBackBtn').disabled = !enabled;
+}
+document.getElementById('previewClose').addEventListener('click', closePreviewModal);
+document.getElementById('previewOverlay').addEventListener('click', e=>{ if(e.target === document.getElementById('previewOverlay')) closePreviewModal(); });
+// "Edit Details" goes back to the booking form without resetting it, so
+// whatever the customer already typed (name, phone, files, ...) is still there.
+document.getElementById('previewBackBtn').addEventListener('click', ()=>{
+  closePreviewModal();
+  bookingOverlay.classList.add('open');
+});
+document.getElementById('previewPayNowBtn').addEventListener('click', ()=> finalizeBooking('now'));
+document.getElementById('previewPayPickupBtn').addEventListener('click', ()=> finalizeBooking('pickup'));
+
+async function finalizeBooking(choice){
+  const data = pendingBookingData;
+  if(!data) return;
+  const dict = I18N[currentLang];
+  const previewError = document.getElementById('previewError');
+  previewError.classList.remove('show');
+  setPreviewButtonsEnabled(false);
+
+  const ref = 'AFC-' + Date.now().toString().slice(-8);
   // Record the booking FIRST (server-side stock check, atomic against concurrent
   // bookings) — only generate/download the PDF once the vehicle is confirmed as
   // actually still available, so two customers can't both "win" the last unit.
-  const bookingResult = await addBookedCar(activeBookingCar.id, {
-    ref, carName: activeBookingCar.name, customerName: name, phone, email, pickup, ret,
-    stock: activeBookingCar.stock || 1, total,
+  const bookingResult = await addBookedCar(data.car.id, {
+    ref, carName: data.car.name, customerName: data.name, phone: data.phone, email: data.email,
+    pickup: data.pickup, ret: data.ret, stock: data.car.stock || 1, total: data.total,
   });
-  if(submitBtn) submitBtn.disabled = false;
   if(!bookingResult.success){
-    bookingError.textContent = bookingResult.error === 'sold_out' ? dict.sold_out_error : dict.required_field;
-    bookingError.classList.add('show');
+    previewError.textContent = bookingResult.error === 'sold_out' ? dict.sold_out_error : dict.required_field;
+    previewError.classList.add('show');
+    setPreviewButtonsEnabled(true);
     await fetchBookedCars();
     renderFleet(dict, document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
     return;
@@ -3539,31 +3643,51 @@ bookingForm.addEventListener('submit', async e=>{
   const licenseFile = selectedFiles.bkLicense;
   const passportFile = selectedFiles.bkPassport;
   const [carImg, logoImg] = await Promise.all([
-    imageUrlToPngDataUrl(activeBookingCar.imgSrc, { maxWidth: 400, format: 'image/jpeg', quality: 0.8 }),
+    imageUrlToPngDataUrl(data.car.imgSrc, { maxWidth: 400, format: 'image/jpeg', quality: 0.8 }),
     imageUrlToPngDataUrl('images/logo.webp', { maxWidth: 200, format: 'image/png' })
   ]);
 
   const pdfData = {
     ref, date: new Date().toLocaleDateString(dict.htmlLang, { year: 'numeric', month: 'long', day: 'numeric' }),
-    name, phone, carName: activeBookingCar.name,
-    pickup: formatDateTimeForPdf(pickup, dict.htmlLang), ret: formatDateTimeForPdf(ret, dict.htmlLang),
-    quantity: 1, licenseYears, pickupLoc, dropoffLoc, deposit, resources, total,
+    name: data.name, phone: data.phone, carName: data.car.name,
+    pickup: formatDateTimeForPdf(data.pickup, dict.htmlLang), ret: formatDateTimeForPdf(data.ret, dict.htmlLang),
+    quantity: 1, licenseYears: data.licenseYears, pickupLoc: data.pickupLoc, dropoffLoc: data.dropoffLoc,
+    deposit: data.deposit, resources: data.resources, total: data.total,
     licenseFileName: licenseFile?.name || '', passportFileName: passportFile?.name || '',
     carImg, logoImg,
+    paymentMethodLabel: choice === 'pickup' ? dict.pdf_payment_cash : dict.pdf_payment_online,
   };
   const doc = await generateBookingPdf(dict, pdfData);
   doc.save(`booking-${ref}.pdf`);
 
-  closeBookingModal();
-  openPaymentModal({ ref, dict, name, phone, email, carName: activeBookingCar.name, pickup, ret, total });
-});
+  closePreviewModal();
+
+  if(choice === 'pickup'){
+    // Paid at pickup: no online payment step needed — confirm the booking right away.
+    await setBookingPayment(ref, 'cash_on_pickup', 'pending', 'confirmed');
+    const summary = buildBookingSummaryText(
+      { ref, dict, name: data.name, phone: data.phone, carName: data.car.name, pickup: data.pickup, ret: data.ret, total: data.total },
+      dict.payment_method_cash_pickup
+    );
+    document.getElementById('confirmWhatsappBtn').href =
+      'https://wa.me/212661304574?text=' + encodeURIComponent(summary);
+    document.getElementById('confirmEmailBtn').href =
+      'mailto:Auto.fluchos@gmail.com?subject=' +
+      encodeURIComponent(`${dict.payment_confirmation_subject} #${ref}`) +
+      '&body=' + encodeURIComponent(summary + '\n\n' + dict.confirm_attach_note);
+    confirmOverlay.classList.add('open');
+  } else {
+    openPaymentModal({ ref, dict, name: data.name, phone: data.phone, email: data.email, carName: data.car.name, pickup: data.pickup, ret: data.ret, total: data.total });
+  }
+  setPreviewButtonsEnabled(true);
+}
 
 /* ---------------------------------------------------------------
-   PAYMENT STEP — shown right after a booking is recorded. The customer
-   picks Bank Transfer (shows account details + "I've paid" confirmation
-   step) or Wise (opens the pay link, then shows a pending-verification
-   message). Either path updates payment_method/payment_status/
-   booking_status on the booking record via setBookingPayment().
+   PAYMENT STEP — shown right after the customer picks "Pay Now" in the
+   booking preview. They pick Bank Transfer (shows account details + "I've
+   paid" confirmation step) or Wise (opens the pay link, then shows a
+   pending-verification message). Either path updates payment_method/
+   payment_status/booking_status on the booking record via setBookingPayment().
 --------------------------------------------------------------- */
 let currentPaymentBooking = null;
 function buildBookingSummaryText(data, paymentMethodLabel){
