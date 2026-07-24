@@ -2822,14 +2822,11 @@ async function openBookingModal(carId){
   ['bkLicense','bkPassport'].forEach(k => resetFilePicker(k, I18N[currentLang]));
   bookingOverlay.classList.add('open');
 
-  // Refresh availability from the shared backend before letting the customer pick a car,
-  // so a car someone else just booked shows as unavailable here too.
-  await fetchBookedCars();
-  renderFleet(I18N[currentLang], document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
-  // Stay on whichever car the customer clicked, even if it's not free for the
-  // Quick Booking widget's current dates — checkSelectedCarAvailability()
-  // (wired below via updateTotal) will warn them and let them adjust the
-  // dates for THIS car instead of silently swapping to a different vehicle.
+  // Populate the form immediately, before the network round-trip below — so
+  // the customer's Quick Booking dates/locations appear the instant the modal
+  // opens instead of ~1s later. That delay used to leave the form showing
+  // blank/default fields right after opening, making customers think they
+  // had to re-pick their dates from scratch.
   populateCarSelect(I18N[currentLang]);
   document.getElementById('modalCarSelect').value = activeBookingCar.id;
   refreshPickupMin();
@@ -2846,6 +2843,18 @@ async function openBookingModal(carId){
   // survives the few minutes a customer typically spends filling in the rest
   // of the form (uploading documents, entering their name/phone, etc.).
   refreshStalePickupDefault();
+  updateTotal();
+
+  // Refresh availability from the shared backend before letting the customer pick a car,
+  // so a car someone else just booked shows as unavailable here too.
+  await fetchBookedCars();
+  renderFleet(I18N[currentLang], document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
+  // Stay on whichever car the customer clicked, even if it's not free for the
+  // Quick Booking widget's current dates — checkSelectedCarAvailability()
+  // (wired below via updateTotal) will warn them and let them adjust the
+  // dates for THIS car instead of silently swapping to a different vehicle.
+  // Re-run now that fresh booking data has arrived, so the availability
+  // warning reflects any booking made by another customer moments ago.
   updateTotal();
 }
 function refreshStalePickupDefault(){
