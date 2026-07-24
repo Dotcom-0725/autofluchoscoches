@@ -2280,11 +2280,11 @@ const I18N = {
     pdf_payment_online:'الدفع الإلكتروني',
     pdf_title:'تأكيد الحجز', pdf_ref:'رقم الحجز', pdf_date:'التاريخ',
     pdf_customer:'الزبون', pdf_phone:'الهاتف', pdf_car:'السيارة', pdf_price:'الثمن / اليوم',
-    pdf_doc_title:'Reservation', pdf_reservation_label:'Reservation:', pdf_reservation_date_label:'Reservation date:',
-    pdf_bill_to:'Bill to', pdf_col_thumbnail:'Thumbnail', pdf_col_product:'Product',
-    pdf_col_quantity:'Quantity', pdf_col_price:'Price', pdf_subtotal:'Subtotal:', pdf_total_row:'Total:',
-    pdf_payment_method:'Payment method:', pdf_payment_cash:'Cash on delivery',
-    pdf_washing_value:'Car wash',
+    pdf_doc_title:'حجز', pdf_reservation_label:'الحجز:', pdf_reservation_date_label:'تاريخ الحجز:',
+    pdf_bill_to:'فوترة إلى', pdf_col_thumbnail:'صورة', pdf_col_product:'المنتج',
+    pdf_col_quantity:'الكمية', pdf_col_price:'الثمن', pdf_subtotal:'المجموع الفرعي:', pdf_total_row:'المجموع:',
+    pdf_payment_method:'طريقة الدفع:', pdf_payment_cash:'الدفع عند الاستلام',
+    pdf_washing_value:'غسل السيارة',
     pdf_pickup:'تاريخ الاستلام', pdf_return:'تاريخ الإرجاع', pdf_notes:'ملاحظات',
     pdf_deposit:'الضمان المطلوب', pdf_deposit_value:'500€ قابل للاسترجاع، أو 0€ + 10€/اليوم غير قابل للاسترجاع',
     pdf_footer:'شكراً لاختياركم Auto Fluchos Coches!',
@@ -3369,6 +3369,110 @@ function formatDateTimeForPdf(value, locale){
   return `${dd}-${mm}-${d.getFullYear()} ${hh}:${mi}`;
 }
 
+/* jsPDF's built-in fonts have no Arabic glyphs, so any Arabic string passed
+   straight to doc.text() renders as mojibake (the screenshot the customer
+   sent showed exactly this). Rather than embedding/reshaping an Arabic font
+   ourselves, we rasterize Arabic text onto an offscreen <canvas> — the
+   browser's own text engine already knows how to shape and join Arabic
+   letters correctly — and place the result into the PDF as an image. Latin
+   text keeps using jsPDF's normal vector text (sharper, smaller file size),
+   so English/French/Spanish PDFs are completely unaffected by this. */
+function containsArabicText(str){
+  return /[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/.test(str);
+}
+function rasterizeArabicText(text, { bold=false, sizePt=9.5, color=[20,20,20] } = {}){
+  const scale = 3; // supersample so the embedded image stays crisp when printed
+  const sizePx = sizePt * (96 / 72) * scale;
+  const fontSpec = `${bold ? '700' : '400'} ${sizePx}px Cairo, sans-serif`;
+  const measure = document.createElement('canvas').getContext('2d');
+  measure.font = fontSpec;
+  measure.direction = 'rtl';
+  const metrics = measure.measureText(text);
+  const ascent = metrics.actualBoundingBoxAscent || sizePx * 0.8;
+  const descent = metrics.actualBoundingBoxDescent || sizePx * 0.25;
+  const width = Math.max(1, Math.ceil(metrics.width) + 4);
+  const height = Math.max(1, Math.ceil(ascent + descent) + 4);
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.font = fontSpec;
+  ctx.direction = 'rtl';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+  ctx.fillText(text, width - 2, ascent + 2);
+  const pxToMm = 25.4 / 96 / scale;
+  return {
+    dataUrl: canvas.toDataURL('image/png'),
+    widthMm: width * pxToMm,
+    heightMm: height * pxToMm,
+    ascentMm: ascent * pxToMm,
+  };
+}
+/* Splits Arabic text into lines that fit maxWidthMm, measuring with the same
+   canvas font jsPDF's own splitTextToSize() can't use for Arabic. */
+function wrapArabicText(text, sizePt, bold, maxWidthMm){
+  const scale = 3;
+  const sizePx = sizePt * (96 / 72) * scale;
+  const ctx = document.createElement('canvas').getContext('2d');
+  ctx.font = `${bold ? '700' : '400'} ${sizePx}px Cairo, sans-serif`;
+  const maxWidthPx = maxWidthMm / (25.4 / 96 / scale);
+  const words = text.split(' ');
+  const lines = [];
+  let current = '';
+  words.forEach(word=>{
+    const candidate = current ? current + ' ' + word : word;
+    if(current && ctx.measureText(candidate).width > maxWidthPx){
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  });
+  if(current) lines.push(current);
+  return lines;
+}
+/* Drop-in replacement for doc.text() that transparently switches to the
+   canvas-image technique above whenever the string contains Arabic
+   characters. Used for every piece of dict-driven / user-entered text in
+   the booking PDF, since any of it may be Arabic depending on the
+   customer's selected language. Returns the rendered text width in mm. */
+function pdfText(doc, text, x, y, { align='left', bold=false, sizePt=9.5, color=[20,20,20] } = {}){
+  const str = String(text);
+  if(containsArabicText(str)){
+    const { dataUrl, widthMm, heightMm, ascentMm } = rasterizeArabicText(str, { bold, sizePt, color });
+    let imgX = x;
+    if(align === 'right') imgX = x - widthMm;
+    else if(align === 'center') imgX = x - widthMm / 2;
+    try { doc.addImage(dataUrl, 'PNG', imgX, y - ascentMm, widthMm, heightMm); } catch(e){}
+    return widthMm;
+  }
+  doc.setFontSize(sizePt);
+  doc.setFont(undefined, bold ? 'bold' : 'normal');
+  doc.setTextColor(...color);
+  doc.text(str, x, y, { align });
+  return doc.getTextWidth(str);
+}
+/* Same idea as pdfText but for the multi-line bullet values (e.g. a long
+   resources list) — wraps Arabic text with wrapArabicText() instead of
+   jsPDF's splitTextToSize(), then draws each line as its own rasterized image. */
+function pdfTextWrapped(doc, text, x, y, maxWidthMm, lineHeightMm, opts={}){
+  const str = String(text);
+  const { bold=false, sizePt=9.5, color=[20,20,20] } = opts;
+  if(containsArabicText(str)){
+    const lines = wrapArabicText(str, sizePt, bold, maxWidthMm);
+    lines.forEach((line, i)=> pdfText(doc, line, x, y + i * lineHeightMm, { align: 'left', bold, sizePt, color }));
+    return lines.length;
+  }
+  doc.setFontSize(sizePt);
+  doc.setFont(undefined, bold ? 'bold' : 'normal');
+  doc.setTextColor(...color);
+  const wrapped = doc.splitTextToSize(str, maxWidthMm);
+  doc.text(wrapped, x, y);
+  return wrapped.length;
+}
+
 /* Reservation PDF, styled to match the original site's invoice-style booking
    document: logo + business info, centered "Reservation" title, bill-to block,
    a blue product table (car thumbnail + bulleted details), blue
@@ -3383,47 +3487,41 @@ async function generateBookingPdf(dict, data){
   const BLUE = [31, 111, 235];
   const DARK = [20, 20, 20];
   const GRAY = [100, 100, 100];
+  const WHITE = [255, 255, 255];
+
+  // Arabic text is rasterized from live DOM fonts (see pdfText above), so the
+  // "Cairo" webfont must actually be loaded before we start drawing — it
+  // normally already is (the page itself renders in Arabic by this point),
+  // but this guards against a slow first paint.
+  if(dict.dir === 'rtl'){
+    try { await Promise.all([document.fonts.load('700 40px Cairo'), document.fonts.load('400 40px Cairo')]); } catch(e){}
+  }
 
   // ---- Header: logo + business info (left), title (center), bill-to (right) ----
   if(data.logoImg){
     try { doc.addImage(data.logoImg, 'PNG', marginX, 10, 24, 24); } catch(e){}
   }
-  doc.setTextColor(...DARK);
-  doc.setFontSize(11);
-  doc.setFont(undefined, 'bold');
-  doc.text('autofluchoscoches.com', marginX, 40);
-  doc.setFont(undefined, 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...GRAY);
-  doc.text('Phone: +212 661-304574', marginX, 46);
-  doc.text('Auto.fluchos@gmail.com', marginX, 51);
-  doc.text('https://autofluchoscoches.com', marginX, 56);
+  pdfText(doc, 'autofluchoscoches.com', marginX, 40, { bold: true, sizePt: 11, color: DARK });
+  pdfText(doc, 'Phone: +212 661-304574', marginX, 46, { sizePt: 9, color: GRAY });
+  pdfText(doc, 'Auto.fluchos@gmail.com', marginX, 51, { sizePt: 9, color: GRAY });
+  pdfText(doc, 'https://autofluchoscoches.com', marginX, 56, { sizePt: 9, color: GRAY });
 
-  doc.setTextColor(...DARK);
-  doc.setFontSize(22);
-  doc.setFont(undefined, 'bold');
-  doc.text(dict.pdf_doc_title, pageW / 2, 26, { align: 'center' });
+  pdfText(doc, dict.pdf_doc_title, pageW / 2, 26, { align: 'center', bold: true, sizePt: 22, color: DARK });
 
   let ry = 14;
-  doc.setFontSize(9.5);
   // Draws "Label value" right-flush against rightX, with the label in bold and
   // the value in normal weight (jsPDF can't mix weights within one text() call).
   const labelValueRight = (label, value) => {
-    doc.setFont(undefined, 'normal');
     const valueText = ' ' + value;
-    const valueW = doc.getTextWidth(valueText);
-    doc.text(valueText, rightX, ry, { align: 'right' });
-    doc.setFont(undefined, 'bold');
-    doc.text(label, rightX - valueW, ry, { align: 'right' });
+    const valueW = pdfText(doc, valueText, rightX, ry, { align: 'right', sizePt: 9.5, color: DARK });
+    pdfText(doc, label, rightX - valueW, ry, { align: 'right', bold: true, sizePt: 9.5, color: DARK });
     ry += 5;
   };
   labelValueRight(dict.pdf_reservation_label, '#' + data.ref);
   labelValueRight(dict.pdf_reservation_date_label, data.date);
-  doc.setFont(undefined, 'bold');
-  doc.text(dict.pdf_bill_to, rightX, ry, { align: 'right' }); ry += 5;
-  doc.setFont(undefined, 'normal');
-  doc.text(data.name, rightX, ry, { align: 'right' }); ry += 5;
-  doc.text(data.phone, rightX, ry, { align: 'right' }); ry += 5;
+  pdfText(doc, dict.pdf_bill_to, rightX, ry, { align: 'right', bold: true, sizePt: 9.5, color: DARK }); ry += 5;
+  pdfText(doc, data.name, rightX, ry, { align: 'right', sizePt: 9.5, color: DARK }); ry += 5;
+  pdfText(doc, data.phone, rightX, ry, { align: 'right', sizePt: 9.5, color: DARK }); ry += 5;
 
   doc.setDrawColor(...BLUE);
   doc.setLineWidth(0.6);
@@ -3433,13 +3531,10 @@ async function generateBookingPdf(dict, data){
   let y = 70;
   doc.setFillColor(...BLUE);
   doc.rect(marginX, y, rightX - marginX, 8, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(9.5);
-  doc.setFont(undefined, 'bold');
-  doc.text(dict.pdf_col_thumbnail, marginX + 2, y + 5.5);
-  doc.text(dict.pdf_col_product, marginX + 38, y + 5.5);
-  doc.text(dict.pdf_col_quantity, 152, y + 5.5);
-  doc.text(dict.pdf_col_price, 174, y + 5.5);
+  pdfText(doc, dict.pdf_col_thumbnail, marginX + 2, y + 5.5, { bold: true, sizePt: 9.5, color: WHITE });
+  pdfText(doc, dict.pdf_col_product, marginX + 38, y + 5.5, { bold: true, sizePt: 9.5, color: WHITE });
+  pdfText(doc, dict.pdf_col_quantity, 152, y + 5.5, { bold: true, sizePt: 9.5, color: WHITE });
+  pdfText(doc, dict.pdf_col_price, 174, y + 5.5, { bold: true, sizePt: 9.5, color: WHITE });
   y += 8;
   const rowTop = y;
 
@@ -3449,10 +3544,7 @@ async function generateBookingPdf(dict, data){
   }
   let py = y + 6;
   const productX = marginX + 38;
-  doc.setTextColor(...DARK);
-  doc.setFontSize(10.5);
-  doc.setFont(undefined, 'bold');
-  doc.text(data.carName, productX, py);
+  pdfText(doc, data.carName, productX, py, { bold: true, sizePt: 10.5, color: DARK });
   py += 6;
 
   const bullets = [
@@ -3468,23 +3560,16 @@ async function generateBookingPdf(dict, data){
   bullets.push([dict.modal_washing_label, dict.pdf_washing_value]);
   if(data.resources) bullets.push([dict.modal_resources_title, data.resources]);
 
-  doc.setFontSize(9.5);
   bullets.forEach(([label, value])=>{
-    doc.setFont(undefined, 'bold');
-    doc.text('• ' + label + ':', productX, py);
+    pdfText(doc, '• ' + label + ':', productX, py, { bold: true, sizePt: 9.5, color: DARK });
     py += 4.6;
-    doc.setFont(undefined, 'normal');
-    const wrapped = doc.splitTextToSize(String(value), 95);
-    doc.text(wrapped, productX, py);
-    py += 4.6 * wrapped.length;
+    const lineCount = pdfTextWrapped(doc, value, productX, py, 95, 4.6, { sizePt: 9.5, color: DARK });
+    py += 4.6 * lineCount;
   });
 
   const rowBottom = Math.max(py + 2, rowTop + 30);
-  doc.setTextColor(...DARK);
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'normal');
-  doc.text(String(data.quantity), 154, rowTop + 6);
-  doc.text(data.total, 174, rowTop + 6);
+  pdfText(doc, String(data.quantity), 154, rowTop + 6, { sizePt: 10, color: DARK });
+  pdfText(doc, data.total, 174, rowTop + 6, { sizePt: 10, color: DARK });
 
   doc.setDrawColor(210, 210, 210);
   doc.line(marginX, rowBottom, rightX, rowBottom);
@@ -3494,18 +3579,15 @@ async function generateBookingPdf(dict, data){
   const bar = (label, value) => {
     doc.setFillColor(...BLUE);
     doc.rect(marginX, y, rightX - marginX, 9, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'bold');
-    doc.text(label, marginX + 3, y + 6);
-    doc.text(String(value), rightX - 3, y + 6, { align: 'right' });
+    pdfText(doc, label, marginX + 3, y + 6, { bold: true, sizePt: 10, color: WHITE });
+    pdfText(doc, String(value), rightX - 3, y + 6, { align: 'right', bold: true, sizePt: 10, color: WHITE });
     y += 9;
   };
   bar(dict.pdf_subtotal, data.total);
   bar(dict.pdf_total_row, data.total);
   bar(dict.pdf_payment_method, data.paymentMethodLabel || dict.pdf_payment_cash);
 
-  // ---- legal footer: business registration numbers ----
+  // ---- legal footer: business registration numbers ---- (always Latin text, so plain doc.text is fine)
   y += 10;
   doc.setTextColor(...DARK);
   doc.setFontSize(9.5);
