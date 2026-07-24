@@ -223,6 +223,33 @@ function doPost(e) {
     return jsonResponse_({ success: true });
   }
 
+  // Customer-initiated: called from the browser in the background right after
+  // a booking is recorded, to upload the customer's driving license / passport
+  // photo to Drive and attach the resulting link to that booking row. This is
+  // what lets the confirmation PDF's "Driving license" / "Passport" bullets be
+  // clickable links to the actual photo, instead of just showing the filename
+  // the customer picked. No password — the customer isn't authenticated here.
+  if (body.action === 'attachBookingDocument') {
+    if (!body.ref || !body.docType || !body.dataBase64) return jsonResponse_({ success: false, error: 'Missing fields' });
+    if (body.docType !== 'license' && body.docType !== 'passport') return jsonResponse_({ success: false, error: 'Invalid docType' });
+    const row = findBookingRowByRef_(body.ref);
+    if (row === -1) return jsonResponse_({ success: false, error: 'Booking not found' });
+    try {
+      const bytes = Utilities.base64Decode(body.dataBase64);
+      const mimeType = body.mimeType || 'application/octet-stream';
+      const safeName = (body.docType + '_' + body.ref + '_' + (body.fileName || 'document')).replace(/[\/\\]/g, '_');
+      const blob = Utilities.newBlob(bytes, mimeType, safeName);
+      const file = getBookingDocumentsFolder_().createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      const url = 'https://drive.google.com/file/d/' + file.getId() + '/view';
+      const sheet = getBookingsSheet_();
+      sheet.getRange(row, body.docType === 'license' ? 16 : 17).setValue(url);
+      return jsonResponse_({ success: true, url: url });
+    } catch (err) {
+      return jsonResponse_({ success: false, error: 'upload_failed' });
+    }
+  }
+
   // Admin-only: change a booking's payment status from the dashboard
   // (Pending / Awaiting Verification / Paid / Cancelled / Refunded).
   // Marking it Paid auto-confirms the booking and emails the customer.
@@ -298,6 +325,8 @@ function doPost(e) {
       'none',
       'pending',
       'pending_payment',
+      '',
+      '',
     ]);
     // Phone numbers start with "+" (country code, e.g. "+212 6..."), which
     // Google Sheets auto-parses as the start of a formula/number and shows
@@ -602,9 +631,17 @@ function getBookingsSheet_() {
   let sheet = ss.getSheetByName(BOOKINGS_SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(BOOKINGS_SHEET_NAME);
-    sheet.appendRow(['car_id', 'car_name', 'customer_name', 'phone', 'pickup_date', 'return_date', 'reference', 'booked_at', 'stock', 'total', 'source', 'customer_email', 'payment_method', 'payment_status', 'booking_status']);
+    sheet.appendRow(['car_id', 'car_name', 'customer_name', 'phone', 'pickup_date', 'return_date', 'reference', 'booked_at', 'stock', 'total', 'source', 'customer_email', 'payment_method', 'payment_status', 'booking_status', 'license_url', 'passport_url']);
   }
   return sheet;
+}
+// Drive folder where uploaded license/passport photos are stored (see
+// `attachBookingDocument` above) — created once, reused on every upload.
+function getBookingDocumentsFolder_() {
+  const FOLDER_NAME = 'AFC Booking Documents';
+  const folders = DriveApp.getFoldersByName(FOLDER_NAME);
+  if (folders.hasNext()) return folders.next();
+  return DriveApp.createFolder(FOLDER_NAME);
 }
 function getSeasonsSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();

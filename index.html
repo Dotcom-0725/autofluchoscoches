@@ -2560,6 +2560,30 @@ async function setBookingPayment(ref, paymentMethod, paymentStatus, bookingStatu
   }
 }
 
+/* Uploads a license/passport photo to Drive (via the `attachBookingDocument`
+   backend action) and returns its shareable view URL, so the confirmation
+   PDF can turn the filename into a clickable link to the actual document
+   instead of just printing the name the customer picked. Resolves to an
+   empty url (never throws) if there's no file, the backend isn't deployed
+   yet, or the upload fails — the PDF just falls back to plain filename text. */
+async function uploadBookingDocument(ref, docType, file){
+  if(!file) return { success: true, url: '' };
+  if(APPS_SCRIPT_URL.startsWith('PASTE_')) return { success: true, url: '' };
+  try {
+    const dataUrl = await readFileAsDataUrl(file);
+    if(!dataUrl) return { success: false, url: '' };
+    const dataBase64 = dataUrl.split(',')[1] || '';
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action: 'attachBookingDocument', ref, docType, fileName: file.name, mimeType: file.type, dataBase64 }),
+    });
+    return await res.json();
+  } catch(e){
+    return { success: false, url: '' };
+  }
+}
+
 function renderFleet(dict, cat){
   const grid = document.getElementById('fleetGrid');
   grid.innerHTML = '';
@@ -3471,9 +3495,13 @@ function wrapArabicText(text, sizePt, bold, maxWidthMm){
    characters. Used for every piece of dict-driven / user-entered text in
    the booking PDF, since any of it may be Arabic depending on the
    customer's selected language. Returns the rendered text width in mm. */
-function pdfText(doc, text, x, y, { align='left', bold=false, sizePt=9.5, color=[20,20,20] } = {}){
+function pdfText(doc, text, x, y, { align='left', bold=false, sizePt=9.5, color=[20,20,20], url=null } = {}){
   const str = String(text);
   if(containsArabicText(str)){
+    // Arabic text is rasterized to an image (see above), so it can't carry a
+    // jsPDF text link annotation — not a real limitation here since every
+    // caller that passes `url` (the license/passport filename bullets) always
+    // deals with a plain ASCII filename, never Arabic text.
     const { dataUrl, widthMm, heightMm, ascentMm } = rasterizeArabicText(str, { bold, sizePt, color });
     let imgX = x;
     if(align === 'right') imgX = x - widthMm;
@@ -3484,6 +3512,10 @@ function pdfText(doc, text, x, y, { align='left', bold=false, sizePt=9.5, color=
   doc.setFontSize(sizePt);
   doc.setFont(undefined, bold ? 'bold' : 'normal');
   doc.setTextColor(...color);
+  if(url){
+    doc.textWithLink(str, x, y, { url, align });
+    return doc.getTextWidth(str);
+  }
   doc.text(str, x, y, { align });
   return doc.getTextWidth(str);
 }
@@ -3584,8 +3616,11 @@ async function generateBookingPdf(dict, data){
     [dict.pdf_pickup, data.pickup],
     [dict.pdf_return, data.ret],
   ];
-  if(data.licenseFileName) bullets.push([dict.modal_license_label, data.licenseFileName]);
-  if(data.passportFileName) bullets.push([dict.modal_passport_label, data.passportFileName]);
+  // A url makes the bullet's value a clickable link straight to the uploaded
+  // photo (see uploadBookingDocument/attachBookingDocument) — falls back to
+  // plain filename text if the upload didn't happen or hasn't finished.
+  if(data.licenseFileName) bullets.push([dict.modal_license_label, data.licenseFileName, data.licenseUrl]);
+  if(data.passportFileName) bullets.push([dict.modal_passport_label, data.passportFileName, data.passportUrl]);
   if(data.licenseYears) bullets.push([dict.modal_license_years_label, String(data.licenseYears)]);
   bullets.push([dict.modal_pickup_location_label, data.pickupLoc]);
   bullets.push([dict.modal_dropoff_location_label, data.dropoffLoc]);
@@ -3593,11 +3628,16 @@ async function generateBookingPdf(dict, data){
   bullets.push([dict.modal_washing_label, dict.pdf_washing_value]);
   if(data.resources) bullets.push([dict.modal_resources_title, data.resources]);
 
-  bullets.forEach(([label, value])=>{
+  bullets.forEach(([label, value, url])=>{
     pdfText(doc, '• ' + label + ':', productX, py, { bold: true, sizePt: 9.5, color: DARK });
     py += 4.6;
-    const lineCount = pdfTextWrapped(doc, value, productX, py, 95, 4.6, { sizePt: 9.5, color: DARK });
-    py += 4.6 * lineCount;
+    if(url){
+      pdfText(doc, value, productX, py, { sizePt: 9.5, color: BLUE, url });
+      py += 4.6;
+    } else {
+      const lineCount = pdfTextWrapped(doc, value, productX, py, 95, 4.6, { sizePt: 9.5, color: DARK });
+      py += 4.6 * lineCount;
+    }
   });
 
   const rowBottom = Math.max(py + 2, rowTop + 30);
@@ -3736,9 +3776,11 @@ async function schedulePdfGeneration(dict, data, ref, choice){
   try {
     const licenseFile = selectedFiles.bkLicense;
     const passportFile = selectedFiles.bkPassport;
-    const [carImg, logoImg] = await Promise.all([
+    const [carImg, logoImg, licenseUpload, passportUpload] = await Promise.all([
       imageUrlToPngDataUrl(data.car.imgSrc, { maxWidth: 400, format: 'image/jpeg', quality: 0.8 }),
-      imageUrlToPngDataUrl('images/logo.webp', { maxWidth: 200, format: 'image/png' })
+      imageUrlToPngDataUrl('images/logo.webp', { maxWidth: 200, format: 'image/png' }),
+      uploadBookingDocument(ref, 'license', licenseFile),
+      uploadBookingDocument(ref, 'passport', passportFile),
     ]);
     const pdfData = {
       ref, date: new Date().toLocaleDateString(dict.htmlLang, { year: 'numeric', month: 'long', day: 'numeric' }),
@@ -3747,6 +3789,7 @@ async function schedulePdfGeneration(dict, data, ref, choice){
       quantity: 1, licenseYears: data.licenseYears, pickupLoc: data.pickupLoc, dropoffLoc: data.dropoffLoc,
       deposit: data.deposit, resources: data.resources, total: data.total,
       licenseFileName: licenseFile?.name || '', passportFileName: passportFile?.name || '',
+      licenseUrl: licenseUpload?.url || '', passportUrl: passportUpload?.url || '',
       carImg, logoImg,
       paymentMethodLabel: choice === 'pickup' ? dict.pdf_payment_cash : dict.pdf_payment_online,
     };
