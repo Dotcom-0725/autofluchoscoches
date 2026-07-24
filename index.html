@@ -2836,7 +2836,30 @@ async function openBookingModal(carId){
   setDefaultBookingDates();
   setDefaultBookingLocations();
   copyQuickBookingIntoBookingForm();
+  // The Quick Booking widget's pickup default is computed once at page load
+  // ("now + 2h"). A customer who browses for a while before clicking "Book
+  // Now" can carry a now-stale value into this form — one that was valid
+  // when the page loaded but falls back under the 2h minimum by the time
+  // they actually open the modal, tripping the "too soon" warning before
+  // they've even started filling anything in. Refresh it here, at the exact
+  // moment the form opens, with a comfortable safety margin so it also
+  // survives the few minutes a customer typically spends filling in the rest
+  // of the form (uploading documents, entering their name/phone, etc.).
+  refreshStalePickupDefault();
   updateTotal();
+}
+function refreshStalePickupDefault(){
+  const pickupInput = document.getElementById('bkPickup');
+  const returnInput = document.getElementById('bkReturn');
+  if(!pickupInput || !pickupInput.value) return;
+  const safeMinimum = new Date(Date.now() + (2 * 60 + 10) * 60 * 1000); // 2h10min buffer
+  const currentPickup = new Date(pickupInput.value);
+  if(currentPickup >= safeMinimum) return;
+  const days = computeDays('bkPickup', 'bkReturn') || MIN_RENTAL_DAYS;
+  const newReturn = new Date(safeMinimum);
+  newReturn.setDate(newReturn.getDate() + Math.max(days, MIN_RENTAL_DAYS));
+  pickupInput.value = toDatetimeLocalString(safeMinimum);
+  returnInput.value = toDatetimeLocalString(newReturn);
 }
 // bookingForm.reset() above reverts <select> elements to their first option
 // (no `selected` attribute is set on the dynamically generated ones), so the
@@ -3865,15 +3888,17 @@ document.querySelectorAll('.currency-switch-group button').forEach(b=>{
   if(qbLocReturn) qbLocReturn.value = String(officeIndex);
 })();
 
-// Quick Booking widget: default pickup to today at (now + 2h) — matching the
-// site-wide "earliest pickup is 2h from now" rule — and return to pickup+
-// MIN_RENTAL_DAYS at the same time, so the customer sees a valid 3-day
-// minimum rental window straight away.
+// Quick Booking widget: default pickup to today at (now + 2h10min) — a small
+// safety margin above the site-wide "earliest pickup is 2h from now" rule, so
+// a customer who browses for a bit before clicking "Book Now" (this default
+// is only computed once, at page load) doesn't immediately trip that rule —
+// and return to pickup+MIN_RENTAL_DAYS at the same time, so the customer sees
+// a valid 3-day minimum rental window straight away.
 (function setQuickBookingDefaults2(){
   const pad = n => String(n).padStart(2, '0');
   const toDateStr = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const toTimeStr = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  const pickup = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  const pickup = new Date(Date.now() + (2 * 60 + 10) * 60 * 1000);
   const ret = new Date(pickup);
   ret.setDate(ret.getDate() + MIN_RENTAL_DAYS);
   const qbPickupDate = document.getElementById('qbPickupDate');
