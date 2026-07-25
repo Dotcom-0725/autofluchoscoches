@@ -954,13 +954,10 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
     <div class="fleet-filter" id="fleetFilter">
       <button class="active" data-cat="all" data-i18n="filter_all">All Cars</button>
       <button data-cat="petrol_hybrid" data-i18n="filter_petrol_hybrid">Petrol &amp; Hybrid</button>
-      <button data-cat="diesel" data-i18n="filter_diesel">Diesel</button>
       <button data-cat="manual" data-i18n="filter_manual">Manual</button>
       <button data-cat="automatic" data-i18n="filter_automatic">Automatic</button>
       <button data-cat="suv" data-i18n="filter_suv">SUV</button>
       <button data-cat="7seats" data-i18n="filter_family">7 Seats</button>
-      <button data-cat="luxury" data-i18n="filter_luxury">Luxury</button>
-      <button data-cat="economy" data-i18n="filter_economy">Economy</button>
     </div>
 
     <div class="fleet-toolbar" id="fleetToolbar">
@@ -1457,6 +1454,11 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
         <span class="bank-detail-label" data-i18n="payment_bank_name">Bank</span>
         <span class="bank-detail-value" id="bankBankName"></span>
       </div>
+      <div class="bank-detail-row">
+        <span class="bank-detail-label" data-i18n="payment_email">Email</span>
+        <span class="bank-detail-value" id="bankEmail"></span>
+        <button type="button" class="btn btn-outline btn-sm" data-copy-target="bankEmail" data-i18n="payment_copy">Copy</button>
+      </div>
       <button type="button" class="btn btn-blue btn-block" id="bankTransferDoneBtn" data-i18n="payment_transfer_done">I have completed the transfer</button>
     </div>
 
@@ -1859,7 +1861,7 @@ const I18N = {
     confirm_close:'Close',
     payment_title:'Choose a Payment Method', payment_subtitle:'Your booking is reserved — complete payment to confirm it.',
     payment_tab_bank:'Bank Transfer', payment_tab_wise:'Wise',
-    payment_account_holder:'Account Holder', payment_iban:'IBAN', payment_swift:'SWIFT/BIC', payment_bank_name:'Bank',
+    payment_account_holder:'Account Holder', payment_iban:'IBAN', payment_swift:'SWIFT/BIC', payment_bank_name:'Bank', payment_email:'Email',
     payment_copy:'Copy', payment_copied:'Copied!',
     payment_transfer_done:'I have completed the transfer',
     payment_wise_intro:'Pay securely online with Wise, then come back to this page.',
@@ -1994,7 +1996,7 @@ const I18N = {
     confirm_close:'Fermer',
     payment_title:'Choisissez un mode de paiement', payment_subtitle:'Votre réservation est en attente — finalisez le paiement pour la confirmer.',
     payment_tab_bank:'Virement bancaire', payment_tab_wise:'Wise',
-    payment_account_holder:'Titulaire du compte', payment_iban:'IBAN', payment_swift:'SWIFT/BIC', payment_bank_name:'Banque',
+    payment_account_holder:'Titulaire du compte', payment_iban:'IBAN', payment_swift:'SWIFT/BIC', payment_bank_name:'Banque', payment_email:'Email',
     payment_copy:'Copier', payment_copied:'Copié !',
     payment_transfer_done:'J\'ai effectué le virement',
     payment_wise_intro:'Payez en ligne en toute sécurité avec Wise, puis revenez sur cette page.',
@@ -2130,7 +2132,7 @@ const I18N = {
     confirm_close:'Cerrar',
     payment_title:'Elija un método de pago', payment_subtitle:'Su reserva está pendiente — complete el pago para confirmarla.',
     payment_tab_bank:'Transferencia bancaria', payment_tab_wise:'Wise',
-    payment_account_holder:'Titular de la cuenta', payment_iban:'IBAN', payment_swift:'SWIFT/BIC', payment_bank_name:'Banco',
+    payment_account_holder:'Titular de la cuenta', payment_iban:'IBAN', payment_swift:'SWIFT/BIC', payment_bank_name:'Banco', payment_email:'Email',
     payment_copy:'Copiar', payment_copied:'¡Copiado!',
     payment_transfer_done:'He realizado la transferencia',
     payment_wise_intro:'Pague de forma segura en línea con Wise, luego vuelva a esta página.',
@@ -2266,7 +2268,7 @@ const I18N = {
     confirm_close:'إغلاق',
     payment_title:'اختر طريقة الدفع', payment_subtitle:'تم حجز طلبكم — أكملوا الدفع لتأكيده.',
     payment_tab_bank:'تحويل بنكي', payment_tab_wise:'Wise',
-    payment_account_holder:'صاحب الحساب', payment_iban:'IBAN', payment_swift:'SWIFT/BIC', payment_bank_name:'البنك',
+    payment_account_holder:'صاحب الحساب', payment_iban:'IBAN', payment_swift:'SWIFT/BIC', payment_bank_name:'البنك', payment_email:'البريد الإلكتروني',
     payment_copy:'نسخ', payment_copied:'تم النسخ!',
     payment_transfer_done:'لقد أتممت التحويل',
     payment_wise_intro:'ادفع بأمان عبر الإنترنت باستخدام Wise، ثم عد إلى هذه الصفحة.',
@@ -2540,6 +2542,7 @@ const PAYMENT_METHODS = {
     iban: 'BE20 9678 0637 9756',
     swift: 'TRWIBEB1XXX',
     bankName: 'Wise Belgium',
+    email: 'FLUCHOS.cars@gmail.com',
   },
   wise: {
     enabled: true,
@@ -3875,6 +3878,7 @@ function openPaymentModal(data){
   document.getElementById('bankIban').textContent = bank.iban;
   document.getElementById('bankSwift').textContent = bank.swift;
   document.getElementById('bankBankName').textContent = bank.bankName;
+  document.getElementById('bankEmail').textContent = bank.email;
   document.getElementById('wiseSuccessBox').hidden = true;
   document.getElementById('wisePayBtn').hidden = false;
   document.getElementById('wiseCloseBtn').hidden = true;

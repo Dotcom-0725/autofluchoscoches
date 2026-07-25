@@ -51,6 +51,7 @@ const CARS_SHEET_NAME = 'Cars';
 const SETTINGS_SHEET_NAME = 'Settings';
 const ACTIVITY_SHEET_NAME = 'ActivityLog';
 const AVAILABILITY_SHEET_NAME = 'AvailabilityRequests';
+const FLEET_UNITS_SHEET_NAME = 'FleetUnits';
 
 // Single shared admin password — full access (super_admin role), no separate
 // Manager/Employee tiers. Change it here any time; redeploy afterwards.
@@ -82,6 +83,9 @@ function doGet(e) {
       cars: listCars_(),
       settings: listSettings_(),
       activityLog: listActivityLog_(),
+      // Internal per-unit fleet registry (nickname/plate/VIN/status/notes) —
+      // admin-only, never exposed via the public doGet responses below.
+      fleetUnits: listFleetUnits_(),
     });
   }
 
@@ -188,6 +192,30 @@ function doPost(e) {
     return jsonResponse_({ success: true });
   }
 
+  // Admin-only: internal per-unit fleet registry (nickname, plate, fleet id,
+  // VIN, status, notes) — lets the owner tell physically identical cars of
+  // the same model apart (e.g. 5 units of "Clio 5 Automatique") without any
+  // of this ever reaching the public site. Upserts by unitId; a blank/missing
+  // unitId creates a new unit.
+  if (body.action === 'saveFleetUnit') {
+    const role = roleForPassword_(body.password);
+    if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
+    const unit = body.unit || {};
+    if (!unit.carId) return jsonResponse_({ success: false, error: 'Missing carId' });
+    const unitId = upsertFleetUnit_(unit);
+    logActivity_(role, 'save_fleet_unit', unitId + ' — ' + (unit.nickname || unit.carId));
+    return jsonResponse_({ success: true, unitId: unitId });
+  }
+
+  if (body.action === 'deleteFleetUnit') {
+    const role = roleForPassword_(body.password);
+    if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
+    if (!body.unitId) return jsonResponse_({ success: false, error: 'Missing unitId' });
+    deleteFleetUnit_(body.unitId);
+    logActivity_(role, 'delete_fleet_unit', body.unitId);
+    return jsonResponse_({ success: true });
+  }
+
   if (body.action === 'duplicateCar') {
     const role = roleForPassword_(body.password);
     if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
@@ -246,7 +274,7 @@ function doPost(e) {
       sheet.getRange(row, body.docType === 'license' ? 16 : 17).setValue(url);
       return jsonResponse_({ success: true, url: url });
     } catch (err) {
-      return jsonResponse_({ success: false, error: 'upload_failed' });
+      return jsonResponse_({ success: false, error: 'upload_failed', message: String(err && err.message || err) });
     }
   }
 
@@ -514,6 +542,70 @@ function duplicateCar_(id) {
     }
   }
   return null;
+}
+
+/* ---- Fleet Units (internal per-vehicle registry — admin dashboard only) ----
+   Lets the owner distinguish physically identical cars of the same model
+   (e.g. 5 units of "Clio 5 Automatique") with a nickname, plate number,
+   fleet id, VIN and a manually-set status. Never read by the public site —
+   only ever returned from the password-gated 'admin' doGet action above. */
+function listFleetUnits_() {
+  const rows = getFleetUnitsSheet_().getDataRange().getValues();
+  const units = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (!rows[i][0]) continue;
+    units.push({
+      row: i + 1,
+      unitId: rows[i][0],
+      carId: rows[i][1],
+      nickname: rows[i][2] || '',
+      plate: rows[i][3] || '',
+      fleetId: rows[i][4] || '',
+      vin: rows[i][5] || '',
+      status: rows[i][6] || 'available',
+      notes: rows[i][7] || '',
+    });
+  }
+  return units;
+}
+
+function upsertFleetUnit_(unit) {
+  const sheet = getFleetUnitsSheet_();
+  const rows = sheet.getDataRange().getValues();
+  const unitId = unit.unitId || ('FU-' + Date.now().toString(36).toUpperCase());
+  const rowData = [
+    unitId, unit.carId, unit.nickname || '', unit.plate || '',
+    unit.fleetId || '', unit.vin || '', unit.status || 'available', unit.notes || '',
+  ];
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === unitId) {
+      sheet.getRange(i + 1, 1, 1, rowData.length).setValues([rowData]);
+      return unitId;
+    }
+  }
+  sheet.appendRow(rowData);
+  return unitId;
+}
+
+function deleteFleetUnit_(unitId) {
+  const sheet = getFleetUnitsSheet_();
+  const rows = sheet.getDataRange().getValues();
+  for (let i = rows.length - 1; i >= 1; i--) {
+    if (rows[i][0] === unitId) {
+      sheet.deleteRow(i + 1);
+      return;
+    }
+  }
+}
+
+function getFleetUnitsSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(FLEET_UNITS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(FLEET_UNITS_SHEET_NAME);
+    sheet.appendRow(['unit_id', 'car_id', 'nickname', 'plate', 'fleet_id', 'vin', 'status', 'notes']);
+  }
+  return sheet;
 }
 
 /* One-time helper: run manually once from the Apps Script editor to seed the

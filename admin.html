@@ -182,7 +182,7 @@ tr.dragging{opacity:.4}
 <script>
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxKZk3f58C67EZArO4uLRSu7chg3soBBgIBQYNOq3-NXUkoZ0--82S5NgS7ccWbiuOi/exec';
 
-const state = { password: null, role: null, cars: [], bookings: [], seasons: [], settings: {}, activityLog: [] };
+const state = { password: null, role: null, cars: [], bookings: [], seasons: [], settings: {}, activityLog: [], fleetUnits: [] };
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -298,6 +298,7 @@ function applyAdminData(data){
   state.seasons = data.seasons || [];
   state.settings = data.settings || {};
   state.activityLog = data.activityLog || [];
+  state.fleetUnits = data.fleetUnits || [];
 }
 document.getElementById('logoutBtn').addEventListener('click', ()=>{
   try { sessionStorage.removeItem('afc_admin_pw'); } catch(e){}
@@ -370,7 +371,7 @@ function buildSidebar(){
 const VIEW_TITLES = {
   dashboard: ['Dashboard', 'Overview of your rental business'],
   fleet: ['Fleet Management', 'Create, edit and manage your vehicles'],
-  inventory: ['Inventory', 'Stock levels per vehicle model'],
+  inventory: ['Inventory', 'Stock levels + internal fleet registry (nicknames, plates, VIN, status)'],
   reservations: ['Reservations', 'All bookings — website and manual'],
   calendar: ['Calendar', 'Bookings by date'],
   customers: ['Customers', 'Built from your booking history'],
@@ -658,17 +659,125 @@ function renderInventory(){
         </tbody>
       </table>
     </div></div>
+
+    <div class="toolbar-row" style="margin-top:22px">
+      <input type="search" id="fleetUnitSearch" placeholder="🔍 Search by nickname or plate…" style="max-width:320px">
+      ${isEditor() ? `<button class="btn btn-primary" id="newFleetUnitBtn">+ Add unit</button>` : ''}
+    </div>
+    <div class="section-note">Internal fleet registry — nickname, plate number, fleet ID, VIN and status for each physical vehicle. This never appears on the public website; it's only visible here so you can tell identical models apart (e.g. 5 units of the same car) at a glance.</div>
+    <div class="card"><div class="table-wrap">
+      <table>
+        <thead><tr><th>Vehicle model</th><th>Nickname</th><th>Plate</th><th>Fleet ID</th><th>VIN</th><th>Status</th><th>Notes</th>${isEditor() ? '<th>Actions</th>' : ''}</tr></thead>
+        <tbody id="fleetUnitsTableBody"></tbody>
+      </table>
+    </div></div>
   `;
   if(isEditor()){
     root.querySelectorAll('[data-stock-plus]').forEach(b => b.addEventListener('click', ()=> adjustStock(b.dataset.stockPlus, 1)));
     root.querySelectorAll('[data-stock-minus]').forEach(b => b.addEventListener('click', ()=> adjustStock(b.dataset.stockMinus, -1)));
+    document.getElementById('newFleetUnitBtn').addEventListener('click', ()=> openFleetUnitModal(null));
   }
+  renderFleetUnitsTable();
+  document.getElementById('fleetUnitSearch').addEventListener('input', e => renderFleetUnitsTable(e.target.value));
 }
 async function adjustStock(id, delta){
   const car = carById(id);
   const newStock = Math.max(0, (Number(car.stock)||0) + delta);
   const r = await apiPost({ action: 'saveCar', car: { ...car, stock: newStock } });
   if(r.success){ await refreshAdminData(); renderInventory(); }
+}
+
+/* ---- Fleet Units: internal per-vehicle registry (nickname/plate/VIN/status/notes) ---- */
+const FLEET_UNIT_STATUSES = [
+  { value: 'available', label: 'Available', pill: 'pill-green' },
+  { value: 'reserved', label: 'Reserved', pill: 'pill-blue' },
+  { value: 'rented', label: 'Rented', pill: 'pill-red' },
+  { value: 'maintenance', label: 'Maintenance', pill: 'pill-gray' },
+];
+function fleetUnitStatusMeta(status){
+  return FLEET_UNIT_STATUSES.find(s => s.value === status) || FLEET_UNIT_STATUSES[0];
+}
+function renderFleetUnitsTable(filterText){
+  const tbody = document.getElementById('fleetUnitsTableBody');
+  if(!tbody) return;
+  const q = (filterText || '').trim().toLowerCase();
+  const units = state.fleetUnits
+    .filter(u => !q || u.nickname.toLowerCase().includes(q) || u.plate.toLowerCase().includes(q))
+    .slice()
+    .sort((a,b)=> (carById(a.carId)?.name || '').localeCompare(carById(b.carId)?.name || ''));
+  tbody.innerHTML = units.map(u => {
+    const car = carById(u.carId);
+    const meta = fleetUnitStatusMeta(u.status);
+    return `<tr>
+      <td><b>${car ? car.name : u.carId}</b></td>
+      <td>${u.nickname || '—'}</td>
+      <td>${u.plate || '—'}</td>
+      <td>${u.fleetId || '—'}</td>
+      <td>${u.vin || '—'}</td>
+      <td>${isEditor()
+        ? `<select class="fleet-unit-status-select" data-unit="${u.unitId}">${FLEET_UNIT_STATUSES.map(s=>`<option value="${s.value}" ${s.value===u.status?'selected':''}>${s.label}</option>`).join('')}</select>`
+        : `<span class="pill ${meta.pill}">${meta.label}</span>`}</td>
+      <td>${u.notes || '—'}</td>
+      ${isEditor() ? `<td class="tag-row">
+        <button class="btn btn-outline btn-sm" data-edit-unit="${u.unitId}">Edit</button>
+        <button class="btn btn-danger btn-sm" data-del-unit="${u.unitId}">Delete</button>
+      </td>` : ''}
+    </tr>`;
+  }).join('') || `<tr><td colspan="8" class="empty-state">${q ? 'No matching units.' : 'No fleet units yet — add one to start tracking individual vehicles.'}</td></tr>`;
+
+  if(isEditor()){
+    tbody.querySelectorAll('.fleet-unit-status-select').forEach(sel => sel.addEventListener('change', async ()=>{
+      const unit = state.fleetUnits.find(u => u.unitId === sel.dataset.unit);
+      if(!unit) return;
+      const r = await apiPost({ action: 'saveFleetUnit', unit: { ...unit, status: sel.value } });
+      if(r.success){ toast('Status updated'); await refreshAdminData(); renderFleetUnitsTable(document.getElementById('fleetUnitSearch')?.value); }
+      else toast(r.error || 'Failed');
+    }));
+    tbody.querySelectorAll('[data-edit-unit]').forEach(b => b.addEventListener('click', ()=>
+      openFleetUnitModal(state.fleetUnits.find(u => u.unitId === b.dataset.editUnit))));
+    tbody.querySelectorAll('[data-del-unit]').forEach(b => b.addEventListener('click', async ()=>{
+      if(!confirm('Delete this fleet unit? This only removes it from your internal registry — it does not affect stock counts or bookings.')) return;
+      const r = await apiPost({ action: 'deleteFleetUnit', unitId: b.dataset.delUnit });
+      if(r.success){ toast('Unit deleted'); await refreshAdminData(); renderFleetUnitsTable(document.getElementById('fleetUnitSearch')?.value); }
+      else toast(r.error || 'Failed');
+    }));
+  }
+}
+function openFleetUnitModal(unit){
+  const isNew = !unit;
+  unit = unit || { unitId: '', carId: state.cars[0]?.id || '', nickname: '', plate: '', fleetId: '', vin: '', status: 'available', notes: '' };
+  openModal(`
+    <h3>${isNew ? 'Add fleet unit' : 'Edit fleet unit'}</h3>
+    <div class="field-grid">
+      <div class="field"><label>Vehicle model</label><select id="fuCarId">${state.cars.map(c=>`<option value="${c.id}" ${c.id===unit.carId?'selected':''}>${c.name}</option>`).join('')}</select></div>
+      <div class="field"><label>Status</label><select id="fuStatus">${FLEET_UNIT_STATUSES.map(s=>`<option value="${s.value}" ${s.value===unit.status?'selected':''}>${s.label}</option>`).join('')}</select></div>
+      <div class="field"><label>Nickname</label><input id="fuNickname" value="${unit.nickname}" placeholder="e.g. الحصان 1"></div>
+      <div class="field"><label>Plate number</label><input id="fuPlate" value="${unit.plate}" placeholder="e.g. 60"></div>
+      <div class="field"><label>Fleet ID</label><input id="fuFleetId" value="${unit.fleetId}"></div>
+      <div class="field"><label>VIN / chassis number (optional)</label><input id="fuVin" value="${unit.vin}"></div>
+    </div>
+    <div class="field"><label>Internal notes</label><input id="fuNotes" value="${unit.notes}"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="fuCancel">Cancel</button>
+      <button class="btn btn-primary" id="fuSave">${isNew ? 'Add unit' : 'Save unit'}</button>
+    </div>
+  `);
+  document.getElementById('fuCancel').addEventListener('click', closeModal);
+  document.getElementById('fuSave').addEventListener('click', async ()=>{
+    const payload = {
+      unitId: unit.unitId,
+      carId: document.getElementById('fuCarId').value,
+      status: document.getElementById('fuStatus').value,
+      nickname: document.getElementById('fuNickname').value.trim(),
+      plate: document.getElementById('fuPlate').value.trim(),
+      fleetId: document.getElementById('fuFleetId').value.trim(),
+      vin: document.getElementById('fuVin').value.trim(),
+      notes: document.getElementById('fuNotes').value.trim(),
+    };
+    const r = await apiPost({ action: 'saveFleetUnit', unit: payload });
+    if(r.success){ toast(isNew ? 'Unit added' : 'Unit saved'); closeModal(); await refreshAdminData(); if(currentView==='inventory') renderFleetUnitsTable(document.getElementById('fleetUnitSearch')?.value); }
+    else toast(r.error || 'Failed to save');
+  });
 }
 
 /* ================= RESERVATIONS ================= */
