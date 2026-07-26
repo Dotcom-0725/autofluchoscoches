@@ -465,11 +465,28 @@ function rangesOverlapAdmin(startA, endA, startB, endB){
 function getOverlapCountAdmin(carId, pickupVal, retVal){
   return state.bookings.filter(b => b.carId === carId && rangesOverlapAdmin(pickupVal, retVal, b.pickup, b.ret)).length;
 }
+/* When this car has real units registered (plate/fleet ID, entered in the
+   Inventory > Fleet Units screen), the admin already has full visibility into
+   which unit each booking is assigned to (state.bookings[].unitId) — so
+   shading here can be EXACT: a day is only fully booked once every registered
+   unit has an overlapping booking assigned to it, not just a bare count. Cars
+   with no units registered yet fall back to the old count-vs-stock check. */
 function isDayFullyBookedAdmin(carId, cellDate){
   const car = carById(carId);
   if(!car) return false;
   const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
   const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+  const units = state.fleetUnits.filter(u => u.carId === carId);
+  if(units.length > 0){
+    const dayOverlap = state.bookings.filter(b => b.carId === carId && rangesOverlapAdmin(dayStart.toISOString(), dayEnd.toISOString(), b.pickup, b.ret));
+    // Bookings with no unitId (e.g. made before this car had units registered)
+    // still occupy a real car — each one must still claim a free slot, or a
+    // car with older unassigned bookings would wrongly look fully free.
+    const assignedUnitIds = dayOverlap.filter(b => b.unitId).map(b => b.unitId);
+    const legacyCount = dayOverlap.filter(b => !b.unitId).length;
+    const freeUnits = units.filter(u => assignedUnitIds.indexOf(u.unitId) === -1);
+    return freeUnits.length <= legacyCount;
+  }
   const overlap = getOverlapCountAdmin(carId, dayStart.toISOString(), dayEnd.toISOString());
   return overlap >= (Number(car.stock) || 1);
 }
@@ -1067,7 +1084,10 @@ function openManualBookingModal(){
     const note = document.getElementById('mbAvailNote');
     if(!car){ note.style.display = 'none'; return; }
     note.style.display = '';
-    note.textContent = `${car.name} has ${car.stock || 1} unit(s) total. Click Pickup/Return below to see exactly which days are free — fully booked days are shown crossed-out per date range, not as a blanket "unavailable".`;
+    const units = state.fleetUnits.filter(u => u.carId === car.id);
+    note.textContent = units.length > 0
+      ? `${car.name} has ${units.length} registered unit(s) (${units.map(u=>u.plate||u.nickname||u.unitId).join(', ')}). A specific free unit is auto-assigned on save — the calendar below reflects their exact combined availability.`
+      : `${car.name} has ${car.stock || 1} unit(s) total (no plates registered yet in Fleet Units — availability is estimated by count). Click Pickup/Return below to see which days are free.`;
   };
   document.getElementById('mbCar').addEventListener('change', updateAvailNote);
   updateAvailNote();
@@ -1086,7 +1106,10 @@ function openManualBookingModal(){
       stock: car.stock, total: document.getElementById('mbTotal').value || '',
       source: document.getElementById('mbSource').value, adminPassword: state.password,
     });
-    if(r.success){ toast('Reservation created'); closeModal(); await refreshAdminData(); if(currentView==='reservations') renderReservationsRows(); }
+    if(r.success){
+      toast(r.unitPlate ? `Reservation created — assigned unit: ${r.unitPlate}` : 'Reservation created');
+      closeModal(); await refreshAdminData(); if(currentView==='reservations') renderReservationsRows();
+    }
     else toast(r.error === 'sold_out' ? 'No stock left for this vehicle' : (r.error || 'Failed'));
   });
 }

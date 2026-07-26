@@ -2497,6 +2497,7 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxKZk3f58C67EZA
 let remoteBookedCounts = null; // null until the first successful fetch; then the shared source of truth
 let remoteBookedReturns = {}; // carId -> sorted (ascending) ISO return-date strings of its active bookings
 let remoteBookedIntervals = {}; // carId -> [{pickup, ret}] ISO strings of every active booking for that car
+let remoteCarUnitCounts = {}; // carId -> number of physical units registered in the admin's Fleet Units screen
 
 async function fetchBookedCars(){
   if(APPS_SCRIPT_URL.startsWith('PASTE_')) return; // not deployed yet — stay on local fallback
@@ -2506,9 +2507,19 @@ async function fetchBookedCars(){
     remoteBookedCounts = (data && typeof data.bookedCounts === 'object' && data.bookedCounts) ? data.bookedCounts : {};
     remoteBookedReturns = (data && typeof data.bookedReturns === 'object' && data.bookedReturns) ? data.bookedReturns : {};
     remoteBookedIntervals = (data && typeof data.bookedIntervals === 'object' && data.bookedIntervals) ? data.bookedIntervals : {};
+    remoteCarUnitCounts = (data && typeof data.carUnitCounts === 'object' && data.carUnitCounts) ? data.carUnitCounts : {};
   } catch(e){
     remoteBookedCounts = null; // offline or backend unreachable — fall back to local-only for this visit
   }
+}
+/* The number of units to treat a car as having, for availability math: the
+   REAL registered fleet-unit count once the owner has set specific units
+   (plate/fleet ID) for it in the admin dashboard, otherwise the plain
+   Cars-sheet `stock` number as before. Keeps this exactly in sync with what
+   the backend's findAvailableUnitForBooking_ will actually enforce. */
+function effectiveStock(car){
+  const tracked = remoteCarUnitCounts[car.id];
+  return (tracked && tracked > 0) ? tracked : (car.stock || 1);
 }
 /* True if [startA, endA) overlaps [startB, endB) — mirrors the backend's
    rangesOverlap_ so the client can pre-check availability for a specific
@@ -2531,7 +2542,7 @@ function getOverlapCount(carId, pickupVal, retVal){
 function getRemainingStockForRange(car, pickupVal, retVal){
   if(!pickupVal || !retVal) return getRemainingStock(car);
   const overlap = getOverlapCount(car.id, pickupVal, retVal);
-  return Math.max(0, (car.stock || 1) - overlap);
+  return Math.max(0, effectiveStock(car) - overlap);
 }
 /* Reads the hero Quick Booking widget's currently selected pickup/return
    datetimes (as datetime-local-style strings), if present, so fleet
@@ -2552,7 +2563,7 @@ function getBookedCounts(){
 }
 function getRemainingStock(car){
   const booked = getBookedCounts()[car.id] || 0;
-  return Math.max(0, (car.stock || 1) - booked);
+  return Math.max(0, effectiveStock(car) - booked);
 }
 
 async function addBookedCar(carId, details){
@@ -4111,7 +4122,7 @@ function isDayFullyBooked(carId, cellDate){
   const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
   const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
   const overlap = getOverlapCount(carId, dayStart.toISOString(), dayEnd.toISOString());
-  return overlap >= (car.stock || 1);
+  return overlap >= effectiveStock(car);
 }
 function openCustomDatePicker(input){
   closeCustomDatePicker();

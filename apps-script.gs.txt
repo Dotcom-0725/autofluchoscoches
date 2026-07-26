@@ -128,7 +128,15 @@ function doGet(e) {
     }
   });
   Object.keys(bookedReturns).forEach(carId => bookedReturns[carId].sort());
-  return jsonResponse_({ bookedCounts: bookedCounts, bookedReturns: bookedReturns, bookedIntervals: bookedIntervals });
+  return jsonResponse_({
+    bookedCounts: bookedCounts, bookedReturns: bookedReturns, bookedIntervals: bookedIntervals,
+    // Per-car count of registered physical units (no plates/names — just a
+    // number) — lets the site use the REAL unit count as the availability
+    // denominator instead of the Cars sheet's `stock` field whenever the
+    // owner has set up specific units for that car, keeping the calendar
+    // shading customers see consistent with what booking creation enforces.
+    carUnitCounts: countUnitsByCar_(),
+  });
 }
 
 /* True if [startA, endA) overlaps [startB, endB) — the standard interval
@@ -323,17 +331,15 @@ function doPost(e) {
   lock.waitLock(10000);
   try {
     const stock = Number(body.stock) || 1;
-    // Only count bookings whose date range actually overlaps the one being
-    // requested — a car with an existing booking that ends before this one
-    // starts (or starts after this one ends) is NOT a conflict, so it must
-    // stay bookable for any other free date range instead of being treated
-    // as fully sold out.
-    const overlapping = body.pickup && body.ret
-      ? listActiveBookings_().filter(b =>
-          b.carId === body.carId && rangesOverlap_(body.pickup, body.ret, b.pickup, b.ret)
-        ).length
-      : listActiveBookings_().filter(b => b.carId === body.carId).length;
-    if (overlapping >= stock) {
+    // Per-unit assignment: if this car has specific units registered (plate/
+    // fleet ID, entered by the owner in the admin "Fleet Units" screen), the
+    // booking is checked and assigned against those REAL physical units —
+    // this is what actually prevents "all units of this model are booked" from
+    // ever showing a free date before every one of them frees up, since it's
+    // no longer just a bare count. Cars with no units registered yet fall back
+    // to the previous count-vs-stock check unchanged.
+    const assignment = findAvailableUnitForBooking_(body.carId, body.pickup, body.ret, stock);
+    if (assignment.mode === 'sold_out') {
       return jsonResponse_({ success: false, error: 'sold_out' });
     }
     const bookingsSheet = getBookingsSheet_();
@@ -356,6 +362,7 @@ function doPost(e) {
       '',
       '',
       body.nationality || '',
+      assignment.unitId || '',
     ]);
     // Phone numbers start with "+" (country code, e.g. "+212 6..."), which
     // Google Sheets auto-parses as the start of a formula/number and shows
@@ -367,10 +374,43 @@ function doPost(e) {
       const role = roleForPassword_(body.adminPassword);
       if (role) logActivity_(role, 'manual_booking', (body.source || 'manual') + ' — ' + body.carName);
     }
-    return jsonResponse_({ success: true });
+    return jsonResponse_({ success: true, unitId: assignment.unitId || '', unitPlate: assignment.plate || '' });
   } finally {
     lock.releaseLock();
   }
+}
+
+/* Decides which physical unit (if any) a new booking should be assigned to.
+   - If the car has no units registered in the FleetUnits sheet yet, falls
+     back to the previous behavior: just count overlapping bookings against
+     the car's abstract `stock` number (no specific unit is assigned).
+   - If units ARE registered, availability becomes exact: a day is only ever
+     truly sold out once every registered unit has an overlapping booking
+     assigned to it — this is what makes "extend one unit's booking to
+     September" correctly leave the OTHER unit (and only that unit) bookable,
+     instead of a bare count that can't tell units apart. */
+function findAvailableUnitForBooking_(carId, pickup, ret, stock) {
+  const units = listFleetUnits_().filter(u => u.carId === carId);
+  if (units.length === 0) {
+    const overlapping = pickup && ret
+      ? listActiveBookings_().filter(b => b.carId === carId && rangesOverlap_(pickup, ret, b.pickup, b.ret)).length
+      : listActiveBookings_().filter(b => b.carId === carId).length;
+    return overlapping >= stock ? { mode: 'sold_out' } : { mode: 'legacy' };
+  }
+  const overlappingBookings = pickup && ret
+    ? listActiveBookings_().filter(b => b.carId === carId && rangesOverlap_(pickup, ret, b.pickup, b.ret))
+    : listActiveBookings_().filter(b => b.carId === carId);
+  const assignedOverlapUnitIds = overlappingBookings.filter(b => b.unitId).map(b => b.unitId);
+  // Bookings made before a car had units registered (or any other case where
+  // a booking has no unitId) can't be matched to a specific unit — but they
+  // still occupy a real physical car, so each one must still claim one of the
+  // free slots below. Otherwise a car with older, unassigned bookings would
+  // wrongly look fully free just because none of them "match" a unit ID.
+  const legacyOverlapCount = overlappingBookings.filter(b => !b.unitId).length;
+  const freeUnits = units.filter(u => assignedOverlapUnitIds.indexOf(u.unitId) === -1);
+  if (freeUnits.length <= legacyOverlapCount) return { mode: 'sold_out' };
+  const free = freeUnits[legacyOverlapCount];
+  return { mode: 'unit', unitId: free.unitId, plate: free.plate || free.nickname || free.unitId };
 }
 
 /* Frees up stock automatically once a booking's return date has passed.
@@ -445,6 +485,7 @@ function listActiveBookings_() {
       paymentStatus: rows[i][13] || 'pending',
       bookingStatus: rows[i][14] || 'pending_payment',
       nationality: rows[i][17] || '',
+      unitId: rows[i][18] || '',
     });
   }
   return bookings;
@@ -569,6 +610,17 @@ function listFleetUnits_() {
     });
   }
   return units;
+}
+
+/* How many physical units are registered per car — safe to expose publicly
+   (it's just a count, no plates/nicknames), used by index.html so the
+   customer-facing availability math lines up exactly with what the backend
+   will actually enforce once a car has real units tracked (see
+   findAvailableUnitForBooking_ above). */
+function countUnitsByCar_() {
+  const counts = {};
+  listFleetUnits_().forEach(u => { counts[u.carId] = (counts[u.carId] || 0) + 1; });
+  return counts;
 }
 
 function upsertFleetUnit_(unit) {
@@ -725,7 +777,7 @@ function getBookingsSheet_() {
   let sheet = ss.getSheetByName(BOOKINGS_SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(BOOKINGS_SHEET_NAME);
-    sheet.appendRow(['car_id', 'car_name', 'customer_name', 'phone', 'pickup_date', 'return_date', 'reference', 'booked_at', 'stock', 'total', 'source', 'customer_email', 'payment_method', 'payment_status', 'booking_status', 'license_url', 'passport_url', 'nationality']);
+    sheet.appendRow(['car_id', 'car_name', 'customer_name', 'phone', 'pickup_date', 'return_date', 'reference', 'booked_at', 'stock', 'total', 'source', 'customer_email', 'payment_method', 'payment_status', 'booking_status', 'license_url', 'passport_url', 'nationality', 'unit_id']);
   }
   return sheet;
 }
