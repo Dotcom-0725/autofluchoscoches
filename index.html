@@ -338,13 +338,6 @@ header{
   100%{transform:scale(1.18) translate(-2.5%,-1.5%)}
 }
 @media (prefers-reduced-motion: reduce){ .hero-bg-img{animation:none} }
-.hero-overlay{
-  position:absolute;inset:0;z-index:1;
-  background:
-    radial-gradient(circle at 15% 15%, var(--blue-glow), transparent 45%),
-    radial-gradient(circle at 85% 85%, rgba(200,134,13,.12), transparent 40%),
-    linear-gradient(180deg, rgba(255,255,255,.25) 0%, rgba(255,255,255,.55) 70%, var(--navy-900) 100%);
-}
 .hero > .container{position:relative;z-index:2}
 
 .badge-row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:18px}
@@ -883,7 +876,6 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
   <div class="hero-bg-wrap">
     <img class="hero-bg-img" src="images/hero-tetouan.webp" alt="Tétouan medina cityscape with the Rif mountains" loading="eager">
   </div>
-  <div class="hero-overlay"></div>
   <div class="container hero-booking-inner">
     <div class="badge-row">
       <span class="pill-badge" data-i18n="badge_know_us">GET TO KNOW US</span>
