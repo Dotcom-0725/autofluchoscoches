@@ -355,6 +355,7 @@ function doPost(e) {
       'pending_payment',
       '',
       '',
+      body.nationality || '',
     ]);
     // Phone numbers start with "+" (country code, e.g. "+212 6..."), which
     // Google Sheets auto-parses as the start of a formula/number and shows
@@ -443,6 +444,7 @@ function listActiveBookings_() {
       paymentMethod: rows[i][12] || 'none',
       paymentStatus: rows[i][13] || 'pending',
       bookingStatus: rows[i][14] || 'pending_payment',
+      nationality: rows[i][17] || '',
     });
   }
   return bookings;
@@ -723,7 +725,7 @@ function getBookingsSheet_() {
   let sheet = ss.getSheetByName(BOOKINGS_SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(BOOKINGS_SHEET_NAME);
-    sheet.appendRow(['car_id', 'car_name', 'customer_name', 'phone', 'pickup_date', 'return_date', 'reference', 'booked_at', 'stock', 'total', 'source', 'customer_email', 'payment_method', 'payment_status', 'booking_status', 'license_url', 'passport_url']);
+    sheet.appendRow(['car_id', 'car_name', 'customer_name', 'phone', 'pickup_date', 'return_date', 'reference', 'booked_at', 'stock', 'total', 'source', 'customer_email', 'payment_method', 'payment_status', 'booking_status', 'license_url', 'passport_url', 'nationality']);
   }
   return sheet;
 }

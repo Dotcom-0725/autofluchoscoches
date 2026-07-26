@@ -791,7 +791,7 @@ function renderReservations(){
     <div class="section-note">Manual reservations (phone, office, walk-in) use the same booking engine as the website — inventory updates automatically and overbooking is prevented.</div>
     <div class="card"><div class="table-wrap">
       <table>
-        <thead><tr><th>Ref</th><th>Customer</th><th>Phone</th><th>Vehicle</th><th>Pickup</th><th>Return</th><th>Total</th><th>Source</th><th>Status</th><th>Payment</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Ref</th><th>Customer</th><th>Nationality</th><th>Phone</th><th>Vehicle</th><th>Pickup</th><th>Return</th><th>Total</th><th>Source</th><th>Status</th><th>Payment</th><th>Actions</th></tr></thead>
         <tbody id="reservationsBody"></tbody>
       </table>
     </div></div>
@@ -816,7 +816,7 @@ function renderReservationsRows(){
     const st = bookingStatus(b);
     const paymentStatus = b.paymentStatus || 'pending';
     return `<tr>
-      <td>${b.ref||'—'}</td><td>${b.customerName||'—'}</td><td>${b.phone||'—'}</td><td>${b.carName||'—'}</td>
+      <td>${b.ref||'—'}</td><td>${b.customerName||'—'}</td><td>${b.nationality||'—'}</td><td>${b.phone||'—'}</td><td>${b.carName||'—'}</td>
       <td>${fmtDate(b.pickup)}</td><td>${fmtDate(b.ret)}</td><td>${b.total||'—'}</td>
       <td><span class="pill pill-gray">${b.source||'website'}</span></td>
       <td><span class="pill ${st.cls}">${st.label}</span></td>
