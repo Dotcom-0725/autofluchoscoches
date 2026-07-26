@@ -471,14 +471,15 @@ function getOverlapCountAdmin(carId, pickupVal, retVal){
    shading here can be EXACT: a day is only fully booked once every registered
    unit has an overlapping booking assigned to it, not just a bare count. Cars
    with no units registered yet fall back to the old count-vs-stock check. */
-function isDayFullyBookedAdmin(carId, cellDate){
+function isDayFullyBookedAdmin(carId, cellDate, excludeRow){
   const car = carById(carId);
   if(!car) return false;
   const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
   const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+  const bookingsPool = excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings;
   const units = state.fleetUnits.filter(u => u.carId === carId);
   if(units.length > 0){
-    const dayOverlap = state.bookings.filter(b => b.carId === carId && rangesOverlapAdmin(dayStart.toISOString(), dayEnd.toISOString(), b.pickup, b.ret));
+    const dayOverlap = bookingsPool.filter(b => b.carId === carId && rangesOverlapAdmin(dayStart.toISOString(), dayEnd.toISOString(), b.pickup, b.ret));
     // Bookings with no unitId (e.g. made before this car had units registered)
     // still occupy a real car — each one must still claim a free slot, or a
     // car with older unassigned bookings would wrongly look fully free.
@@ -487,7 +488,7 @@ function isDayFullyBookedAdmin(carId, cellDate){
     const freeUnits = units.filter(u => assignedUnitIds.indexOf(u.unitId) === -1);
     return freeUnits.length <= legacyCount;
   }
-  const overlap = getOverlapCountAdmin(carId, dayStart.toISOString(), dayEnd.toISOString());
+  const overlap = bookingsPool.filter(b => b.carId === carId && rangesOverlapAdmin(dayStart.toISOString(), dayEnd.toISOString(), b.pickup, b.ret)).length;
   return overlap >= (Number(car.stock) || 1);
 }
 
@@ -521,7 +522,7 @@ function writeAdminDateValue(input, date, time){
   input.dispatchEvent(new Event('input', { bubbles: true }));
   input.dispatchEvent(new Event('change', { bubbles: true }));
 }
-function openAdminDatePicker(input, carId){
+function openAdminDatePicker(input, carId, excludeRow){
   closeAdminDatePicker();
   const { date: selected, time: initialTime } = parseAdminDateValue(input);
   let viewYear = selected.getFullYear();
@@ -566,7 +567,7 @@ function openAdminDatePicker(input, carId){
       btn.textContent = cellDate.getDate();
       if(cellDate.getMonth() !== viewMonth) btn.classList.add('cdp-other-month');
       if(cellDate.toDateString() === selected.toDateString()) btn.classList.add('cdp-selected');
-      if(carId && isDayFullyBookedAdmin(carId, cellDate)){
+      if(carId && isDayFullyBookedAdmin(carId, cellDate, excludeRow)){
         btn.classList.add('cdp-booked');
         btn.disabled = true;
         btn.title = 'Fully booked for this vehicle';
@@ -1028,9 +1029,16 @@ function renderReservationsRows(){
           ${PAYMENT_STATUS_OPTIONS.map(o=> `<option value="${o.value}" ${o.value===paymentStatus?'selected':''}>${o.label}</option>`).join('')}
         </select>
       </td>
-      <td><button class="btn btn-danger btn-sm" data-cancel="${b.row}">Cancel</button></td>
+      <td>
+        <button class="btn btn-outline btn-sm" data-edit="${b.row}">Edit</button>
+        <button class="btn btn-danger btn-sm" data-cancel="${b.row}">Cancel</button>
+      </td>
     </tr>`;
   }).join('') || `<tr><td colspan="11" class="empty-state">No reservations yet.</td></tr>`;
+  tbody.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', ()=>{
+    const booking = state.bookings.find(b => String(b.row) === btn.dataset.edit);
+    if(booking) openBookingEditModal(booking);
+  }));
   tbody.querySelectorAll('[data-cancel]').forEach(btn => btn.addEventListener('click', async ()=>{
     if(!confirm('Cancel this booking and free up the vehicle?')) return;
     const r = await apiPost({ action: 'cancel', row: btn.dataset.cancel });
@@ -1111,6 +1119,85 @@ function openManualBookingModal(){
       closeModal(); await refreshAdminData(); if(currentView==='reservations') renderReservationsRows();
     }
     else toast(r.error === 'sold_out' ? 'No stock left for this vehicle' : (r.error || 'Failed'));
+  });
+}
+
+/* Converts an ISO date string (as returned by the backend for a booking's
+   pickup/return) into the "YYYY-MM-DDTHH:MM" format the custom date-picker
+   inputs use, in the browser's local time — matching how fmtDate() already
+   displays these same values elsewhere in the dashboard. */
+function toDatetimeLocalInputValue(v){
+  if(!v) return '';
+  const d = new Date(v);
+  if(isNaN(d)) return '';
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/* Opens full booking details for an existing reservation (website or manual)
+   with every field editable — previously the only actions available from the
+   Reservations table were Cancel or changing the payment status, with no way
+   to view or correct a booking's dates/customer info once created. */
+function openBookingEditModal(booking){
+  openModal(`
+    <h3>Edit Reservation ${booking.ref || ''}</h3>
+    <div class="field-grid">
+      <div class="field"><label>Vehicle</label><select id="ebCar">
+        ${state.cars.map(c => `<option value="${c.id}" ${c.id === booking.carId ? 'selected' : ''}>${c.name}</option>`).join('')}
+      </select></div>
+      <div class="field"><label>Reference</label><input id="ebRef" value="${booking.ref || ''}" disabled></div>
+      <div class="field"><label>Customer name</label><input id="ebName" value="${(booking.customerName || '').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Phone</label><input id="ebPhone" value="${(booking.phone || '').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Nationality</label><input id="ebNationality" value="${(booking.nationality || '').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Email</label><input id="ebEmail" value="${(booking.email || '').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Pickup</label><input type="text" id="ebPickup" data-custom-picker readonly value="${toDatetimeLocalInputValue(booking.pickup)}"></div>
+      <div class="field"><label>Return</label><input type="text" id="ebReturn" data-custom-picker readonly value="${toDatetimeLocalInputValue(booking.ret)}"></div>
+      <div class="field"><label>Total (€)</label><input id="ebTotal" type="number" value="${booking.total || ''}"></div>
+    </div>
+    <div class="section-note" id="ebAvailNote"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="ebCancel">Cancel</button>
+      <button class="btn btn-primary" id="ebSave">Save changes</button>
+    </div>
+  `);
+  const updateAvailNote = ()=>{
+    const car = carById(document.getElementById('ebCar').value);
+    const note = document.getElementById('ebAvailNote');
+    if(!car){ note.textContent = ''; return; }
+    const units = state.fleetUnits.filter(u => u.carId === car.id);
+    const assignedNote = booking.unitId ? ` Currently assigned unit: ${booking.unitId}.` : '';
+    note.textContent = units.length > 0
+      ? `${car.name} has ${units.length} registered unit(s).${assignedNote} A free unit is auto-assigned when you save, excluding this booking's own current dates from the check.`
+      : `${car.name} has ${car.stock || 1} unit(s) total (no plates registered in Fleet Units).${assignedNote}`;
+  };
+  ['ebPickup', 'ebReturn'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.addEventListener('click', ()=> openAdminDatePicker(el, document.getElementById('ebCar').value, booking.row));
+  });
+  document.getElementById('ebCar').addEventListener('change', updateAvailNote);
+  updateAvailNote();
+  document.getElementById('ebCancel').addEventListener('click', closeModal);
+  document.getElementById('ebSave').addEventListener('click', async ()=>{
+    const carId = document.getElementById('ebCar').value;
+    const car = carById(carId);
+    const pickup = document.getElementById('ebPickup').value;
+    const ret = document.getElementById('ebReturn').value;
+    if(!car || !pickup || !ret){ toast('Please fill in all required fields'); return; }
+    const r = await apiPost({
+      action: 'editBooking', row: booking.row,
+      carId, carName: car.name,
+      customerName: document.getElementById('ebName').value.trim(),
+      phone: document.getElementById('ebPhone').value.trim(),
+      nationality: document.getElementById('ebNationality').value.trim(),
+      email: document.getElementById('ebEmail').value.trim(),
+      pickup, ret,
+      total: document.getElementById('ebTotal').value || '',
+      stock: car.stock,
+    });
+    if(r.success){
+      toast(r.unitPlate ? `Reservation updated — assigned unit: ${r.unitPlate}` : 'Reservation updated');
+      closeModal(); await refreshAdminData(); if(currentView==='reservations') renderReservationsRows();
+    } else toast(r.error === 'sold_out' ? 'No availability for these dates' : (r.error || 'Failed'));
   });
 }
 

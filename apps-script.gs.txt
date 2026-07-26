@@ -159,6 +159,52 @@ function doPost(e) {
     return jsonResponse_({ success: true });
   }
 
+  // Admin-only: full edit of an existing reservation (website or manual) —
+  // previously the dashboard only offered Cancel or a payment-status change,
+  // with no way to open a booking and correct its dates or customer details.
+  // Re-runs the same per-unit/stock availability check used when a booking is
+  // first created, but EXCLUDING this booking's own row from that check (so a
+  // booking editing its own unchanged dates doesn't look like a conflict with
+  // itself), and re-assigns whichever unit is free for the new dates.
+  if (body.action === 'editBooking') {
+    const role = roleForPassword_(body.password);
+    if (!role) return jsonResponse_({ success: false, error: 'Wrong password' });
+    if (!body.row) return jsonResponse_({ success: false, error: 'Missing row' });
+    const sheet = getBookingsSheet_();
+    const rowNum = Number(body.row);
+    const existing = sheet.getRange(rowNum, 1, 1, 19).getValues()[0];
+    if (!existing[0]) return jsonResponse_({ success: false, error: 'Booking not found' });
+    const carId = body.carId || existing[0];
+    const stock = Number(body.stock) || Number(existing[8]) || 1;
+    const pickup = body.pickup || existing[4];
+    const ret = body.ret || existing[5];
+    const assignment = findAvailableUnitForBooking_(carId, pickup, ret, stock, rowNum);
+    if (assignment.mode === 'sold_out') {
+      return jsonResponse_({ success: false, error: 'sold_out' });
+    }
+    const phone = body.phone != null ? body.phone : existing[3];
+    sheet.getRange(rowNum, 1, 1, 19).setValues([[
+      carId,
+      body.carName || existing[1],
+      body.customerName != null ? body.customerName : existing[2],
+      phone,
+      pickup,
+      ret,
+      existing[6], // reference — never changes
+      existing[7], // booked_at — never changes
+      stock,
+      body.total != null ? body.total : existing[9],
+      existing[10], // source — never changes
+      body.email != null ? body.email : existing[11],
+      existing[12], existing[13], existing[14], existing[15], existing[16], // payment/document fields untouched
+      body.nationality != null ? body.nationality : existing[17],
+      assignment.unitId || '',
+    ]]);
+    sheet.getRange(rowNum, 4).setNumberFormat('@').setValue(phone);
+    logActivity_(role, 'edit_booking', 'Row ' + rowNum + ' — ' + (body.carName || existing[1]));
+    return jsonResponse_({ success: true, unitId: assignment.unitId || '', unitPlate: assignment.plate || '' });
+  }
+
   if (body.action === 'addSeason') {
     const role = roleForPassword_(body.password);
     if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
@@ -389,17 +435,18 @@ function doPost(e) {
      assigned to it — this is what makes "extend one unit's booking to
      September" correctly leave the OTHER unit (and only that unit) bookable,
      instead of a bare count that can't tell units apart. */
-function findAvailableUnitForBooking_(carId, pickup, ret, stock) {
+function findAvailableUnitForBooking_(carId, pickup, ret, stock, excludeRow) {
   const units = listFleetUnits_().filter(u => u.carId === carId);
+  const bookingsPool = excludeRow ? listActiveBookings_().filter(b => b.row !== excludeRow) : listActiveBookings_();
   if (units.length === 0) {
     const overlapping = pickup && ret
-      ? listActiveBookings_().filter(b => b.carId === carId && rangesOverlap_(pickup, ret, b.pickup, b.ret)).length
-      : listActiveBookings_().filter(b => b.carId === carId).length;
+      ? bookingsPool.filter(b => b.carId === carId && rangesOverlap_(pickup, ret, b.pickup, b.ret)).length
+      : bookingsPool.filter(b => b.carId === carId).length;
     return overlapping >= stock ? { mode: 'sold_out' } : { mode: 'legacy' };
   }
   const overlappingBookings = pickup && ret
-    ? listActiveBookings_().filter(b => b.carId === carId && rangesOverlap_(pickup, ret, b.pickup, b.ret))
-    : listActiveBookings_().filter(b => b.carId === carId);
+    ? bookingsPool.filter(b => b.carId === carId && rangesOverlap_(pickup, ret, b.pickup, b.ret))
+    : bookingsPool.filter(b => b.carId === carId);
   const assignedOverlapUnitIds = overlappingBookings.filter(b => b.unitId).map(b => b.unitId);
   // Bookings made before a car had units registered (or any other case where
   // a booking has no unitId) can't be matched to a specific unit — but they
