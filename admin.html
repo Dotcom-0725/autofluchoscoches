@@ -456,30 +456,45 @@ function remainingStock(car){
   return Math.max(0, (Number(car.stock) || 1) - booked);
 }
 
-/* True if [startA,endA) overlaps [startB,endB) — same interval-overlap test
-   the website's booking engine uses, so "is this car free for these dates"
-   agrees exactly between the admin dashboard and the public site. */
+// Mandatory turnaround time between one booking's return and the next
+// booking's pickup for the SAME car — mirrors the backend's
+// CAR_TURNAROUND_BUFFER_MS exactly (see apps-script.gs.txt), so the admin
+// dashboard never disagrees with what the backend will actually enforce.
+const CAR_TURNAROUND_BUFFER_MS_ADMIN = 2 * 60 * 60 * 1000;
+/* True if [startA,endA) conflicts with [startB,endB) once the mandatory
+   CAR_TURNAROUND_BUFFER_MS_ADMIN gap is required between one range's end and
+   the other's start — same interval-overlap test the website's booking
+   engine uses, so "is this car free for these dates" agrees exactly between
+   the admin dashboard and the public site. */
 function rangesOverlapAdmin(startA, endA, startB, endB){
-  return new Date(startA) < new Date(endB) && new Date(startB) < new Date(endA);
+  return new Date(startB).getTime() < new Date(endA).getTime() + CAR_TURNAROUND_BUFFER_MS_ADMIN &&
+         new Date(startA).getTime() < new Date(endB).getTime() + CAR_TURNAROUND_BUFFER_MS_ADMIN;
 }
 function getOverlapCountAdmin(carId, pickupVal, retVal){
   return state.bookings.filter(b => b.carId === carId && rangesOverlapAdmin(pickupVal, retVal, b.pickup, b.ret)).length;
 }
-/* When this car has real units registered (plate/fleet ID, entered in the
+/* True if this car has NO valid moment left to pick on this calendar day —
+   i.e. every unit is still busy (accounting for the turnaround buffer) even
+   in the very last minute of the day. Checking only that last instant
+   (instead of the whole day) matters: a car whose only booking returns at
+   10:00 becomes free again at 12:00 (after the 2h buffer), so the customer
+   must still be able to pick THIS day with a later time — the day itself
+   must not be disabled just because part of it was booked.
+   When this car has real units registered (plate/fleet ID, entered in the
    Inventory > Fleet Units screen), the admin already has full visibility into
    which unit each booking is assigned to (state.bookings[].unitId) — so
-   shading here can be EXACT: a day is only fully booked once every registered
-   unit has an overlapping booking assigned to it, not just a bare count. Cars
-   with no units registered yet fall back to the old count-vs-stock check. */
+   shading here can be EXACT: the day is only fully booked once every
+   registered unit is still busy at that last instant, not just a bare count.
+   Cars with no units registered yet fall back to the old count-vs-stock check. */
 function isDayFullyBookedAdmin(carId, cellDate, excludeRow){
   const car = carById(carId);
   if(!car) return false;
-  const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
-  const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+  const dayEnd = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate() + 1);
+  const lastInstantStart = new Date(dayEnd.getTime() - 60000); // last minute of the day
   const bookingsPool = excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings;
   const units = state.fleetUnits.filter(u => u.carId === carId);
   if(units.length > 0){
-    const dayOverlap = bookingsPool.filter(b => b.carId === carId && rangesOverlapAdmin(dayStart.toISOString(), dayEnd.toISOString(), b.pickup, b.ret));
+    const dayOverlap = bookingsPool.filter(b => b.carId === carId && rangesOverlapAdmin(lastInstantStart.toISOString(), dayEnd.toISOString(), b.pickup, b.ret));
     // Bookings with no unitId (e.g. made before this car had units registered)
     // still occupy a real car — each one must still claim a free slot, or a
     // car with older unassigned bookings would wrongly look fully free.
@@ -488,7 +503,7 @@ function isDayFullyBookedAdmin(carId, cellDate, excludeRow){
     const freeUnits = units.filter(u => assignedUnitIds.indexOf(u.unitId) === -1);
     return freeUnits.length <= legacyCount;
   }
-  const overlap = bookingsPool.filter(b => b.carId === carId && rangesOverlapAdmin(dayStart.toISOString(), dayEnd.toISOString(), b.pickup, b.ret)).length;
+  const overlap = bookingsPool.filter(b => b.carId === carId && rangesOverlapAdmin(lastInstantStart.toISOString(), dayEnd.toISOString(), b.pickup, b.ret)).length;
   return overlap >= (Number(car.stock) || 1);
 }
 

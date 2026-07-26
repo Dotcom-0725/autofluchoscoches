@@ -4121,15 +4121,19 @@ function getCarIdForDateInput(input){
   if((input.id === 'bkPickup' || input.id === 'bkReturn') && activeBookingCar) return activeBookingCar.id;
   return null;
 }
-/* True if `car` has zero remaining units for the single calendar day
-   `cellDate` — i.e. every unit is already booked by an overlapping
-   reservation for that day, so the customer must not be able to pick it. */
+/* True if `car` has NO valid moment left to pick on this calendar day — i.e.
+   every unit is still busy (accounting for the turnaround buffer) even in
+   the very last minute of the day. Checking only that last instant (instead
+   of the whole day) is deliberate: a car whose only booking returns at 10:00
+   becomes free again at 12:00 (after the 2h buffer) — the customer can still
+   pick THIS day and a later time, so the day itself must not be disabled
+   just because part of it was booked. */
 function isDayFullyBooked(carId, cellDate){
   const car = CARS.find(c => c.id === carId);
   if(!car) return false;
-  const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
-  const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
-  const overlap = getOverlapCount(carId, dayStart.toISOString(), dayEnd.toISOString());
+  const dayEnd = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate() + 1);
+  const lastInstantStart = new Date(dayEnd.getTime() - 60000); // last minute of the day
+  const overlap = getOverlapCount(carId, lastInstantStart.toISOString(), dayEnd.toISOString());
   return overlap >= effectiveStock(car);
 }
 function openCustomDatePicker(input){
