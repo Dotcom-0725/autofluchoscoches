@@ -1040,7 +1040,7 @@ function openManualBookingModal(){
       <option value="phone">Phone booking</option><option value="office">Office booking</option><option value="walkin">Walk-in customer</option>
     </select></div>
     <div class="field"><label>Vehicle</label><select id="mbCar">
-      ${state.cars.map(c=> `<option value="${c.id}" ${remainingStock(c)<=0 ? 'disabled' : ''}>${c.name} — ${remainingStock(c)} available</option>`).join('')}
+      ${state.cars.map(c=> `<option value="${c.id}">${c.name} (${c.stock || 1} unit${(c.stock || 1) === 1 ? '' : 's'} total)</option>`).join('')}
     </select></div>
     <div class="field-grid">
       <div class="field"><label>Customer name</label><input id="mbName" required></div>
@@ -1067,7 +1067,7 @@ function openManualBookingModal(){
     const note = document.getElementById('mbAvailNote');
     if(!car){ note.style.display = 'none'; return; }
     note.style.display = '';
-    note.textContent = `${remainingStock(car)} of ${car.stock || 1} unit(s) currently free for ${car.name}. Booked days are shown crossed-out in the calendar below.`;
+    note.textContent = `${car.name} has ${car.stock || 1} unit(s) total. Click Pickup/Return below to see exactly which days are free — fully booked days are shown crossed-out per date range, not as a blanket "unavailable".`;
   };
   document.getElementById('mbCar').addEventListener('change', updateAvailNote);
   updateAvailNote();
