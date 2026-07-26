@@ -116,6 +116,50 @@ tr:last-child td{border-bottom:none}
 .modal-box h3{margin:0 0 18px}
 .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
 
+/* Custom calendar popup for the manual-reservation Pickup/Return fields —
+   mirrors the customer-facing site's picker (same booked-day shading logic,
+   fed from the same live bookings data) so the admin sees exactly the same
+   availability the website would show, preventing any mismatch between
+   manual and online reservations for the same vehicle. */
+.custom-datepicker{
+  position:absolute;z-index:900;background:var(--card);border:1px solid var(--card-border);
+  border-radius:14px;box-shadow:var(--shadow);padding:14px;width:266px;
+}
+.custom-datepicker-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.custom-datepicker-header .cdp-label{font-weight:800;font-size:.88rem}
+.custom-datepicker-header button{
+  background:var(--bg);border:1px solid var(--card-border);color:var(--ink);
+  width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:.85rem;line-height:1;
+}
+.custom-datepicker-header button:hover{border-color:var(--accent);color:var(--accent)}
+.custom-datepicker-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}
+.custom-datepicker-grid .cdp-dow{color:var(--ink-dim);font-weight:700;font-size:.68rem;padding:4px 0;text-transform:uppercase}
+.custom-datepicker-grid button{
+  background:none;border:none;padding:7px 0;border-radius:8px;cursor:pointer;color:var(--ink);font-size:.8rem;
+}
+.custom-datepicker-grid button:hover:not(:disabled){background:var(--bg)}
+.custom-datepicker-grid button.cdp-selected{background:var(--accent);color:#fff;font-weight:700}
+.custom-datepicker-grid button.cdp-other-month{color:var(--ink-dim);opacity:.4}
+.custom-datepicker-grid button:disabled{opacity:.25;cursor:not-allowed}
+.custom-datepicker-grid button.cdp-booked{
+  background:rgba(230,57,80,.12);color:#c81e3a;text-decoration:line-through;
+  opacity:1;cursor:not-allowed;
+}
+.custom-datepicker-grid button.cdp-booked:hover{background:rgba(230,57,80,.12)}
+.custom-datepicker-grid button.cdp-booked.cdp-other-month{opacity:.35}
+.custom-datepicker-time{
+  display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--card-border);
+}
+.custom-datepicker-time input{
+  flex:1;min-width:0;padding:8px 10px;border-radius:9px;border:1px solid var(--card-border);
+  background:var(--bg);color:var(--ink);font-size:.82rem;
+}
+.custom-datepicker-done{
+  width:100%;margin-top:12px;padding:8px;border-radius:9px;border:none;
+  background:var(--accent);color:#fff;font-weight:700;font-size:.8rem;cursor:pointer;
+}
+input[data-custom-picker]{cursor:pointer}
+
 .empty-state{text-align:center;padding:50px 20px;color:var(--ink-dim)}
 .section-note{background:var(--accent-dim);color:var(--accent);border-radius:8px;padding:10px 14px;font-size:.78rem;margin-bottom:16px}
 .section-note.warn{background:rgba(200,134,13,.12);color:var(--warn)}
@@ -410,6 +454,147 @@ function carById(id){ return state.cars.find(c => c.id === id); }
 function remainingStock(car){
   const booked = state.bookings.filter(b => b.carId === car.id).length;
   return Math.max(0, (Number(car.stock) || 1) - booked);
+}
+
+/* True if [startA,endA) overlaps [startB,endB) — same interval-overlap test
+   the website's booking engine uses, so "is this car free for these dates"
+   agrees exactly between the admin dashboard and the public site. */
+function rangesOverlapAdmin(startA, endA, startB, endB){
+  return new Date(startA) < new Date(endB) && new Date(startB) < new Date(endA);
+}
+function getOverlapCountAdmin(carId, pickupVal, retVal){
+  return state.bookings.filter(b => b.carId === carId && rangesOverlapAdmin(pickupVal, retVal, b.pickup, b.ret)).length;
+}
+function isDayFullyBookedAdmin(carId, cellDate){
+  const car = carById(carId);
+  if(!car) return false;
+  const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+  const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+  const overlap = getOverlapCountAdmin(carId, dayStart.toISOString(), dayEnd.toISOString());
+  return overlap >= (Number(car.stock) || 1);
+}
+
+/* ================= CUSTOM DATE PICKER (manual reservation modal) =================
+   Mirrors the customer-facing site's calendar popup — same booked-day shading,
+   fed from the same state.bookings data — so admins see exactly the same
+   availability a website visitor would see for that vehicle. */
+const ADMIN_MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const ADMIN_WEEKDAY_MIN = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+let activeAdminDatePicker = null;
+function closeAdminDatePicker(){ if(activeAdminDatePicker){ activeAdminDatePicker.remove(); activeAdminDatePicker = null; } }
+document.addEventListener('click', e=>{
+  if(activeAdminDatePicker && !activeAdminDatePicker.contains(e.target) && !e.target.closest('input[data-custom-picker]')){
+    closeAdminDatePicker();
+  }
+});
+document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeAdminDatePicker(); });
+function parseAdminDateValue(input){
+  const v = input.value;
+  if(v){
+    const [datePart, timePart] = v.split('T');
+    const [y, m, d] = datePart.split('-').map(Number);
+    return { date: new Date(y, m - 1, d), time: timePart || '10:00' };
+  }
+  return { date: new Date(), time: '10:00' };
+}
+function writeAdminDateValue(input, date, time){
+  const pad = n => String(n).padStart(2, '0');
+  const dateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  input.value = `${dateStr}T${time}`;
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+function openAdminDatePicker(input, carId){
+  closeAdminDatePicker();
+  const { date: selected, time: initialTime } = parseAdminDateValue(input);
+  let viewYear = selected.getFullYear();
+  let viewMonth = selected.getMonth();
+  let currentTime = initialTime;
+
+  const popup = document.createElement('div');
+  popup.className = 'custom-datepicker';
+  document.body.appendChild(popup);
+  activeAdminDatePicker = popup;
+
+  function render(){
+    popup.innerHTML = '';
+    const header = document.createElement('div');
+    header.className = 'custom-datepicker-header';
+    const prevBtn = document.createElement('button');
+    prevBtn.type = 'button'; prevBtn.textContent = '‹';
+    const label = document.createElement('span');
+    label.className = 'cdp-label';
+    label.textContent = `${ADMIN_MONTH_NAMES[viewMonth]} ${viewYear}`;
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button'; nextBtn.textContent = '›';
+    header.appendChild(prevBtn); header.appendChild(label); header.appendChild(nextBtn);
+    popup.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.className = 'custom-datepicker-grid';
+    ADMIN_WEEKDAY_MIN.forEach(dow=>{
+      const el = document.createElement('div');
+      el.className = 'cdp-dow';
+      el.textContent = dow;
+      grid.appendChild(el);
+    });
+    const firstOfMonth = new Date(viewYear, viewMonth, 1);
+    const startOffset = firstOfMonth.getDay();
+    const gridStart = new Date(viewYear, viewMonth, 1 - startOffset);
+    for(let i = 0; i < 42; i++){
+      const cellDate = new Date(gridStart);
+      cellDate.setDate(gridStart.getDate() + i);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = cellDate.getDate();
+      if(cellDate.getMonth() !== viewMonth) btn.classList.add('cdp-other-month');
+      if(cellDate.toDateString() === selected.toDateString()) btn.classList.add('cdp-selected');
+      if(carId && isDayFullyBookedAdmin(carId, cellDate)){
+        btn.classList.add('cdp-booked');
+        btn.disabled = true;
+        btn.title = 'Fully booked for this vehicle';
+      }
+      btn.addEventListener('click', e=>{
+        e.stopPropagation();
+        writeAdminDateValue(input, cellDate, currentTime || '10:00');
+        selected.setFullYear(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+        render();
+      });
+      grid.appendChild(btn);
+    }
+    popup.appendChild(grid);
+
+    const timeRow = document.createElement('div');
+    timeRow.className = 'custom-datepicker-time';
+    const timeInput = document.createElement('input');
+    timeInput.type = 'time';
+    timeInput.value = currentTime || '10:00';
+    timeInput.addEventListener('change', ()=>{
+      currentTime = timeInput.value;
+      writeAdminDateValue(input, selected, currentTime);
+    });
+    timeRow.appendChild(timeInput);
+    popup.appendChild(timeRow);
+
+    const doneBtn = document.createElement('button');
+    doneBtn.type = 'button';
+    doneBtn.className = 'custom-datepicker-done';
+    doneBtn.textContent = 'Done';
+    doneBtn.addEventListener('click', closeAdminDatePicker);
+    popup.appendChild(doneBtn);
+
+    prevBtn.addEventListener('click', e=>{ e.stopPropagation(); viewMonth--; if(viewMonth < 0){ viewMonth = 11; viewYear--; } render(); });
+    nextBtn.addEventListener('click', e=>{ e.stopPropagation(); viewMonth++; if(viewMonth > 11){ viewMonth = 0; viewYear++; } render(); });
+  }
+  render();
+
+  const rect = input.getBoundingClientRect();
+  const top = window.scrollY + rect.bottom + 6;
+  let left = window.scrollX + rect.left;
+  const maxLeft = window.scrollX + document.documentElement.clientWidth - 280;
+  if(left > maxLeft) left = Math.max(8, maxLeft);
+  popup.style.top = top + 'px';
+  popup.style.left = left + 'px';
 }
 
 /* ================= DASHBOARD ================= */
@@ -860,15 +1045,32 @@ function openManualBookingModal(){
     <div class="field-grid">
       <div class="field"><label>Customer name</label><input id="mbName" required></div>
       <div class="field"><label>Phone</label><input id="mbPhone" required></div>
-      <div class="field"><label>Pickup</label><input type="datetime-local" id="mbPickup" required></div>
-      <div class="field"><label>Return</label><input type="datetime-local" id="mbReturn" required></div>
+      <div class="field"><label>Pickup</label><input type="text" id="mbPickup" data-custom-picker readonly required placeholder="Select date & time"></div>
+      <div class="field"><label>Return</label><input type="text" id="mbReturn" data-custom-picker readonly required placeholder="Select date & time"></div>
     </div>
+    <div class="section-note" id="mbAvailNote" style="display:none"></div>
     <div class="field"><label>Total (€, optional)</label><input id="mbTotal" type="number"></div>
     <div class="modal-actions">
       <button class="btn btn-outline" id="mbCancel">Cancel</button>
       <button class="btn btn-primary" id="mbSave">Create reservation</button>
     </div>
   `);
+  // Same booked-day shading the website's own booking calendar uses (fed from
+  // the same live state.bookings data), so the admin never manually creates a
+  // reservation that conflicts with an existing website booking, or vice versa.
+  ['mbPickup', 'mbReturn'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.addEventListener('click', ()=> openAdminDatePicker(el, document.getElementById('mbCar').value));
+  });
+  const updateAvailNote = ()=>{
+    const car = carById(document.getElementById('mbCar').value);
+    const note = document.getElementById('mbAvailNote');
+    if(!car){ note.style.display = 'none'; return; }
+    note.style.display = '';
+    note.textContent = `${remainingStock(car)} of ${car.stock || 1} unit(s) currently free for ${car.name}. Booked days are shown crossed-out in the calendar below.`;
+  };
+  document.getElementById('mbCar').addEventListener('change', updateAvailNote);
+  updateAvailNote();
   document.getElementById('mbCancel').addEventListener('click', closeModal);
   document.getElementById('mbSave').addEventListener('click', async ()=>{
     const carId = document.getElementById('mbCar').value;
