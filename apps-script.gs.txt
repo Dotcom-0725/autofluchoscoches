@@ -139,12 +139,22 @@ function doGet(e) {
   });
 }
 
-/* True if [startA, endA) overlaps [startB, endB) — the standard interval
-   overlap test. Two bookings for the same car conflict only if their date
-   ranges actually overlap; a booking ending July 25 does not conflict with
-   one starting July 25 or later. */
+// Mandatory turnaround time between one booking's return and the next
+// booking's pickup for the SAME physical car (cleaning/inspection buffer) —
+// a car becomes bookable again exactly this many hours after its scheduled
+// return, on the same day if that's when the buffer elapses.
+const CAR_TURNAROUND_BUFFER_MS = 2 * 60 * 60 * 1000;
+
+/* True if [startA, endA) conflicts with [startB, endB) once a mandatory
+   CAR_TURNAROUND_BUFFER_MS gap is required between one range's end and the
+   other's start (in either direction) — not just a bare interval overlap.
+   Two bookings for the same car conflict unless one ends at least the buffer
+   before the other starts; a booking ending at 10:00 does NOT conflict with
+   one starting at 12:00 (exactly the 2h buffer later), but does conflict
+   with one starting at 11:59. */
 function rangesOverlap_(startA, endA, startB, endB) {
-  return new Date(startA) < new Date(endB) && new Date(startB) < new Date(endA);
+  return new Date(startB).getTime() < new Date(endA).getTime() + CAR_TURNAROUND_BUFFER_MS &&
+         new Date(startA).getTime() < new Date(endB).getTime() + CAR_TURNAROUND_BUFFER_MS;
 }
 
 function doPost(e) {

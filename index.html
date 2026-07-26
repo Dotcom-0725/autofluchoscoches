@@ -2521,11 +2521,19 @@ function effectiveStock(car){
   const tracked = remoteCarUnitCounts[car.id];
   return (tracked && tracked > 0) ? tracked : (car.stock || 1);
 }
-/* True if [startA, endA) overlaps [startB, endB) — mirrors the backend's
-   rangesOverlap_ so the client can pre-check availability for a specific
-   date range instead of only knowing a car's overall current booked count. */
+// Mandatory turnaround time between one booking's return and the next
+// booking's pickup for the SAME car (cleaning/inspection buffer) — mirrors
+// the backend's CAR_TURNAROUND_BUFFER_MS exactly, so the client-side preview
+// never disagrees with what the backend will actually enforce.
+const CAR_TURNAROUND_BUFFER_MS = 2 * 60 * 60 * 1000;
+/* True if [startA, endA) conflicts with [startB, endB) once the mandatory
+   CAR_TURNAROUND_BUFFER_MS gap is required between one range's end and the
+   other's start — mirrors the backend's rangesOverlap_ so the client can
+   pre-check availability for a specific date range instead of only knowing a
+   car's overall current booked count. */
 function rangesOverlap(startA, endA, startB, endB){
-  return new Date(startA) < new Date(endB) && new Date(startB) < new Date(endA);
+  return new Date(startB).getTime() < new Date(endA).getTime() + CAR_TURNAROUND_BUFFER_MS &&
+         new Date(startA).getTime() < new Date(endB).getTime() + CAR_TURNAROUND_BUFFER_MS;
 }
 /* How many of a car's active bookings actually overlap the given [pickup, ret)
    range — the count that matters for "is this car free for THESE dates",
