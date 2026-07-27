@@ -432,6 +432,7 @@ header{
   background:rgba(20,24,43,.72);color:#fff;font-size:.7rem;font-weight:700;
   padding:5px 10px;border-radius:999px;backdrop-filter:blur(4px);
 }
+.car-stock-badge.is-delayed-badge{background:rgba(180,120,10,.88)}
 .car-body{padding:18px;display:flex;flex-direction:column;gap:12px;flex:1}
 .car-body h3{font-size:1rem}
 .car-price{font-size:1.5rem;color:var(--gold);font-weight:800}
@@ -1238,6 +1239,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
         </div>
       </div>
       <p class="modal-error" id="bkDatesUnavailable" data-i18n="dates_unavailable_error" hidden>These dates are not available for this car. Please choose a different date range or vehicle.</p>
+      <p class="modal-warning" id="bkAvailableLaterNote" hidden></p>
 
       <div class="modal-grid-2">
         <div>
@@ -1786,20 +1788,22 @@ function applyFleetFiltersAndSort(list, qbRange){
   if(fleetMaxPrice !== 'all') out = out.filter(c => c.price <= Number(fleetMaxPrice));
   if(fleetSortKey === 'price_asc') out = [...out].sort((a,b)=>a.price-b.price);
   else if(fleetSortKey === 'price_desc') out = [...out].sort((a,b)=>b.price-a.price);
-  // Available cars always float above unavailable ones, regardless of brand/
-  // seats/price filters or the chosen sort — so a customer never has to
-  // scroll past a wall of "Not Available" cards to find one they can
-  // actually book. Array#sort is stable in every engine this site targets,
-  // so cars WITHIN the same availability group keep whatever relative order
-  // the filters/sort above already gave them (price order, featured order,
-  // etc.) — only the two groups themselves get reordered. Uses the exact
-  // same getRemainingStockForRange call renderFleet uses for each card's own
-  // "Not Available" badge, so the ordering and the badges always agree.
-  if(qbRange){
+  // Available AND "delayed" cars (free later the same pickup day — see
+  // getDelayedAvailability) always float above genuinely unavailable ones,
+  // regardless of brand/seats/price filters or the chosen sort — so a
+  // customer never has to scroll past a wall of "Not Available" cards to
+  // find one they can actually book, and a car that's merely delayed a few
+  // hours isn't buried alongside cars that are truly sold out. Array#sort is
+  // stable in every engine this site targets, so cars WITHIN the same group
+  // keep whatever relative order the filters/sort above already gave them —
+  // only the groups themselves get reordered. Uses the exact same
+  // getDelayedAvailability call renderFleet uses for each card's own badge,
+  // so the ordering and the badges always agree.
+  if(qbRange && qbRange.pickup && qbRange.ret){
     out = [...out].sort((a,b)=>{
-      const aBooked = getRemainingStockForRange(a, qbRange.pickup, qbRange.ret) <= 0;
-      const bBooked = getRemainingStockForRange(b, qbRange.pickup, qbRange.ret) <= 0;
-      return (aBooked === bBooked) ? 0 : (aBooked ? 1 : -1);
+      const aUnavailable = getDelayedAvailability(a, qbRange.pickup, qbRange.ret).status === 'unavailable';
+      const bUnavailable = getDelayedAvailability(b, qbRange.pickup, qbRange.ret).status === 'unavailable';
+      return (aUnavailable === bUnavailable) ? 0 : (aUnavailable ? 1 : -1);
     });
   }
   return out;
@@ -1920,6 +1924,8 @@ const I18N = {
     min_rental_error:'The minimum car rental period is 3 days.',
     qb_no_cars_available_error:'No vehicles are available for these dates. Please choose different dates or a different category.',
     dates_unavailable_error:'These dates are not available for this car. Please choose a different date range or vehicle.',
+    vehicle_available_later:'This vehicle will be available from {time} on {date}. Adjust the pick-up time below, or continue and we\'ll confirm it at that time.',
+    available_from_badge:'Available from {time}',
     sold_out_error:'Sorry, this vehicle was just booked by someone else. Please pick another car.',
     modal_resources_title:'Resources', res_second_driver:'Second driver', res_baby_0_15:'Baby seat Birth to 15 Months',
     res_baby_1_4:'Baby seat 1 to 4 years', res_baby_4_12:'Baby seat 4 to 12 years', res_total:'/ Total',
@@ -2055,6 +2061,8 @@ const I18N = {
     min_rental_error:'La durée minimale de location est de 3 jours.',
     qb_no_cars_available_error:'Aucun véhicule n\'est disponible pour ces dates. Merci de choisir d\'autres dates ou une autre catégorie.',
     dates_unavailable_error:'Ces dates ne sont pas disponibles pour cette voiture. Merci de choisir une autre période ou un autre véhicule.',
+    vehicle_available_later:'Ce véhicule sera disponible à partir de {time} le {date}. Ajustez l\'heure de prise en charge ci-dessous, ou continuez et nous la confirmerons à cette heure.',
+    available_from_badge:'Disponible à partir de {time}',
     sold_out_error:'Désolé, ce véhicule vient d\'être réservé par quelqu\'un d\'autre. Veuillez choisir une autre voiture.',
     modal_resources_title:'Ressources', res_second_driver:'Deuxième conducteur', res_baby_0_15:'Siège bébé Naissance à 15 mois',
     res_baby_1_4:'Siège enfant 1 à 4 ans', res_baby_4_12:'Siège enfant 4 à 12 ans', res_total:'/ Total',
@@ -2191,6 +2199,8 @@ const I18N = {
     min_rental_error:'La duración mínima del alquiler es de 3 días.',
     qb_no_cars_available_error:'No hay vehículos disponibles para estas fechas. Elija otras fechas u otra categoría.',
     dates_unavailable_error:'Estas fechas no están disponibles para este coche. Elija otro periodo u otro vehículo.',
+    vehicle_available_later:'Este vehículo estará disponible a partir de las {time} del {date}. Ajuste la hora de recogida abajo, o continúe y lo confirmaremos a esa hora.',
+    available_from_badge:'Disponible a partir de las {time}',
     sold_out_error:'Lo sentimos, este vehículo acaba de ser reservado por otra persona. Elija otro coche.',
     modal_resources_title:'Recursos', res_second_driver:'Segundo conductor', res_baby_0_15:'Silla bebé Nacimiento a 15 meses',
     res_baby_1_4:'Silla infantil 1 a 4 años', res_baby_4_12:'Silla infantil 4 a 12 años', res_total:'/ Total',
@@ -2327,6 +2337,8 @@ const I18N = {
     min_rental_error:'الحد الأدنى لمدة كراء السيارة هو 3 أيام.',
     qb_no_cars_available_error:'لا توجد سيارات متاحة لهذه التواريخ. يرجى اختيار تواريخ أخرى أو فئة أخرى.',
     dates_unavailable_error:'هذه التواريخ غير متاحة لهذه السيارة. يرجى اختيار فترة أخرى أو سيارة أخرى.',
+    vehicle_available_later:'ستكون هذه السيارة متاحة ابتداءً من {time} بتاريخ {date}. يمكنك تعديل وقت الاستلام أدناه، أو المتابعة وسنؤكد الحجز في ذلك الوقت.',
+    available_from_badge:'متاحة ابتداءً من {time}',
     sold_out_error:'عذراً، تم حجز هذه السيارة للتو من طرف شخص آخر. يرجى اختيار سيارة أخرى.',
     modal_resources_title:'إضافات', res_second_driver:'سائق ثاني', res_baby_0_15:'مقعد طفل من الولادة إلى 15 شهر',
     res_baby_1_4:'مقعد طفل من 1 إلى 4 سنوات', res_baby_4_12:'مقعد طفل من 4 إلى 12 سنة', res_total:'/ المجموع',
@@ -2596,6 +2608,38 @@ function getRemainingStockForRange(car, pickupVal, retVal){
   const freeUnits = unitIds.filter(id => assignedOverlapUnitIds.indexOf(id) === -1);
   return Math.max(0, freeUnits.length - legacyOverlapCount);
 }
+/* Three-state availability check for search/browse: 'available' (free at the
+   exact requested pickup/return), 'delayed' (not free at the exact requested
+   time, but WOULD be free later the same pickup day — e.g. a booking returns
+   at 10:00 and the mandatory 2h buffer clears it at 12:00), or 'unavailable'
+   (no rescue that day, or the return-side still conflicts).
+
+   This exists so the initial search never has to reject a car outright just
+   because the customer's exact chosen time lands inside another booking's
+   turnaround window — it can instead surface a specific "available from
+   HH:MM" note and let the customer decide, instead of hiding a genuinely
+   bookable car. The final booking submission still enforces the real
+   [pickupVal, retVal) check server-side (via getRemainingStockForRange /
+   findAvailableUnitForBooking_), so a real conflict is only ever blocked
+   there — never here. */
+function getDelayedAvailability(car, pickupVal, retVal){
+  if(!pickupVal || !retVal) return { status: 'unknown' };
+  const remaining = getRemainingStockForRange(car, pickupVal, retVal);
+  if(remaining > 0) return { status: 'available', remaining, effectivePickup: pickupVal };
+  const [pickupDateStr, pickupTimeStr] = pickupVal.split('T');
+  const [y, m, d] = pickupDateStr.split('-').map(Number);
+  if(!y || !m || !d) return { status: 'unavailable' };
+  const earliest = getEarliestAvailableTimeOnDay(car.id, new Date(y, m - 1, d));
+  const pad = n => String(n).padStart(2, '0');
+  const earliestTimeStr = `${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
+  if(earliestTimeStr <= pickupTimeStr) return { status: 'unavailable' }; // no later rescue slot that day
+  const delayedPickup = `${pickupDateStr}T${earliestTimeStr}`;
+  const delayedRemaining = getRemainingStockForRange(car, delayedPickup, retVal);
+  if(delayedRemaining > 0){
+    return { status: 'delayed', remaining: delayedRemaining, effectivePickup: delayedPickup, earliestTimeStr, pickupDateStr };
+  }
+  return { status: 'unavailable' };
+}
 /* Reads the hero Quick Booking widget's currently selected pickup/return
    datetimes (as datetime-local-style strings), if present, so fleet
    availability can reflect "is this car free for the dates the customer
@@ -2717,15 +2761,22 @@ function renderFleet(dict, cat){
   matching.forEach(c=>{
     const gearLabel = c.gearKey === 'auto' ? dict.gear_auto : dict.gear_manual;
     const fuelLabel = dict['fuel_' + c.fuelKey];
-    const remainingForRange = getRemainingStockForRange(c, qbRange.pickup, qbRange.ret);
-    const isBooked = remainingForRange <= 0;
+    // Three-state check (see getDelayedAvailability): a car that's merely
+    // delayed a few hours the same pickup day must still read as bookable —
+    // only a genuine 'unavailable' verdict shows the red "Not Available"
+    // badge and greys out the photo.
+    const availability = (qbRange.pickup && qbRange.ret) ? getDelayedAvailability(c, qbRange.pickup, qbRange.ret) : { status: 'unknown' };
+    const isBooked = availability.status === 'unavailable';
+    const isDelayed = availability.status === 'delayed';
+    const remainingForRange = availability.status === 'unknown' ? getRemainingStockForRange(c, qbRange.pickup, qbRange.ret) : availability.remaining;
     const altText = `${c.name} rental car in Tétouan &amp; Tangier — ${c.seats} seats, ${gearLabel}, ${fuelLabel} — Auto Fluchos Coches`;
     const card = document.createElement('div');
     card.className = 'car-card' + (isBooked ? ' is-unavailable' : '');
     card.innerHTML = `
       <div class="car-photo">
         <span class="car-offer${isBooked ? ' is-unavailable-badge' : ''}">${isBooked ? dict.unavailable_badge : c.offer}</span>
-        ${!isBooked ? `<span class="car-stock-badge">🚗 ${remainingForRange} ${dict.stock_available_label}</span>` : ''}
+        ${isDelayed ? `<span class="car-stock-badge is-delayed-badge">🕒 ${dict.available_from_badge.replace('{time}', availability.earliestTimeStr)}</span>`
+          : (!isBooked ? `<span class="car-stock-badge">🚗 ${remainingForRange} ${dict.stock_available_label}</span>` : '')}
         <img src="${c.imgSrc}" alt="${altText}" loading="lazy">
       </div>
       <div class="car-body">
@@ -2764,12 +2815,14 @@ function qbRentalDays(){
 /* Beyond the min-rental-days check, also warns immediately — without the
    customer needing to open the calendar or scroll down to the fleet grid —
    when the exact currently-selected pickup/return/category combo has zero
-   remaining stock across the ENTIRE matching fleet. Uses the same
-   isDayFullyBookedForFleetRange (paired-range) check the calendar's own
-   shading relies on, so the banner and the calendar always agree. Doesn't
-   block the Search button itself: the fleet section below still needs to be
-   reachable so the customer can see exactly which vehicles are (un)available
-   and adjust dates or category from there. */
+   remaining stock across the ENTIRE matching fleet. Uses getDelayedAvailability
+   per car (same check renderFleet uses for each card's badge) so the banner
+   only ever fires when every matching car is genuinely 'unavailable' — a car
+   that's merely free later the same pickup day must never trigger a blanket
+   "no vehicles available" message. Doesn't block the Search button itself:
+   the fleet section below still needs to be reachable so the customer can
+   see exactly which vehicles are (un)available and adjust dates or category
+   from there. */
 function validateQbDates(){
   const days = qbRentalDays();
   const tooShort = days !== null && days < MIN_RENTAL_DAYS;
@@ -2784,7 +2837,10 @@ function validateQbDates(){
     const returnTime = document.getElementById('qbReturnTime').value || '10:00';
     const cat = document.getElementById('qbCategory').value;
     if(pickupDate && returnDate){
-      noAvailability = isDayFullyBookedForFleetRange(`${pickupDate}T${pickupTime}`, `${returnDate}T${returnTime}`, cat);
+      const pickupIso = `${pickupDate}T${pickupTime}`;
+      const retIso = `${returnDate}T${returnTime}`;
+      const candidates = CARS.filter(c => carMatchesCategory(c, cat || 'all'));
+      noAvailability = candidates.length > 0 && candidates.every(c => getDelayedAvailability(c, pickupIso, retIso).status === 'unavailable');
     }
   }
   availError.classList.toggle('show', noAvailability);
@@ -2985,8 +3041,14 @@ function populateCarSelect(dict){
   const bkReturn = document.getElementById('bkReturn')?.value;
   const range = (bkPickup && bkReturn) ? { pickup: bkPickup, ret: bkReturn } : getQuickBookingRange();
   sel.innerHTML = CARS.map(c=>{
-    const isBooked = getRemainingStockForRange(c, range.pickup, range.ret) <= 0;
-    const label = `${c.name} — ${fmtPrice(c.price)}${dict.per_day}${isBooked ? ' (' + dict.unavailable_badge + ')' : ''}`;
+    // A car that's merely 'delayed' (free later the same pickup day) stays
+    // selectable here too — only a genuine 'unavailable' verdict disables it,
+    // matching the fleet grid's badges and checkSelectedCarAvailability.
+    const availability = (range.pickup && range.ret) ? getDelayedAvailability(c, range.pickup, range.ret) : { status: 'unknown' };
+    const isBooked = availability.status === 'unavailable';
+    const isDelayed = availability.status === 'delayed';
+    const suffix = isBooked ? ' (' + dict.unavailable_badge + ')' : (isDelayed ? ' (' + dict.available_from_badge.replace('{time}', availability.earliestTimeStr) + ')' : '');
+    const label = `${c.name} — ${fmtPrice(c.price)}${dict.per_day}${suffix}`;
     return `<option value="${c.id}" ${isBooked ? 'disabled' : ''}>${label}</option>`;
   }).join('');
   if(prev && CARS.some(c => c.id === prev)) sel.value = prev;
@@ -3487,20 +3549,50 @@ function updateTotal(){
 /* Live-checks whether activeBookingCar is actually free for the exact
    [bkPickup, bkReturn) range currently entered — a car can be fully valid
    to book overall while still conflicting with this specific date range if
-   another customer already has it reserved for part of that window. Shows
-   an inline warning and disables the submit button when that happens,
-   instead of only finding out after the customer fills in the whole form. */
+   another customer already has it reserved for part of that window.
+
+   Uses the same three-state getDelayedAvailability check the search results
+   use: a car that's merely delayed a few hours the same pickup day (e.g. its
+   previous booking returns at 10:00 and the mandatory 2h buffer clears it at
+   12:00) is NOT blocked here — instead an informational note tells the
+   customer exactly when it'll be free, and they can still submit; the
+   backend's own findAvailableUnitForBooking_ check at submit time is what
+   actually enforces the real constraint, so a genuine conflict is only ever
+   blocked there, never by this upfront preview. Only a true 'unavailable'
+   verdict disables the submit button here. */
 function checkSelectedCarAvailability(){
   const warningEl = document.getElementById('bkDatesUnavailable');
+  const laterNoteEl = document.getElementById('bkAvailableLaterNote');
   const submitBtn = bookingForm.querySelector('button[type="submit"]');
   if(!activeBookingCar || !warningEl) return true;
   const pickup = document.getElementById('bkPickup').value;
   const ret = document.getElementById('bkReturn').value;
-  if(!pickup || !ret){ warningEl.classList.remove('show'); return true; }
-  const available = getRemainingStockForRange(activeBookingCar, pickup, ret) > 0;
+  if(!pickup || !ret){
+    warningEl.classList.remove('show');
+    if(laterNoteEl) laterNoteEl.hidden = true;
+    return true;
+  }
+  const dict = I18N[currentLang];
+  const availability = getDelayedAvailability(activeBookingCar, pickup, ret);
+  if(availability.status === 'delayed'){
+    const [y, m, d] = availability.pickupDateStr.split('-');
+    const formattedDate = `${d}/${m}/${y}`;
+    if(laterNoteEl){
+      laterNoteEl.textContent = dict.vehicle_available_later
+        .replace('{time}', availability.earliestTimeStr)
+        .replace('{date}', formattedDate);
+      laterNoteEl.hidden = false;
+    }
+    warningEl.classList.remove('show');
+    if(submitBtn) submitBtn.disabled = false;
+    populateCarSelect(dict);
+    return true;
+  }
+  const available = availability.status === 'available';
   warningEl.classList.toggle('show', !available);
+  if(laterNoteEl) laterNoteEl.hidden = true;
   if(submitBtn) submitBtn.disabled = !available;
-  populateCarSelect(I18N[currentLang]);
+  populateCarSelect(dict);
   return available;
 }
 ['bkPickup','bkReturn','bkPickupLoc','bkDropoffLoc','bkDeposit',
