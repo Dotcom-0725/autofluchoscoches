@@ -921,7 +921,7 @@ function renderInventory(){
     <div class="section-note">Internal fleet registry — nickname, plate number, fleet ID, VIN and status for each physical vehicle. This never appears on the public website; it's only visible here so you can tell identical models apart (e.g. 5 units of the same car) at a glance.</div>
     <div class="card"><div class="table-wrap">
       <table>
-        <thead><tr><th>Vehicle model</th><th>Nickname</th><th>Plate</th><th>Fleet ID</th><th>VIN</th><th>Status</th><th>Notes</th>${isEditor() ? '<th>Actions</th>' : ''}</tr></thead>
+        <thead><tr><th>Vehicle model</th><th>Nickname</th><th>Plate</th><th>Fleet ID</th><th>VIN</th><th>Status</th><th>Current booking</th><th>Notes</th>${isEditor() ? '<th>Actions</th>' : ''}</tr></thead>
         <tbody id="fleetUnitsTableBody"></tbody>
       </table>
     </div></div>
@@ -951,6 +951,21 @@ const FLEET_UNIT_STATUSES = [
 function fleetUnitStatusMeta(status){
   return FLEET_UNIT_STATUSES.find(s => s.value === status) || FLEET_UNIT_STATUSES[0];
 }
+/* Real, live booking status for one specific unit — unlike the manually-set
+   Status dropdown above (which the owner has to remember to update by hand),
+   this is computed directly from actual reservations linked to this unit's
+   unitId, so it always reflects reality without any manual upkeep. */
+function liveUnitBookingLabel(unitId){
+  const now = new Date();
+  const bookingsForUnit = state.bookings.filter(b => b.unitId === unitId);
+  const active = bookingsForUnit.find(b => new Date(b.pickup) <= now && now <= new Date(b.ret));
+  if(active) return { text: `Booked until ${fmtDate(active.ret)}`, pill: 'pill-red' };
+  const upcoming = bookingsForUnit
+    .filter(b => new Date(b.pickup) > now)
+    .sort((a, b) => new Date(a.pickup) - new Date(b.pickup))[0];
+  if(upcoming) return { text: `Free — next booking ${fmtDate(upcoming.pickup)}`, pill: 'pill-blue' };
+  return { text: 'Free', pill: 'pill-green' };
+}
 function renderFleetUnitsTable(filterText){
   const tbody = document.getElementById('fleetUnitsTableBody');
   if(!tbody) return;
@@ -962,6 +977,7 @@ function renderFleetUnitsTable(filterText){
   tbody.innerHTML = units.map(u => {
     const car = carById(u.carId);
     const meta = fleetUnitStatusMeta(u.status);
+    const live = liveUnitBookingLabel(u.unitId);
     return `<tr>
       <td><b>${car ? car.name : u.carId}</b></td>
       <td>${u.nickname || '—'}</td>
@@ -971,13 +987,14 @@ function renderFleetUnitsTable(filterText){
       <td>${isEditor()
         ? `<select class="fleet-unit-status-select" data-unit="${u.unitId}">${FLEET_UNIT_STATUSES.map(s=>`<option value="${s.value}" ${s.value===u.status?'selected':''}>${s.label}</option>`).join('')}</select>`
         : `<span class="pill ${meta.pill}">${meta.label}</span>`}</td>
+      <td><span class="pill ${live.pill}">${live.text}</span></td>
       <td>${u.notes || '—'}</td>
       ${isEditor() ? `<td class="tag-row">
         <button class="btn btn-outline btn-sm" data-edit-unit="${u.unitId}">Edit</button>
         <button class="btn btn-danger btn-sm" data-del-unit="${u.unitId}">Delete</button>
       </td>` : ''}
     </tr>`;
-  }).join('') || `<tr><td colspan="8" class="empty-state">${q ? 'No matching units.' : 'No fleet units yet — add one to start tracking individual vehicles.'}</td></tr>`;
+  }).join('') || `<tr><td colspan="9" class="empty-state">${q ? 'No matching units.' : 'No fleet units yet — add one to start tracking individual vehicles.'}</td></tr>`;
 
   if(isEditor()){
     tbody.querySelectorAll('.fleet-unit-status-select').forEach(sel => sel.addEventListener('change', async ()=>{
@@ -1045,7 +1062,7 @@ function renderReservations(){
     <div class="section-note">Manual reservations (phone, office, walk-in) use the same booking engine as the website — inventory updates automatically and overbooking is prevented.</div>
     <div class="card"><div class="table-wrap">
       <table>
-        <thead><tr><th>Ref</th><th>Customer</th><th>Nationality</th><th>Phone</th><th>Vehicle</th><th>Pickup</th><th>Return</th><th>Total</th><th>Source</th><th>Status</th><th>Payment</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Ref</th><th>Customer</th><th>Nationality</th><th>Phone</th><th>Vehicle</th><th>Unit / Plate</th><th>Pickup</th><th>Return</th><th>Total</th><th>Source</th><th>Status</th><th>Payment</th><th>Actions</th></tr></thead>
         <tbody id="reservationsBody"></tbody>
       </table>
     </div></div>
@@ -1063,6 +1080,16 @@ const PAYMENT_STATUS_OPTIONS = [
 function paymentMethodLabel(method){
   return { bank_transfer: 'Bank Transfer', wise: 'Wise', cash_on_pickup: 'Cash on Pickup', none: '—' }[method] || method || '—';
 }
+/* Which specific physical unit (by plate/nickname) a booking is linked to —
+   resolves booking.unitId (set automatically by the backend at booking time,
+   see findAvailableUnitForBooking_) against the Fleet Units registry, so the
+   owner can see at a glance which exact car is booked, not just the model. */
+function unitLabelForBooking(b){
+  if(!b.unitId) return '—';
+  const unit = state.fleetUnits.find(u => u.unitId === b.unitId);
+  if(!unit) return '—';
+  return unit.plate || unit.nickname || unit.unitId;
+}
 function renderReservationsRows(){
   const tbody = document.getElementById('reservationsBody');
   const sorted = [...state.bookings].sort((a,b)=> new Date(a.pickup) - new Date(b.pickup));
@@ -1071,6 +1098,7 @@ function renderReservationsRows(){
     const paymentStatus = b.paymentStatus || 'pending';
     return `<tr>
       <td>${b.ref||'—'}</td><td>${b.customerName||'—'}</td><td>${b.nationality||'—'}</td><td>${b.phone||'—'}</td><td>${b.carName||'—'}</td>
+      <td>${unitLabelForBooking(b)}</td>
       <td>${fmtDate(b.pickup)}</td><td>${fmtDate(b.ret)}</td><td>${b.total||'—'}</td>
       <td><span class="pill pill-gray">${b.source||'website'}</span></td>
       <td><span class="pill ${st.cls}">${st.label}</span></td>
@@ -1085,7 +1113,7 @@ function renderReservationsRows(){
         <button class="btn btn-danger btn-sm" data-cancel="${b.row}">Cancel</button>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="11" class="empty-state">No reservations yet.</td></tr>`;
+  }).join('') || `<tr><td colspan="12" class="empty-state">No reservations yet.</td></tr>`;
   tbody.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', ()=>{
     const booking = state.bookings.find(b => String(b.row) === btn.dataset.edit);
     if(booking) openBookingEditModal(booking);
