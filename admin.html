@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Dashboard — Auto Fluchos Coches</title>
+<title>Tableau de bord admin — Auto Fluchos Coches</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -186,10 +186,10 @@ tr.dragging{opacity:.4}
 <div id="loginScreen">
   <form class="login-card" id="loginForm">
     <h1>Auto Fluchos Coches</h1>
-    <p>Admin Dashboard — sign in with your admin password.</p>
-    <input type="password" id="loginPassword" placeholder="Password" autofocus required>
-    <p class="login-error" id="loginError">Wrong password.</p>
-    <button type="submit" id="loginSubmitBtn">Sign in</button>
+    <p>Tableau de bord admin — connectez-vous avec votre mot de passe administrateur.</p>
+    <input type="password" id="loginPassword" placeholder="Mot de passe" autofocus required>
+    <p class="login-error" id="loginError">Mot de passe incorrect.</p>
+    <button type="submit" id="loginSubmitBtn">Se connecter</button>
   </form>
 </div>
 
@@ -200,8 +200,8 @@ tr.dragging{opacity:.4}
     <ul class="nav-list" id="navList"></ul>
     <div class="sidebar-footer">
       <span class="role-badge" id="roleBadge">—</span>
-      <button type="button" id="darkModeToggle">🌙 Dark mode</button>
-      <button type="button" id="logoutBtn">Log out</button>
+      <button type="button" id="darkModeToggle">🌙 Mode sombre</button>
+      <button type="button" id="logoutBtn">Déconnexion</button>
     </div>
   </aside>
   <main>
@@ -209,11 +209,11 @@ tr.dragging{opacity:.4}
       <div class="topbar-title-row">
         <button type="button" id="sidebarToggle" class="sidebar-toggle-btn" aria-label="Menu">☰</button>
         <div>
-          <h2 id="pageTitle">Dashboard</h2>
+          <h2 id="pageTitle">Tableau de bord</h2>
           <div class="sub" id="pageSub"></div>
         </div>
       </div>
-      <a href="index.html" class="btn btn-outline" target="_blank">View live site ↗</a>
+      <a href="index.html" class="btn btn-outline" target="_blank">Voir le site en ligne ↗</a>
     </div>
     <div id="viewRoot"></div>
   </main>
@@ -229,17 +229,17 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxKZk3f58C67EZA
 const state = { password: null, role: null, cars: [], bookings: [], seasons: [], settings: {}, activityLog: [], fleetUnits: [] };
 
 const NAV = [
-  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-  { id: 'fleet', label: 'Fleet Management', icon: '🚗' },
-  { id: 'inventory', label: 'Inventory', icon: '📦' },
-  { id: 'reservations', label: 'Reservations', icon: '📋' },
-  { id: 'calendar', label: 'Calendar', icon: '📅' },
-  { id: 'customers', label: 'Customers', icon: '👥' },
-  { id: 'pricing', label: 'Pricing', icon: '💶' },
-  { id: 'categories', label: 'Categories', icon: '🏷️' },
-  { id: 'reports', label: 'Reports', icon: '📈' },
+  { id: 'dashboard', label: 'Tableau de bord', icon: '📊' },
+  { id: 'fleet', label: 'Gestion de la flotte', icon: '🚗' },
+  { id: 'inventory', label: 'Inventaire', icon: '📦' },
+  { id: 'reservations', label: 'Réservations', icon: '📋' },
+  { id: 'calendar', label: 'Calendrier', icon: '📅' },
+  { id: 'customers', label: 'Clients', icon: '👥' },
+  { id: 'pricing', label: 'Tarification', icon: '💶' },
+  { id: 'categories', label: 'Catégories', icon: '🏷️' },
+  { id: 'reports', label: 'Rapports', icon: '📈' },
   { id: 'notifications', label: 'Notifications', icon: '🔔' },
-  { id: 'settings', label: 'Settings', icon: '⚙️' },
+  { id: 'settings', label: 'Paramètres', icon: '⚙️' },
 ];
 const EDITOR_ROLES = ['super_admin', 'manager'];
 let currentView = 'dashboard';
@@ -268,10 +268,10 @@ function fmtDate(v){
   if(!v) return '—';
   const d = new Date(v);
   if(isNaN(d)) return String(v).slice(0,16).replace('T',' ');
-  return d.toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  return d.toLocaleString('fr-FR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
 }
 function csvDownload(filename, rows){
-  if(!rows.length){ toast('Nothing to export'); return; }
+  if(!rows.length){ toast('Rien à exporter'); return; }
   const cols = Object.keys(rows[0]);
   const esc = v => `"${String(v==null?'':v).replace(/"/g,'""')}"`;
   const csv = [cols.join(','), ...rows.map(r => cols.map(c => esc(r[c])).join(','))].join('\n');
@@ -301,7 +301,7 @@ document.getElementById('loginForm').addEventListener('submit', async e=>{
   const submitBtn = document.getElementById('loginSubmitBtn');
   errorEl.classList.remove('show');
   submitBtn.disabled = true;
-  submitBtn.textContent = 'Signing in…';
+  submitBtn.textContent = 'Connexion…';
 
   // A network/CORS failure (blocked request, ad-blocker, offline, etc.) throws
   // before ever reaching the server — that is NOT the same as a wrong password,
@@ -311,15 +311,15 @@ document.getElementById('loginForm').addEventListener('submit', async e=>{
   if(result.networkError) result = await apiGetAdmin(password);
 
   submitBtn.disabled = false;
-  submitBtn.textContent = 'Sign in';
+  submitBtn.textContent = 'Se connecter';
 
   if(result.networkError){
-    errorEl.textContent = "Couldn't reach the server — this isn't a wrong password. Check your internet connection, or disable any ad-blocker/privacy extension for this site (some block Google Apps Script URLs), then try again.";
+    errorEl.textContent = "Impossible de contacter le serveur — ce n'est pas un mot de passe incorrect. Vérifiez votre connexion internet, ou désactivez tout bloqueur de publicité/extension de confidentialité pour ce site (certains bloquent les URL de Google Apps Script), puis réessayez.";
     errorEl.classList.add('show');
     return;
   }
   if(!result.data || !result.data.success){
-    errorEl.textContent = 'Wrong password.';
+    errorEl.textContent = 'Mot de passe incorrect.';
     errorEl.classList.add('show');
     return;
   }
@@ -369,7 +369,7 @@ document.getElementById('logoutBtn').addEventListener('click', ()=>{
 async function refreshAdminData(){
   const result = await apiGetAdmin(state.password);
   if(result.data && result.data.success) applyAdminData(result.data);
-  else if(result.networkError) toast("Couldn't refresh — connection issue, showing last-loaded data.");
+  else if(result.networkError) toast("Actualisation impossible — problème de connexion, affichage des dernières données chargées.");
 }
 
 /* ---------------- Dark mode ---------------- */
@@ -410,20 +410,20 @@ function buildSidebar(){
   list.querySelectorAll('button').forEach(b=>{
     b.addEventListener('click', ()=> navigate(b.dataset.view));
   });
-  document.getElementById('roleBadge').textContent = state.role.replace('_',' ');
+  document.getElementById('roleBadge').textContent = (state.role === 'super_admin' ? 'super admin' : state.role.replace('_',' '));
 }
 const VIEW_TITLES = {
-  dashboard: ['Dashboard', 'Overview of your rental business'],
-  fleet: ['Fleet Management', 'Create, edit and manage your vehicles'],
-  inventory: ['Inventory', 'Stock levels + internal fleet registry (nicknames, plates, VIN, status)'],
-  reservations: ['Reservations', 'All bookings — website and manual'],
-  calendar: ['Calendar', 'Bookings by date'],
-  customers: ['Customers', 'Built from your booking history'],
-  pricing: ['Pricing', 'Seasonal pricing and currency'],
-  categories: ['Categories', 'Fleet filter tags'],
-  reports: ['Reports', 'Bookings, revenue, occupancy'],
-  notifications: ['Notifications', 'How you get notified of new bookings'],
-  settings: ['Settings', 'SEO, roles, activity log, backups'],
+  dashboard: ['Tableau de bord', 'Aperçu de votre activité de location'],
+  fleet: ['Gestion de la flotte', 'Créez, modifiez et gérez vos véhicules'],
+  inventory: ['Inventaire', 'Niveaux de stock + registre interne de la flotte (surnoms, plaques, VIN, statut)'],
+  reservations: ['Réservations', 'Toutes les réservations — site web et manuelles'],
+  calendar: ['Calendrier', 'Réservations par date'],
+  customers: ['Clients', 'Généré à partir de votre historique de réservations'],
+  pricing: ['Tarification', 'Tarification saisonnière et devise'],
+  categories: ['Catégories', 'Étiquettes de filtre de la flotte'],
+  reports: ['Rapports', 'Réservations, revenus, occupation'],
+  notifications: ['Notifications', 'Comment vous êtes averti des nouvelles réservations'],
+  settings: ['Paramètres', 'SEO, rôles, journal d\'activité, sauvegardes'],
 };
 function navigate(view){
   currentView = view;
@@ -446,9 +446,9 @@ function bookingStatus(b){
   const now = new Date();
   const ret = new Date(b.ret);
   const pickup = new Date(b.pickup);
-  if(ret < now) return { label: 'Overdue', cls: 'pill-red' };
-  if(pickup <= now && now <= ret) return { label: 'Active', cls: 'pill-green' };
-  return { label: 'Upcoming', cls: 'pill-blue' };
+  if(ret < now) return { label: 'En retard', cls: 'pill-red' };
+  if(pickup <= now && now <= ret) return { label: 'En cours', cls: 'pill-green' };
+  return { label: 'À venir', cls: 'pill-blue' };
 }
 function carById(id){ return state.cars.find(c => c.id === id); }
 function remainingStock(car){
@@ -511,8 +511,8 @@ function isDayFullyBookedAdmin(carId, cellDate, excludeRow){
    Mirrors the customer-facing site's calendar popup — same booked-day shading,
    fed from the same state.bookings data — so admins see exactly the same
    availability a website visitor would see for that vehicle. */
-const ADMIN_MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const ADMIN_WEEKDAY_MIN = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+const ADMIN_MONTH_NAMES = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const ADMIN_WEEKDAY_MIN = ['Di','Lu','Ma','Me','Je','Ve','Sa'];
 let activeAdminDatePicker = null;
 function closeAdminDatePicker(){ if(activeAdminDatePicker){ activeAdminDatePicker.remove(); activeAdminDatePicker = null; } }
 document.addEventListener('click', e=>{
@@ -610,7 +610,7 @@ function openAdminDatePicker(input, carId, excludeRow){
       if(carId && isDayFullyBookedAdmin(carId, cellDate, excludeRow)){
         btn.classList.add('cdp-booked');
         btn.disabled = true;
-        btn.title = 'Fully booked for this vehicle';
+        btn.title = 'Complet pour ce véhicule';
       }
       btn.addEventListener('click', e=>{
         e.stopPropagation();
@@ -682,22 +682,22 @@ function renderDashboard(){
 
   document.getElementById('viewRoot').innerHTML = `
     <div class="kpi-grid">
-      <div class="kpi"><div class="label">Active bookings</div><div class="value">${activeBookings}</div><div class="sub">across ${totalCars} models</div></div>
-      <div class="kpi"><div class="label">Estimated revenue</div><div class="value">€${revenue.toFixed(0)}</div><div class="sub">sum of active booking totals</div></div>
-      <div class="kpi"><div class="label">Fleet occupancy</div><div class="value">${occupancy}%</div><div class="sub">${activeBookings} of ${totalStock} units booked</div></div>
-      <div class="kpi"><div class="label">Most popular car</div><div class="value" style="font-size:1.05rem">${popularCar ? popularCar.name : '—'}</div><div class="sub">${popularId ? popularity[popularId] + ' bookings' : 'No bookings yet'}</div></div>
+      <div class="kpi"><div class="label">Réservations actives</div><div class="value">${activeBookings}</div><div class="sub">sur ${totalCars} modèles</div></div>
+      <div class="kpi"><div class="label">Revenus estimés</div><div class="value">€${revenue.toFixed(0)}</div><div class="sub">somme des totaux des réservations actives</div></div>
+      <div class="kpi"><div class="label">Taux d'occupation de la flotte</div><div class="value">${occupancy}%</div><div class="sub">${activeBookings} sur ${totalStock} unités réservées</div></div>
+      <div class="kpi"><div class="label">Voiture la plus populaire</div><div class="value" style="font-size:1.05rem">${popularCar ? popularCar.name : '—'}</div><div class="sub">${popularId ? popularity[popularId] + ' réservations' : 'Aucune réservation pour le moment'}</div></div>
     </div>
     <div class="card">
       <div class="card-pad">
-        <div class="toolbar-row"><b>Upcoming pickups &amp; returns</b></div>
+        <div class="toolbar-row"><b>Prochaines prises en charge et retours</b></div>
         <div class="table-wrap">
         <table>
-          <thead><tr><th>Customer</th><th>Vehicle</th><th>Pickup</th><th>Return</th><th>Status</th><th>Source</th></tr></thead>
+          <thead><tr><th>Client</th><th>Véhicule</th><th>Prise en charge</th><th>Retour</th><th>Statut</th><th>Source</th></tr></thead>
           <tbody>
             ${upcoming.length ? upcoming.map(b=>{
               const st = bookingStatus(b);
               return `<tr><td>${b.customerName||'—'}</td><td>${b.carName||'—'}</td><td>${fmtDate(b.pickup)}</td><td>${fmtDate(b.ret)}</td><td><span class="pill ${st.cls}">${st.label}</span></td><td><span class="pill pill-gray">${b.source||'website'}</span></td></tr>`;
-            }).join('') : `<tr><td colspan="6" class="empty-state">No bookings yet.</td></tr>`}
+            }).join('') : `<tr><td colspan="6" class="empty-state">Aucune réservation pour le moment.</td></tr>`}
           </tbody>
         </table>
         </div>
@@ -712,15 +712,15 @@ function renderFleet(){
   root.innerHTML = `
     <div class="toolbar-row">
       <div class="tag-row">
-        ${isEditor() ? `<label class="btn btn-outline btn-sm">📁 Bulk upload (CSV)<input type="file" id="bulkCsvInput" accept=".csv" hidden></label>` : ''}
-        <button class="btn btn-outline btn-sm" id="exportFleetCsv">⬇ Export CSV</button>
+        ${isEditor() ? `<label class="btn btn-outline btn-sm">📁 Import en masse (CSV)<input type="file" id="bulkCsvInput" accept=".csv" hidden></label>` : ''}
+        <button class="btn btn-outline btn-sm" id="exportFleetCsv">⬇ Exporter CSV</button>
       </div>
-      ${isEditor() ? `<button class="btn btn-primary" id="newCarBtn">+ New vehicle</button>` : ''}
+      ${isEditor() ? `<button class="btn btn-primary" id="newCarBtn">+ Nouveau véhicule</button>` : ''}
     </div>
-    ${isEditor() ? `<div class="section-note">Drag rows by the ⠿ handle to set manual sort order (this controls the order cars appear on the live site).</div>` : ''}
+    ${isEditor() ? `<div class="section-note">Faites glisser les lignes avec la poignée ⠿ pour définir l'ordre manuel (cela contrôle l'ordre d'affichage des voitures sur le site).</div>` : ''}
     <div class="card"><div class="table-wrap">
       <table>
-        <thead><tr>${isEditor() ? '<th></th>' : ''}<th>Photo</th><th>Name</th><th>Price/day</th><th>Specs</th><th>Stock</th><th>Available now</th>${isEditor() ? '<th>Actions</th>' : ''}</tr></thead>
+        <thead><tr>${isEditor() ? '<th></th>' : ''}<th>Photo</th><th>Nom</th><th>Prix/jour</th><th>Caractéristiques</th><th>Stock</th><th>Disponible maintenant</th>${isEditor() ? '<th>Actions</th>' : ''}</tr></thead>
         <tbody id="fleetTableBody"></tbody>
       </table>
     </div></div>
@@ -743,28 +743,28 @@ function renderFleetRows(){
       <td>${c.imgSrc ? `<img class="thumb" src="${c.imgSrc}">` : '—'}</td>
       <td><b>${c.name}</b><br><span style="color:var(--ink-dim);font-size:.75rem">${c.id}</span></td>
       <td>€${c.price}</td>
-      <td>${c.seats} seats · ${c.gearKey === 'auto' ? 'Automatic' : 'Manual'} · ${c.fuelKey}</td>
+      <td>${c.seats} places · ${c.gearKey === 'auto' ? 'Automatique' : 'Manuel'} · ${c.fuelKey}</td>
       <td>${c.stock}</td>
       <td>${remainingStock(c)}</td>
       ${isEditor() ? `<td class="tag-row">
-        <button class="btn btn-outline btn-sm" data-edit="${c.id}">Edit</button>
-        <button class="btn btn-outline btn-sm" data-dup="${c.id}">Duplicate</button>
-        <button class="btn btn-danger btn-sm" data-del="${c.id}">Delete</button>
+        <button class="btn btn-outline btn-sm" data-edit="${c.id}">Modifier</button>
+        <button class="btn btn-outline btn-sm" data-dup="${c.id}">Dupliquer</button>
+        <button class="btn btn-danger btn-sm" data-del="${c.id}">Supprimer</button>
       </td>` : ''}
     </tr>
-  `).join('') || `<tr><td colspan="8" class="empty-state">No vehicles yet.</td></tr>`;
+  `).join('') || `<tr><td colspan="8" class="empty-state">Aucun véhicule pour le moment.</td></tr>`;
 
   tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', ()=> openCarModal(carById(b.dataset.edit))));
   tbody.querySelectorAll('[data-dup]').forEach(b => b.addEventListener('click', async ()=>{
     const r = await apiPost({ action: 'duplicateCar', id: b.dataset.dup });
-    if(r.success){ toast('Vehicle duplicated'); await refreshAdminData(); renderFleetRows(); }
-    else toast(r.error || 'Failed');
+    if(r.success){ toast('Véhicule dupliqué'); await refreshAdminData(); renderFleetRows(); }
+    else toast(r.error || 'Échec');
   }));
   tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async ()=>{
-    if(!confirm('Delete this vehicle? This cannot be undone.')) return;
+    if(!confirm('Supprimer ce véhicule ? Cette action est irréversible.')) return;
     const r = await apiPost({ action: 'deleteCar', id: b.dataset.del });
-    if(r.success){ toast('Vehicle deleted'); await refreshAdminData(); renderFleetRows(); }
-    else toast(r.error || 'Failed');
+    if(r.success){ toast('Véhicule supprimé'); await refreshAdminData(); renderFleetRows(); }
+    else toast(r.error || 'Échec');
   }));
 
   if(isEditor()){
@@ -780,7 +780,7 @@ function renderFleetRows(){
         ids.splice(to, 0, ids.splice(from, 1)[0]);
         const updates = ids.map((id, i) => ({ ...carById(id), sortOrder: i }));
         for(const car of updates) await apiPost({ action: 'saveCar', car });
-        toast('Order updated');
+        toast('Ordre mis à jour');
         await refreshAdminData();
         renderFleetRows();
       });
@@ -804,7 +804,7 @@ async function handleBulkCsv(e){
     await apiPost({ action: 'saveCar', car });
     count++;
   }
-  toast(`Imported ${count} vehicles`);
+  toast(`${count} véhicules importés`);
   await refreshAdminData();
   renderFleetRows();
 }
@@ -827,45 +827,45 @@ function openCarModal(car){
   const isNew = !car;
   car = car || { id:'', name:'', price:30, seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', body:[], stock:1, imgSrc:'', cat:'citadine' };
   openModal(`
-    <h3>${isNew ? 'New vehicle' : 'Edit vehicle'}</h3>
+    <h3>${isNew ? 'Nouveau véhicule' : 'Modifier le véhicule'}</h3>
     <div class="field-grid">
-      <div class="field"><label>Name</label><input id="cfName" value="${car.name}"></div>
-      <div class="field"><label>ID (unique, no spaces)</label><input id="cfId" value="${car.id}" ${isNew ? '' : 'disabled'}></div>
-      <div class="field"><label>Price / day (€)</label><input id="cfPrice" type="number" value="${car.price}"></div>
-      <div class="field"><label>Stock (units owned)</label><input id="cfStock" type="number" min="0" value="${car.stock}"></div>
-      <div class="field"><label>Seats</label><input id="cfSeats" type="number" value="${car.seats}"></div>
-      <div class="field"><label>Doors</label><input id="cfDoors" type="number" value="${car.doors}"></div>
-      <div class="field"><label>Gearbox</label><select id="cfGear"><option value="manual" ${car.gearKey==='manual'?'selected':''}>Manual</option><option value="auto" ${car.gearKey==='auto'?'selected':''}>Automatic</option></select></div>
-      <div class="field"><label>Fuel</label><select id="cfFuel">
+      <div class="field"><label>Nom</label><input id="cfName" value="${car.name}"></div>
+      <div class="field"><label>ID (unique, sans espaces)</label><input id="cfId" value="${car.id}" ${isNew ? '' : 'disabled'}></div>
+      <div class="field"><label>Prix / jour (€)</label><input id="cfPrice" type="number" value="${car.price}"></div>
+      <div class="field"><label>Stock (unités possédées)</label><input id="cfStock" type="number" min="0" value="${car.stock}"></div>
+      <div class="field"><label>Places</label><input id="cfSeats" type="number" value="${car.seats}"></div>
+      <div class="field"><label>Portes</label><input id="cfDoors" type="number" value="${car.doors}"></div>
+      <div class="field"><label>Boîte de vitesses</label><select id="cfGear"><option value="manual" ${car.gearKey==='manual'?'selected':''}>Manuelle</option><option value="auto" ${car.gearKey==='auto'?'selected':''}>Automatique</option></select></div>
+      <div class="field"><label>Carburant</label><select id="cfFuel">
         <option value="diesel" ${car.fuelKey==='diesel'?'selected':''}>Diesel</option>
-        <option value="essence" ${car.fuelKey==='essence'?'selected':''}>Petrol</option>
-        <option value="hybride" ${car.fuelKey==='hybride'?'selected':''}>Hybrid</option>
+        <option value="essence" ${car.fuelKey==='essence'?'selected':''}>Essence</option>
+        <option value="hybride" ${car.fuelKey==='hybride'?'selected':''}>Hybride</option>
       </select></div>
-      <div class="field field-check"><input type="checkbox" id="cfSuv" ${(car.body||[]).includes('suv')?'checked':''}><label style="text-transform:none">SUV tag</label></div>
-      <div class="field field-check"><input type="checkbox" id="cfLuxury" ${(car.body||[]).includes('luxury')?'checked':''}><label style="text-transform:none">Luxury tag</label></div>
+      <div class="field field-check"><input type="checkbox" id="cfSuv" ${(car.body||[]).includes('suv')?'checked':''}><label style="text-transform:none">Étiquette SUV</label></div>
+      <div class="field field-check"><input type="checkbox" id="cfLuxury" ${(car.body||[]).includes('luxury')?'checked':''}><label style="text-transform:none">Étiquette Luxe</label></div>
     </div>
     <div class="field"><label>Photo</label>
-      <input id="cfImgSrc" value="${car.imgSrc}" placeholder="images/your-photo.webp or auto-filled by upload below">
+      <input id="cfImgSrc" value="${car.imgSrc}" placeholder="images/votre-photo.webp ou rempli automatiquement par l'import ci-dessous">
       <input type="file" id="cfImgUpload" accept="image/*" style="margin-top:6px">
-      <span style="font-size:.72rem;color:var(--ink-dim)">Uploading converts the photo to a compressed inline WebP automatically. For a full-resolution photo instead, upload it to the images/ folder yourself and paste its path above.</span>
+      <span style="font-size:.72rem;color:var(--ink-dim)">L'import convertit automatiquement la photo en WebP compressé intégré. Pour une photo en pleine résolution, téléversez-la vous-même dans le dossier images/ et collez son chemin ci-dessus.</span>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline" id="cfCancel">Cancel</button>
-      <button class="btn btn-primary" id="cfSave">Save vehicle</button>
+      <button class="btn btn-outline" id="cfCancel">Annuler</button>
+      <button class="btn btn-primary" id="cfSave">Enregistrer le véhicule</button>
     </div>
   `);
   document.getElementById('cfCancel').addEventListener('click', closeModal);
   document.getElementById('cfImgUpload').addEventListener('change', async e=>{
     const file = e.target.files[0];
     if(!file) return;
-    toast('Converting photo…');
+    toast('Conversion de la photo…');
     const dataUrl = await fileToWebpDataUrl(file, 640);
     document.getElementById('cfImgSrc').value = dataUrl;
-    toast('Photo ready — click Save to apply');
+    toast('Photo prête — cliquez sur Enregistrer pour appliquer');
   });
   document.getElementById('cfSave').addEventListener('click', async ()=>{
     const id = isNew ? document.getElementById('cfId').value.trim().toLowerCase().replace(/[^a-z0-9-]+/g,'-') : car.id;
-    if(!id){ toast('ID is required'); return; }
+    if(!id){ toast('L\'ID est requis'); return; }
     const body = [];
     if(document.getElementById('cfSuv').checked) body.push('suv');
     if(document.getElementById('cfLuxury').checked) body.push('luxury');
@@ -882,10 +882,10 @@ function openCarModal(car){
       offer: (Number(document.getElementById('cfPrice').value) || 0) + '€',
       sortOrder: car.sortOrder,
     };
-    if(!payload.name){ toast('Name is required'); return; }
+    if(!payload.name){ toast('Le nom est requis'); return; }
     const r = await apiPost({ action: 'saveCar', car: payload });
-    if(r.success){ toast('Vehicle saved'); closeModal(); await refreshAdminData(); if(currentView==='fleet') renderFleetRows(); }
-    else toast(r.error || 'Failed to save');
+    if(r.success){ toast('Véhicule enregistré'); closeModal(); await refreshAdminData(); if(currentView==='fleet') renderFleetRows(); }
+    else toast(r.error || 'Échec de l\'enregistrement');
   });
 }
 
@@ -895,7 +895,7 @@ function renderInventory(){
   root.innerHTML = `
     <div class="card"><div class="table-wrap">
       <table>
-        <thead><tr><th>Vehicle</th><th>Total stock</th><th>Currently booked</th><th>Available now</th>${isEditor() ? '<th>Adjust</th>' : ''}</tr></thead>
+        <thead><tr><th>Véhicule</th><th>Stock total</th><th>Actuellement réservé</th><th>Disponible maintenant</th>${isEditor() ? '<th>Ajuster</th>' : ''}</tr></thead>
         <tbody>
           ${state.cars.map(c => {
             const booked = state.bookings.filter(b=>b.carId===c.id).length;
@@ -909,19 +909,19 @@ function renderInventory(){
                 <button class="btn btn-outline btn-sm" data-stock-plus="${c.id}">+</button>
               </td>` : ''}
             </tr>`;
-          }).join('') || `<tr><td colspan="5" class="empty-state">No vehicles yet.</td></tr>`}
+          }).join('') || `<tr><td colspan="5" class="empty-state">Aucun véhicule pour le moment.</td></tr>`}
         </tbody>
       </table>
     </div></div>
 
     <div class="toolbar-row" style="margin-top:22px">
-      <input type="search" id="fleetUnitSearch" placeholder="🔍 Search by nickname or plate…" style="max-width:320px">
-      ${isEditor() ? `<button class="btn btn-primary" id="newFleetUnitBtn">+ Add unit</button>` : ''}
+      <input type="search" id="fleetUnitSearch" placeholder="🔍 Rechercher par surnom ou plaque…" style="max-width:320px">
+      ${isEditor() ? `<button class="btn btn-primary" id="newFleetUnitBtn">+ Ajouter une unité</button>` : ''}
     </div>
-    <div class="section-note">Internal fleet registry — nickname, plate number, fleet ID, VIN and status for each physical vehicle. This never appears on the public website; it's only visible here so you can tell identical models apart (e.g. 5 units of the same car) at a glance.</div>
+    <div class="section-note">Registre interne de la flotte — surnom, numéro de plaque, ID de flotte, VIN et statut pour chaque véhicule physique. Ceci n'apparaît jamais sur le site public ; c'est visible ici uniquement pour distinguer d'un coup d'œil des modèles identiques (par ex. 5 unités de la même voiture).</div>
     <div class="card"><div class="table-wrap">
       <table>
-        <thead><tr><th>Vehicle model</th><th>Nickname</th><th>Plate</th><th>Fleet ID</th><th>VIN</th><th>Status</th><th>Current booking</th><th>Notes</th>${isEditor() ? '<th>Actions</th>' : ''}</tr></thead>
+        <thead><tr><th>Modèle du véhicule</th><th>Surnom</th><th>Plaque</th><th>ID de flotte</th><th>VIN</th><th>Statut</th><th>Réservation actuelle</th><th>Notes</th>${isEditor() ? '<th>Actions</th>' : ''}</tr></thead>
         <tbody id="fleetUnitsTableBody"></tbody>
       </table>
     </div></div>
@@ -943,9 +943,9 @@ async function adjustStock(id, delta){
 
 /* ---- Fleet Units: internal per-vehicle registry (nickname/plate/VIN/status/notes) ---- */
 const FLEET_UNIT_STATUSES = [
-  { value: 'available', label: 'Available', pill: 'pill-green' },
-  { value: 'reserved', label: 'Reserved', pill: 'pill-blue' },
-  { value: 'rented', label: 'Rented', pill: 'pill-red' },
+  { value: 'available', label: 'Disponible', pill: 'pill-green' },
+  { value: 'reserved', label: 'Réservée', pill: 'pill-blue' },
+  { value: 'rented', label: 'Louée', pill: 'pill-red' },
   { value: 'maintenance', label: 'Maintenance', pill: 'pill-gray' },
 ];
 function fleetUnitStatusMeta(status){
@@ -959,12 +959,12 @@ function liveUnitBookingLabel(unitId){
   const now = new Date();
   const bookingsForUnit = state.bookings.filter(b => b.unitId === unitId);
   const active = bookingsForUnit.find(b => new Date(b.pickup) <= now && now <= new Date(b.ret));
-  if(active) return { text: `Booked until ${fmtDate(active.ret)}`, pill: 'pill-red' };
+  if(active) return { text: `Réservée jusqu'au ${fmtDate(active.ret)}`, pill: 'pill-red' };
   const upcoming = bookingsForUnit
     .filter(b => new Date(b.pickup) > now)
     .sort((a, b) => new Date(a.pickup) - new Date(b.pickup))[0];
-  if(upcoming) return { text: `Free — next booking ${fmtDate(upcoming.pickup)}`, pill: 'pill-blue' };
-  return { text: 'Free', pill: 'pill-green' };
+  if(upcoming) return { text: `Libre — prochaine réservation ${fmtDate(upcoming.pickup)}`, pill: 'pill-blue' };
+  return { text: 'Libre', pill: 'pill-green' };
 }
 function renderFleetUnitsTable(filterText){
   const tbody = document.getElementById('fleetUnitsTableBody');
@@ -990,27 +990,27 @@ function renderFleetUnitsTable(filterText){
       <td><span class="pill ${live.pill}">${live.text}</span></td>
       <td>${u.notes || '—'}</td>
       ${isEditor() ? `<td class="tag-row">
-        <button class="btn btn-outline btn-sm" data-edit-unit="${u.unitId}">Edit</button>
-        <button class="btn btn-danger btn-sm" data-del-unit="${u.unitId}">Delete</button>
+        <button class="btn btn-outline btn-sm" data-edit-unit="${u.unitId}">Modifier</button>
+        <button class="btn btn-danger btn-sm" data-del-unit="${u.unitId}">Supprimer</button>
       </td>` : ''}
     </tr>`;
-  }).join('') || `<tr><td colspan="9" class="empty-state">${q ? 'No matching units.' : 'No fleet units yet — add one to start tracking individual vehicles.'}</td></tr>`;
+  }).join('') || `<tr><td colspan="9" class="empty-state">${q ? 'Aucune unité correspondante.' : 'Aucune unité de flotte pour le moment — ajoutez-en une pour commencer à suivre vos véhicules individuellement.'}</td></tr>`;
 
   if(isEditor()){
     tbody.querySelectorAll('.fleet-unit-status-select').forEach(sel => sel.addEventListener('change', async ()=>{
       const unit = state.fleetUnits.find(u => u.unitId === sel.dataset.unit);
       if(!unit) return;
       const r = await apiPost({ action: 'saveFleetUnit', unit: { ...unit, status: sel.value } });
-      if(r.success){ toast('Status updated'); await refreshAdminData(); renderFleetUnitsTable(document.getElementById('fleetUnitSearch')?.value); }
-      else toast(r.error || 'Failed');
+      if(r.success){ toast('Statut mis à jour'); await refreshAdminData(); renderFleetUnitsTable(document.getElementById('fleetUnitSearch')?.value); }
+      else toast(r.error || 'Échec');
     }));
     tbody.querySelectorAll('[data-edit-unit]').forEach(b => b.addEventListener('click', ()=>
       openFleetUnitModal(state.fleetUnits.find(u => u.unitId === b.dataset.editUnit))));
     tbody.querySelectorAll('[data-del-unit]').forEach(b => b.addEventListener('click', async ()=>{
-      if(!confirm('Delete this fleet unit? This only removes it from your internal registry — it does not affect stock counts or bookings.')) return;
+      if(!confirm('Supprimer cette unité de flotte ? Cela ne fait que la retirer de votre registre interne — cela n\'affecte pas le stock ni les réservations.')) return;
       const r = await apiPost({ action: 'deleteFleetUnit', unitId: b.dataset.delUnit });
-      if(r.success){ toast('Unit deleted'); await refreshAdminData(); renderFleetUnitsTable(document.getElementById('fleetUnitSearch')?.value); }
-      else toast(r.error || 'Failed');
+      if(r.success){ toast('Unité supprimée'); await refreshAdminData(); renderFleetUnitsTable(document.getElementById('fleetUnitSearch')?.value); }
+      else toast(r.error || 'Échec');
     }));
   }
 }
@@ -1018,19 +1018,19 @@ function openFleetUnitModal(unit){
   const isNew = !unit;
   unit = unit || { unitId: '', carId: state.cars[0]?.id || '', nickname: '', plate: '', fleetId: '', vin: '', status: 'available', notes: '' };
   openModal(`
-    <h3>${isNew ? 'Add fleet unit' : 'Edit fleet unit'}</h3>
+    <h3>${isNew ? 'Ajouter une unité de flotte' : 'Modifier l\'unité de flotte'}</h3>
     <div class="field-grid">
-      <div class="field"><label>Vehicle model</label><select id="fuCarId">${state.cars.map(c=>`<option value="${c.id}" ${c.id===unit.carId?'selected':''}>${c.name}</option>`).join('')}</select></div>
-      <div class="field"><label>Status</label><select id="fuStatus">${FLEET_UNIT_STATUSES.map(s=>`<option value="${s.value}" ${s.value===unit.status?'selected':''}>${s.label}</option>`).join('')}</select></div>
-      <div class="field"><label>Nickname</label><input id="fuNickname" value="${unit.nickname}" placeholder="e.g. الحصان 1"></div>
-      <div class="field"><label>Plate number</label><input id="fuPlate" value="${unit.plate}" placeholder="e.g. 60"></div>
-      <div class="field"><label>Fleet ID</label><input id="fuFleetId" value="${unit.fleetId}"></div>
-      <div class="field"><label>VIN / chassis number (optional)</label><input id="fuVin" value="${unit.vin}"></div>
+      <div class="field"><label>Modèle du véhicule</label><select id="fuCarId">${state.cars.map(c=>`<option value="${c.id}" ${c.id===unit.carId?'selected':''}>${c.name}</option>`).join('')}</select></div>
+      <div class="field"><label>Statut</label><select id="fuStatus">${FLEET_UNIT_STATUSES.map(s=>`<option value="${s.value}" ${s.value===unit.status?'selected':''}>${s.label}</option>`).join('')}</select></div>
+      <div class="field"><label>Surnom</label><input id="fuNickname" value="${unit.nickname}" placeholder="ex. الحصان 1"></div>
+      <div class="field"><label>Numéro de plaque</label><input id="fuPlate" value="${unit.plate}" placeholder="ex. 60"></div>
+      <div class="field"><label>ID de flotte</label><input id="fuFleetId" value="${unit.fleetId}"></div>
+      <div class="field"><label>VIN / numéro de châssis (optionnel)</label><input id="fuVin" value="${unit.vin}"></div>
     </div>
-    <div class="field"><label>Internal notes</label><input id="fuNotes" value="${unit.notes}"></div>
+    <div class="field"><label>Notes internes</label><input id="fuNotes" value="${unit.notes}"></div>
     <div class="modal-actions">
-      <button class="btn btn-outline" id="fuCancel">Cancel</button>
-      <button class="btn btn-primary" id="fuSave">${isNew ? 'Add unit' : 'Save unit'}</button>
+      <button class="btn btn-outline" id="fuCancel">Annuler</button>
+      <button class="btn btn-primary" id="fuSave">${isNew ? 'Ajouter l\'unité' : 'Enregistrer l\'unité'}</button>
     </div>
   `);
   document.getElementById('fuCancel').addEventListener('click', closeModal);
@@ -1046,8 +1046,8 @@ function openFleetUnitModal(unit){
       notes: document.getElementById('fuNotes').value.trim(),
     };
     const r = await apiPost({ action: 'saveFleetUnit', unit: payload });
-    if(r.success){ toast(isNew ? 'Unit added' : 'Unit saved'); closeModal(); await refreshAdminData(); if(currentView==='inventory') renderFleetUnitsTable(document.getElementById('fleetUnitSearch')?.value); }
-    else toast(r.error || 'Failed to save');
+    if(r.success){ toast(isNew ? 'Unité ajoutée' : 'Unité enregistrée'); closeModal(); await refreshAdminData(); if(currentView==='inventory') renderFleetUnitsTable(document.getElementById('fleetUnitSearch')?.value); }
+    else toast(r.error || 'Échec de l\'enregistrement');
   });
 }
 
@@ -1057,12 +1057,12 @@ function renderReservations(){
   root.innerHTML = `
     <div class="toolbar-row">
       <div></div>
-      <button class="btn btn-primary" id="newBookingBtn">+ Manual reservation</button>
+      <button class="btn btn-primary" id="newBookingBtn">+ Réservation manuelle</button>
     </div>
-    <div class="section-note">Manual reservations (phone, office, walk-in) use the same booking engine as the website — inventory updates automatically and overbooking is prevented.</div>
+    <div class="section-note">Les réservations manuelles (téléphone, agence, sans rendez-vous) utilisent le même moteur de réservation que le site web — l'inventaire se met à jour automatiquement et la surréservation est empêchée.</div>
     <div class="card"><div class="table-wrap">
       <table>
-        <thead><tr><th>Ref</th><th>Customer</th><th>Nationality</th><th>Phone</th><th>Vehicle</th><th>Unit / Plate</th><th>Pickup</th><th>Return</th><th>Total</th><th>Source</th><th>Status</th><th>Payment</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Réf</th><th>Client</th><th>Nationalité</th><th>Téléphone</th><th>Véhicule</th><th>Unité / Plaque</th><th>Prise en charge</th><th>Retour</th><th>Total</th><th>Source</th><th>Statut</th><th>Paiement</th><th>Actions</th></tr></thead>
         <tbody id="reservationsBody"></tbody>
       </table>
     </div></div>
@@ -1071,14 +1071,14 @@ function renderReservations(){
   document.getElementById('newBookingBtn').addEventListener('click', openManualBookingModal);
 }
 const PAYMENT_STATUS_OPTIONS = [
-  { value: 'pending', label: 'Pending' },
-  { value: 'awaiting_verification', label: 'Awaiting Verification' },
-  { value: 'paid', label: 'Paid' },
-  { value: 'cancelled', label: 'Cancelled' },
-  { value: 'refunded', label: 'Refunded' },
+  { value: 'pending', label: 'En attente' },
+  { value: 'awaiting_verification', label: 'Vérification en attente' },
+  { value: 'paid', label: 'Payé' },
+  { value: 'cancelled', label: 'Annulé' },
+  { value: 'refunded', label: 'Remboursé' },
 ];
 function paymentMethodLabel(method){
-  return { bank_transfer: 'Bank Transfer', wise: 'Wise', cash_on_pickup: 'Cash on Pickup', none: '—' }[method] || method || '—';
+  return { bank_transfer: 'Virement bancaire', wise: 'Wise', cash_on_pickup: 'Espèces à la prise en charge', none: '—' }[method] || method || '—';
 }
 /* Which specific physical unit (by plate/nickname) a booking is linked to —
    resolves booking.unitId (set automatically by the backend at booking time,
@@ -1109,20 +1109,20 @@ function renderReservationsRows(){
         </select>
       </td>
       <td>
-        <button class="btn btn-outline btn-sm" data-edit="${b.row}">Edit</button>
-        <button class="btn btn-danger btn-sm" data-cancel="${b.row}">Cancel</button>
+        <button class="btn btn-outline btn-sm" data-edit="${b.row}">Modifier</button>
+        <button class="btn btn-danger btn-sm" data-cancel="${b.row}">Annuler</button>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="12" class="empty-state">No reservations yet.</td></tr>`;
+  }).join('') || `<tr><td colspan="12" class="empty-state">Aucune réservation pour le moment.</td></tr>`;
   tbody.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', ()=>{
     const booking = state.bookings.find(b => String(b.row) === btn.dataset.edit);
     if(booking) openBookingEditModal(booking);
   }));
   tbody.querySelectorAll('[data-cancel]').forEach(btn => btn.addEventListener('click', async ()=>{
-    if(!confirm('Cancel this booking and free up the vehicle?')) return;
+    if(!confirm('Annuler cette réservation et libérer le véhicule ?')) return;
     const r = await apiPost({ action: 'cancel', row: btn.dataset.cancel });
-    if(r.success){ toast('Booking cancelled'); await refreshAdminData(); renderReservationsRows(); }
-    else toast(r.error || 'Failed');
+    if(r.success){ toast('Réservation annulée'); await refreshAdminData(); renderReservationsRows(); }
+    else toast(r.error || 'Échec');
   }));
   tbody.querySelectorAll('.payment-status-select').forEach(sel => sel.addEventListener('change', async ()=>{
     const ref = sel.dataset.ref;
@@ -1131,32 +1131,32 @@ function renderReservationsRows(){
     const r = await apiPost({ action: 'adminSetPaymentStatus', ref, paymentStatus });
     sel.disabled = false;
     if(r.success){
-      toast(paymentStatus === 'paid' ? 'Marked as paid — confirmation email sent' : 'Payment status updated');
+      toast(paymentStatus === 'paid' ? 'Marqué comme payé — e-mail de confirmation envoyé' : 'Statut de paiement mis à jour');
       await refreshAdminData();
       renderReservationsRows();
-    } else toast(r.error || 'Failed');
+    } else toast(r.error || 'Échec');
   }));
 }
 function openManualBookingModal(){
   openModal(`
-    <h3>New manual reservation</h3>
+    <h3>Nouvelle réservation manuelle</h3>
     <div class="field"><label>Source</label><select id="mbSource">
-      <option value="phone">Phone booking</option><option value="office">Office booking</option><option value="walkin">Walk-in customer</option>
+      <option value="phone">Réservation téléphonique</option><option value="office">Réservation en agence</option><option value="walkin">Client sans rendez-vous</option>
     </select></div>
-    <div class="field"><label>Vehicle</label><select id="mbCar">
-      ${state.cars.map(c=> `<option value="${c.id}">${c.name} (${c.stock || 1} unit${(c.stock || 1) === 1 ? '' : 's'} total)</option>`).join('')}
+    <div class="field"><label>Véhicule</label><select id="mbCar">
+      ${state.cars.map(c=> `<option value="${c.id}">${c.name} (${c.stock || 1} unité${(c.stock || 1) === 1 ? '' : 's'} au total)</option>`).join('')}
     </select></div>
     <div class="field-grid">
-      <div class="field"><label>Customer name</label><input id="mbName" required></div>
-      <div class="field"><label>Phone</label><input id="mbPhone" required></div>
-      <div class="field"><label>Pickup</label><input type="text" id="mbPickup" data-custom-picker readonly required placeholder="Select date & time"></div>
-      <div class="field"><label>Return</label><input type="text" id="mbReturn" data-custom-picker readonly required placeholder="Select date & time"></div>
+      <div class="field"><label>Nom du client</label><input id="mbName" required></div>
+      <div class="field"><label>Téléphone</label><input id="mbPhone" required></div>
+      <div class="field"><label>Prise en charge</label><input type="text" id="mbPickup" data-custom-picker readonly required placeholder="Sélectionner date et heure"></div>
+      <div class="field"><label>Retour</label><input type="text" id="mbReturn" data-custom-picker readonly required placeholder="Sélectionner date et heure"></div>
     </div>
     <div class="section-note" id="mbAvailNote" style="display:none"></div>
-    <div class="field"><label>Total (€, optional)</label><input id="mbTotal" type="number"></div>
+    <div class="field"><label>Total (€, optionnel)</label><input id="mbTotal" type="number"></div>
     <div class="modal-actions">
-      <button class="btn btn-outline" id="mbCancel">Cancel</button>
-      <button class="btn btn-primary" id="mbSave">Create reservation</button>
+      <button class="btn btn-outline" id="mbCancel">Annuler</button>
+      <button class="btn btn-primary" id="mbSave">Créer la réservation</button>
     </div>
   `);
   // Same booked-day shading the website's own booking calendar uses (fed from
@@ -1173,8 +1173,8 @@ function openManualBookingModal(){
     note.style.display = '';
     const units = state.fleetUnits.filter(u => u.carId === car.id);
     note.textContent = units.length > 0
-      ? `${car.name} has ${units.length} registered unit(s) (${units.map(u=>u.plate||u.nickname||u.unitId).join(', ')}). A specific free unit is auto-assigned on save — the calendar below reflects their exact combined availability.`
-      : `${car.name} has ${car.stock || 1} unit(s) total (no plates registered yet in Fleet Units — availability is estimated by count). Click Pickup/Return below to see which days are free.`;
+      ? `${car.name} a ${units.length} unité(s) enregistrée(s) (${units.map(u=>u.plate||u.nickname||u.unitId).join(', ')}). Une unité libre spécifique est assignée automatiquement à l'enregistrement — le calendrier ci-dessous reflète leur disponibilité combinée exacte.`
+      : `${car.name} a ${car.stock || 1} unité(s) au total (aucune plaque encore enregistrée dans Unités de flotte — la disponibilité est estimée par le nombre). Cliquez sur Prise en charge/Retour ci-dessous pour voir les jours libres.`;
   };
   document.getElementById('mbCar').addEventListener('change', updateAvailNote);
   updateAvailNote();
@@ -1186,7 +1186,7 @@ function openManualBookingModal(){
     const phone = document.getElementById('mbPhone').value.trim();
     const pickup = document.getElementById('mbPickup').value;
     const ret = document.getElementById('mbReturn').value;
-    if(!car || !name || !phone || !pickup || !ret){ toast('Please fill in all required fields'); return; }
+    if(!car || !name || !phone || !pickup || !ret){ toast('Veuillez remplir tous les champs requis'); return; }
     const ref = 'AFC-M-' + Date.now().toString().slice(-8);
     const r = await apiPost({
       carId, carName: car.name, customerName: name, phone, pickup, ret, ref,
@@ -1194,10 +1194,10 @@ function openManualBookingModal(){
       source: document.getElementById('mbSource').value, adminPassword: state.password,
     });
     if(r.success){
-      toast(r.unitPlate ? `Reservation created — assigned unit: ${r.unitPlate}` : 'Reservation created');
+      toast(r.unitPlate ? `Réservation créée — unité assignée : ${r.unitPlate}` : 'Réservation créée');
       closeModal(); await refreshAdminData(); if(currentView==='reservations') renderReservationsRows();
     }
-    else toast(r.error === 'sold_out' ? 'No stock left for this vehicle' : (r.error || 'Failed'));
+    else toast(r.error === 'sold_out' ? 'Plus de stock disponible pour ce véhicule' : (r.error || 'Échec'));
   });
 }
 
@@ -1219,24 +1219,24 @@ function toDatetimeLocalInputValue(v){
    to view or correct a booking's dates/customer info once created. */
 function openBookingEditModal(booking){
   openModal(`
-    <h3>Edit Reservation ${booking.ref || ''}</h3>
+    <h3>Modifier la réservation ${booking.ref || ''}</h3>
     <div class="field-grid">
-      <div class="field"><label>Vehicle</label><select id="ebCar">
+      <div class="field"><label>Véhicule</label><select id="ebCar">
         ${state.cars.map(c => `<option value="${c.id}" ${c.id === booking.carId ? 'selected' : ''}>${c.name}</option>`).join('')}
       </select></div>
-      <div class="field"><label>Reference</label><input id="ebRef" value="${booking.ref || ''}" disabled></div>
-      <div class="field"><label>Customer name</label><input id="ebName" value="${(booking.customerName || '').replace(/"/g,'&quot;')}"></div>
-      <div class="field"><label>Phone</label><input id="ebPhone" value="${(booking.phone || '').replace(/"/g,'&quot;')}"></div>
-      <div class="field"><label>Nationality</label><input id="ebNationality" value="${(booking.nationality || '').replace(/"/g,'&quot;')}"></div>
-      <div class="field"><label>Email</label><input id="ebEmail" value="${(booking.email || '').replace(/"/g,'&quot;')}"></div>
-      <div class="field"><label>Pickup</label><input type="text" id="ebPickup" data-custom-picker readonly value="${toDatetimeLocalInputValue(booking.pickup)}"></div>
-      <div class="field"><label>Return</label><input type="text" id="ebReturn" data-custom-picker readonly value="${toDatetimeLocalInputValue(booking.ret)}"></div>
+      <div class="field"><label>Référence</label><input id="ebRef" value="${booking.ref || ''}" disabled></div>
+      <div class="field"><label>Nom du client</label><input id="ebName" value="${(booking.customerName || '').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Téléphone</label><input id="ebPhone" value="${(booking.phone || '').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Nationalité</label><input id="ebNationality" value="${(booking.nationality || '').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>E-mail</label><input id="ebEmail" value="${(booking.email || '').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Prise en charge</label><input type="text" id="ebPickup" data-custom-picker readonly value="${toDatetimeLocalInputValue(booking.pickup)}"></div>
+      <div class="field"><label>Retour</label><input type="text" id="ebReturn" data-custom-picker readonly value="${toDatetimeLocalInputValue(booking.ret)}"></div>
       <div class="field"><label>Total (€)</label><input id="ebTotal" type="number" value="${booking.total || ''}"></div>
     </div>
     <div class="section-note" id="ebAvailNote"></div>
     <div class="modal-actions">
-      <button class="btn btn-outline" id="ebCancel">Cancel</button>
-      <button class="btn btn-primary" id="ebSave">Save changes</button>
+      <button class="btn btn-outline" id="ebCancel">Annuler</button>
+      <button class="btn btn-primary" id="ebSave">Enregistrer les modifications</button>
     </div>
   `);
   const updateAvailNote = ()=>{
@@ -1244,10 +1244,10 @@ function openBookingEditModal(booking){
     const note = document.getElementById('ebAvailNote');
     if(!car){ note.textContent = ''; return; }
     const units = state.fleetUnits.filter(u => u.carId === car.id);
-    const assignedNote = booking.unitId ? ` Currently assigned unit: ${booking.unitId}.` : '';
+    const assignedNote = booking.unitId ? ` Unité actuellement assignée : ${booking.unitId}.` : '';
     note.textContent = units.length > 0
-      ? `${car.name} has ${units.length} registered unit(s).${assignedNote} A free unit is auto-assigned when you save, excluding this booking's own current dates from the check.`
-      : `${car.name} has ${car.stock || 1} unit(s) total (no plates registered in Fleet Units).${assignedNote}`;
+      ? `${car.name} a ${units.length} unité(s) enregistrée(s).${assignedNote} Une unité libre est assignée automatiquement lors de l'enregistrement, en excluant les dates actuelles de cette réservation de la vérification.`
+      : `${car.name} a ${car.stock || 1} unité(s) au total (aucune plaque enregistrée dans Unités de flotte).${assignedNote}`;
   };
   ['ebPickup', 'ebReturn'].forEach(id=>{
     const el = document.getElementById(id);
@@ -1261,7 +1261,7 @@ function openBookingEditModal(booking){
     const car = carById(carId);
     const pickup = document.getElementById('ebPickup').value;
     const ret = document.getElementById('ebReturn').value;
-    if(!car || !pickup || !ret){ toast('Please fill in all required fields'); return; }
+    if(!car || !pickup || !ret){ toast('Veuillez remplir tous les champs requis'); return; }
     const r = await apiPost({
       action: 'editBooking', row: booking.row,
       carId, carName: car.name,
@@ -1274,9 +1274,9 @@ function openBookingEditModal(booking){
       stock: car.stock,
     });
     if(r.success){
-      toast(r.unitPlate ? `Reservation updated — assigned unit: ${r.unitPlate}` : 'Reservation updated');
+      toast(r.unitPlate ? `Réservation mise à jour — unité assignée : ${r.unitPlate}` : 'Réservation mise à jour');
       closeModal(); await refreshAdminData(); if(currentView==='reservations') renderReservationsRows();
-    } else toast(r.error === 'sold_out' ? 'No availability for these dates' : (r.error || 'Failed'));
+    } else toast(r.error === 'sold_out' ? 'Aucune disponibilité pour ces dates' : (r.error || 'Échec'));
   });
 }
 
@@ -1288,14 +1288,14 @@ function renderCalendar(){
   root.innerHTML = `
     <div class="toolbar-row">
       <div class="tabs" style="margin:0;border:none">
-        <button data-mode="month" class="${calMode==='month'?'active':''}">Monthly</button>
-        <button data-mode="week" class="${calMode==='week'?'active':''}">Weekly</button>
-        <button data-mode="day" class="${calMode==='day'?'active':''}">Daily</button>
+        <button data-mode="month" class="${calMode==='month'?'active':''}">Mensuel</button>
+        <button data-mode="week" class="${calMode==='week'?'active':''}">Hebdomadaire</button>
+        <button data-mode="day" class="${calMode==='day'?'active':''}">Quotidien</button>
       </div>
       <div class="tag-row">
-        <button class="btn btn-outline btn-sm" id="calPrev">← Prev</button>
-        <button class="btn btn-outline btn-sm" id="calToday">Today</button>
-        <button class="btn btn-outline btn-sm" id="calNext">Next →</button>
+        <button class="btn btn-outline btn-sm" id="calPrev">← Préc.</button>
+        <button class="btn btn-outline btn-sm" id="calToday">Aujourd'hui</button>
+        <button class="btn btn-outline btn-sm" id="calNext">Suiv. →</button>
       </div>
     </div>
     <div class="card card-pad" id="calBody"></div>
@@ -1329,7 +1329,7 @@ function dayCellHtml(day){
       const st = bookingStatus(b);
       return `<div class="pill ${st.cls}" style="display:block;margin-bottom:3px;font-size:.66rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.customerName||'—'} · ${b.carName||''}</div>`;
     }).join('')}
-    ${items.length>3 ? `<div style="font-size:.68rem;color:var(--ink-dim)">+${items.length-3} more</div>` : ''}
+    ${items.length>3 ? `<div style="font-size:.68rem;color:var(--ink-dim)">+${items.length-3} de plus</div>` : ''}
   </div>`;
 }
 function renderCalendarBody(){
@@ -1341,21 +1341,21 @@ function renderCalendarBody(){
     let cells = '';
     for(let i=0;i<startOffset;i++) cells += `<div></div>`;
     for(let d=1; d<=daysInMonth; d++) cells += dayCellHtml(new Date(calDate.getFullYear(), calDate.getMonth(), d));
-    el.innerHTML = `<h4 style="margin-top:0">${calDate.toLocaleString('en-GB',{month:'long',year:'numeric'})}</h4>
+    el.innerHTML = `<h4 style="margin-top:0">${calDate.toLocaleString('fr-FR',{month:'long',year:'numeric'})}</h4>
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">${cells}</div>`;
   } else if(calMode === 'week'){
     const start = new Date(calDate); start.setDate(start.getDate() - start.getDay());
     let cells = '';
     for(let i=0;i<7;i++){ const d = new Date(start); d.setDate(start.getDate()+i); cells += dayCellHtml(d); }
-    el.innerHTML = `<h4 style="margin-top:0">Week of ${start.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</h4>
+    el.innerHTML = `<h4 style="margin-top:0">Semaine du ${start.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})}</h4>
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">${cells}</div>`;
   } else {
     const items = bookingsOn(calDate);
-    el.innerHTML = `<h4 style="margin-top:0">${calDate.toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</h4>
+    el.innerHTML = `<h4 style="margin-top:0">${calDate.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</h4>
       ${items.length ? items.map(b=>{
         const st = bookingStatus(b);
         return `<div class="card-pad" style="border:1px solid var(--card-border);border-radius:8px;margin-bottom:8px"><b>${b.customerName}</b> — ${b.carName} <span class="pill ${st.cls}">${st.label}</span><br><span style="color:var(--ink-dim);font-size:.78rem">${fmtDate(b.pickup)} → ${fmtDate(b.ret)}</span></div>`;
-      }).join('') : `<div class="empty-state">No bookings this day.</div>`}`;
+      }).join('') : `<div class="empty-state">Aucune réservation ce jour.</div>`}`;
   }
 }
 
@@ -1370,13 +1370,13 @@ function renderCustomers(){
   });
   const customers = Object.values(byPhone).sort((a,b)=> b.bookings - a.bookings);
   document.getElementById('viewRoot').innerHTML = `
-    <div class="section-note">Customers are derived from your booking history (grouped by phone number) — there's no separate customer database yet.</div>
+    <div class="section-note">Les clients sont déduits de votre historique de réservations (groupés par numéro de téléphone) — il n'y a pas encore de base de données clients séparée.</div>
     <div class="card"><div class="table-wrap">
       <table>
-        <thead><tr><th>Name</th><th>Phone</th><th># Bookings</th><th>Last booking</th></tr></thead>
+        <thead><tr><th>Nom</th><th>Téléphone</th><th>Nb réservations</th><th>Dernière réservation</th></tr></thead>
         <tbody>
           ${customers.map(c => `<tr><td>${c.name||'—'}</td><td>${c.phone||'—'}</td><td>${c.bookings}</td><td>${fmtDate(c.lastDate)}</td></tr>`).join('')
-            || `<tr><td colspan="4" class="empty-state">No customers yet.</td></tr>`}
+            || `<tr><td colspan="4" class="empty-state">Aucun client pour le moment.</td></tr>`}
         </tbody>
       </table>
     </div></div>
@@ -1388,8 +1388,8 @@ function renderPricing(){
   const root = document.getElementById('viewRoot');
   root.innerHTML = `
     <div class="tabs">
-      <button data-tab="seasonal" class="active">Seasonal &amp; special periods</button>
-      <button data-tab="currency">Currency</button>
+      <button data-tab="seasonal" class="active">Périodes saisonnières et spéciales</button>
+      <button data-tab="currency">Devise</button>
     </div>
     <div id="pricingTabBody"></div>
   `;
@@ -1404,25 +1404,25 @@ function renderPricingTab(tab){
   const el = document.getElementById('pricingTabBody');
   if(tab === 'seasonal'){
     el.innerHTML = `
-      <div class="section-note">Covers Summer, Holidays, Christmas, weekend surcharges or any special event — each period applies a % or fixed € adjustment to every car's daily price automatically when the pickup date falls inside it.</div>
+      <div class="section-note">Couvre l'été, les vacances, Noël, les suppléments de week-end ou tout événement spécial — chaque période applique automatiquement un ajustement en % ou en € fixe au prix journalier de chaque voiture lorsque la date de prise en charge y correspond.</div>
       ${isEditor() ? `<div class="card card-pad" style="margin-bottom:20px">
-        <b>Add a pricing period</b>
+        <b>Ajouter une période tarifaire</b>
         <div class="field-grid" style="margin-top:12px">
-          <div class="field"><label>Name</label><input id="spName" placeholder="Summer, Christmas, Weekend…"></div>
-          <div class="field"><label>Type</label><select id="spType"><option value="percent">% increase</option><option value="fixed">Fixed € / day</option></select></div>
-          <div class="field"><label>Start date</label><input type="date" id="spStart"></div>
-          <div class="field"><label>End date</label><input type="date" id="spEnd"></div>
-          <div class="field"><label>Value</label><input type="number" id="spValue" placeholder="e.g. 20"></div>
+          <div class="field"><label>Nom</label><input id="spName" placeholder="Été, Noël, Week-end…"></div>
+          <div class="field"><label>Type</label><select id="spType"><option value="percent">Augmentation en %</option><option value="fixed">€ fixe / jour</option></select></div>
+          <div class="field"><label>Date de début</label><input type="date" id="spStart"></div>
+          <div class="field"><label>Date de fin</label><input type="date" id="spEnd"></div>
+          <div class="field"><label>Valeur</label><input type="number" id="spValue" placeholder="ex. 20"></div>
         </div>
-        <button class="btn btn-primary" id="spAdd">Add period</button>
+        <button class="btn btn-primary" id="spAdd">Ajouter la période</button>
       </div>` : ''}
       <div class="card"><div class="table-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Start</th><th>End</th><th>Adjustment</th>${isEditor() ? '<th></th>' : ''}</tr></thead>
+          <thead><tr><th>Nom</th><th>Début</th><th>Fin</th><th>Ajustement</th>${isEditor() ? '<th></th>' : ''}</tr></thead>
           <tbody>
-            ${state.seasons.map(s => `<tr><td>${s.name}</td><td>${s.start}</td><td>${s.end}</td><td>${s.type==='fixed' ? '+€'+s.value+'/day' : '+'+s.value+'%'}</td>
-              ${isEditor() ? `<td><button class="btn btn-danger btn-sm" data-del-season="${s.row}">Delete</button></td>` : ''}</tr>`).join('')
-              || `<tr><td colspan="5" class="empty-state">No pricing periods yet.</td></tr>`}
+            ${state.seasons.map(s => `<tr><td>${s.name}</td><td>${s.start}</td><td>${s.end}</td><td>${s.type==='fixed' ? '+€'+s.value+'/jour' : '+'+s.value+'%'}</td>
+              ${isEditor() ? `<td><button class="btn btn-danger btn-sm" data-del-season="${s.row}">Supprimer</button></td>` : ''}</tr>`).join('')
+              || `<tr><td colspan="5" class="empty-state">Aucune période tarifaire pour le moment.</td></tr>`}
           </tbody>
         </table>
       </div></div>
@@ -1434,41 +1434,41 @@ function renderPricingTab(tab){
         const end = document.getElementById('spEnd').value;
         const value = document.getElementById('spValue').value;
         const type = document.getElementById('spType').value;
-        if(!name || !start || !end || !value){ toast('Fill in all fields'); return; }
+        if(!name || !start || !end || !value){ toast('Veuillez remplir tous les champs'); return; }
         const r = await apiPost({ action: 'addSeason', name, start, end, value, type });
-        if(r.success){ toast('Period added'); await refreshAdminData(); renderPricingTab('seasonal'); }
-        else toast(r.error || 'Failed');
+        if(r.success){ toast('Période ajoutée'); await refreshAdminData(); renderPricingTab('seasonal'); }
+        else toast(r.error || 'Échec');
       });
       el.querySelectorAll('[data-del-season]').forEach(b => b.addEventListener('click', async ()=>{
         const r = await apiPost({ action: 'deleteSeason', row: b.dataset.delSeason });
-        if(r.success){ toast('Period removed'); await refreshAdminData(); renderPricingTab('seasonal'); }
+        if(r.success){ toast('Période supprimée'); await refreshAdminData(); renderPricingTab('seasonal'); }
       }));
     }
   } else {
     el.innerHTML = `
       <div class="card card-pad">
-        <b>Live exchange rates</b>
-        <p style="color:var(--ink-dim);font-size:.82rem">The website converts EUR prices to MAD/USD live using <code>frankfurter.app</code> (free, no API key). Booking totals and the PDF invoice always stay in EUR — the agency's real transaction currency.</p>
-        <div id="fxRates" style="font-size:1.1rem;font-weight:700;margin-top:10px">Loading rates…</div>
+        <b>Taux de change en direct</b>
+        <p style="color:var(--ink-dim);font-size:.82rem">Le site web convertit les prix EUR en MAD/USD en direct grâce à <code>frankfurter.app</code> (gratuit, sans clé API). Les totaux de réservation et la facture PDF restent toujours en EUR — la devise réelle des transactions de l'agence.</p>
+        <div id="fxRates" style="font-size:1.1rem;font-weight:700;margin-top:10px">Chargement des taux…</div>
       </div>
     `;
     fetch('https://api.frankfurter.app/latest?from=EUR&to=MAD,USD').then(r=>r.json()).then(d=>{
       document.getElementById('fxRates').textContent = `1 EUR = ${d.rates.MAD} MAD = ${d.rates.USD} USD`;
-    }).catch(()=>{ document.getElementById('fxRates').textContent = 'Rates unavailable right now (offline?).'; });
+    }).catch(()=>{ document.getElementById('fxRates').textContent = 'Taux indisponibles pour le moment (hors ligne ?).'; });
   }
 }
 
 /* ================= CATEGORIES ================= */
 function renderCategories(){
   const fixedCats = [
-    ['All Cars', 'Always matches'], ['Petrol & Hybrid', 'fuelKey = essence or hybride'], ['Diesel', 'fuelKey = diesel'],
-    ['Manual', 'gearKey = manual'], ['Automatic', 'gearKey = auto'], ['SUV', "'suv' tag on the vehicle"],
-    ['7 Seats', 'seats = 7'], ['Luxury', "'luxury' tag on the vehicle"], ['Economy', 'price ≤ 25€/day'],
+    ['Toutes les voitures', 'Correspond toujours'], ['Essence et hybride', 'fuelKey = essence ou hybride'], ['Diesel', 'fuelKey = diesel'],
+    ['Manuelle', 'gearKey = manual'], ['Automatique', 'gearKey = auto'], ['SUV', "étiquette 'suv' sur le véhicule"],
+    ['7 places', 'seats = 7'], ['Luxe', "étiquette 'luxury' sur le véhicule"], ['Économique', 'prix ≤ 25€/jour'],
   ];
   document.getElementById('viewRoot').innerHTML = `
-    <div class="section-note">The 9 fleet filters on the live site are computed automatically from each vehicle's specs — there's no separate category list to manage. "SUV" and "Luxury" are the only two manually-assigned tags (edit them per vehicle from Fleet Management).</div>
+    <div class="section-note">Les 9 filtres de la flotte sur le site en ligne sont calculés automatiquement à partir des caractéristiques de chaque véhicule — il n'y a pas de liste de catégories séparée à gérer. "SUV" et "Luxe" sont les deux seules étiquettes assignées manuellement (modifiables par véhicule depuis Gestion de la flotte).</div>
     <div class="card"><div class="table-wrap">
-      <table><thead><tr><th>Category</th><th>How it's matched</th></tr></thead>
+      <table><thead><tr><th>Catégorie</th><th>Comment elle est déterminée</th></tr></thead>
       <tbody>${fixedCats.map(([n,d])=>`<tr><td><b>${n}</b></td><td style="color:var(--ink-dim)">${d}</td></tr>`).join('')}</tbody></table>
     </div></div>
   `;
@@ -1485,29 +1485,29 @@ function renderReports(){
 
   document.getElementById('viewRoot').innerHTML = `
     <div class="kpi-grid">
-      <div class="kpi"><div class="label">Total bookings</div><div class="value">${state.bookings.length}</div></div>
-      <div class="kpi"><div class="label">Revenue (active)</div><div class="value">€${revenue.toFixed(0)}</div></div>
-      <div class="kpi"><div class="label">Fleet models</div><div class="value">${state.cars.length}</div></div>
+      <div class="kpi"><div class="label">Total des réservations</div><div class="value">${state.bookings.length}</div></div>
+      <div class="kpi"><div class="label">Revenus (actifs)</div><div class="value">€${revenue.toFixed(0)}</div></div>
+      <div class="kpi"><div class="label">Modèles de la flotte</div><div class="value">${state.cars.length}</div></div>
     </div>
     <div class="card">
       <div class="card-pad">
-        <div class="toolbar-row"><b>Most popular vehicles</b>
+        <div class="toolbar-row"><b>Véhicules les plus populaires</b>
           <div class="tag-row">
-            <button class="btn btn-outline btn-sm" id="exportBookingsCsv">⬇ Bookings CSV</button>
+            <button class="btn btn-outline btn-sm" id="exportBookingsCsv">⬇ CSV des réservations</button>
           </div>
         </div>
         <div class="table-wrap"><table>
-          <thead><tr><th>Vehicle</th><th>Bookings</th></tr></thead>
-          <tbody>${popularSorted.map(([id,count])=>{ const c = carById(id); return `<tr><td>${c ? c.name : id}</td><td>${count}</td></tr>`; }).join('') || `<tr><td colspan="2" class="empty-state">No data yet.</td></tr>`}</tbody>
+          <thead><tr><th>Véhicule</th><th>Réservations</th></tr></thead>
+          <tbody>${popularSorted.map(([id,count])=>{ const c = carById(id); return `<tr><td>${c ? c.name : id}</td><td>${count}</td></tr>`; }).join('') || `<tr><td colspan="2" class="empty-state">Aucune donnée pour le moment.</td></tr>`}</tbody>
         </table></div>
       </div>
     </div>
     <div class="card">
       <div class="card-pad">
-        <b>Bookings by source</b>
+        <b>Réservations par source</b>
         <div class="table-wrap" style="margin-top:12px"><table>
-          <thead><tr><th>Source</th><th>Count</th></tr></thead>
-          <tbody>${Object.entries(bySource).map(([s,c])=>`<tr><td>${s}</td><td>${c}</td></tr>`).join('') || `<tr><td colspan="2" class="empty-state">No data yet.</td></tr>`}</tbody>
+          <thead><tr><th>Source</th><th>Nombre</th></tr></thead>
+          <tbody>${Object.entries(bySource).map(([s,c])=>`<tr><td>${s}</td><td>${c}</td></tr>`).join('') || `<tr><td colspan="2" class="empty-state">Aucune donnée pour le moment.</td></tr>`}</tbody>
         </table></div>
       </div>
     </div>
@@ -1519,16 +1519,16 @@ function renderReports(){
 function renderNotifications(){
   document.getElementById('viewRoot').innerHTML = `
     <div class="card card-pad">
-      <div class="toolbar-row"><b>Email</b><span class="pill pill-green">Active</span></div>
-      <p style="color:var(--ink-dim);font-size:.83rem">Every new booking (website or manual) automatically sends a confirmation email to <b>${state.settings.notification_email || 'the agency inbox'}</b> via the booking backend. No setup needed.</p>
+      <div class="toolbar-row"><b>E-mail</b><span class="pill pill-green">Actif</span></div>
+      <p style="color:var(--ink-dim);font-size:.83rem">Chaque nouvelle réservation (site web ou manuelle) envoie automatiquement un e-mail de confirmation à <b>${state.settings.notification_email || 'la boîte de réception de l\'agence'}</b> via le backend de réservation. Aucune configuration nécessaire.</p>
     </div>
     <div class="card card-pad">
-      <div class="toolbar-row"><b>WhatsApp</b><span class="pill pill-green">Ready</span></div>
-      <p style="color:var(--ink-dim);font-size:.83rem">The website's booking confirmation and every "Book Now" button already deep-link to WhatsApp with a pre-filled message — no extra setup needed on your side.</p>
+      <div class="toolbar-row"><b>WhatsApp</b><span class="pill pill-green">Prêt</span></div>
+      <p style="color:var(--ink-dim);font-size:.83rem">La confirmation de réservation du site et chaque bouton "Réserver" renvoient déjà vers WhatsApp avec un message pré-rempli — aucune configuration supplémentaire nécessaire de votre côté.</p>
     </div>
     <div class="card card-pad">
-      <div class="toolbar-row"><b>Push notifications</b><span class="pill pill-red">Not available</span></div>
-      <p style="color:var(--ink-dim);font-size:.83rem">Browser push notifications need a push server and a service worker running on the live site — that infrastructure isn't set up yet. Email + WhatsApp cover new-booking alerts in the meantime.</p>
+      <div class="toolbar-row"><b>Notifications push</b><span class="pill pill-red">Non disponible</span></div>
+      <p style="color:var(--ink-dim);font-size:.83rem">Les notifications push du navigateur nécessitent un serveur push et un service worker actif sur le site en ligne — cette infrastructure n'est pas encore en place. L'e-mail et WhatsApp couvrent les alertes de nouvelle réservation en attendant.</p>
     </div>
   `;
 }
@@ -1539,9 +1539,9 @@ function renderSettings(){
   root.innerHTML = `
     <div class="tabs">
       <button data-stab="seo" class="active">SEO</button>
-      <button data-stab="roles">Admin roles</button>
-      <button data-stab="log">Activity log</button>
-      <button data-stab="backup">Backups</button>
+      <button data-stab="roles">Rôles admin</button>
+      <button data-stab="log">Journal d'activité</button>
+      <button data-stab="backup">Sauvegardes</button>
     </div>
     <div id="settingsTabBody"></div>
   `;
@@ -1556,52 +1556,52 @@ function renderSettingsTab(tab){
   const el = document.getElementById('settingsTabBody');
   if(tab === 'seo'){
     el.innerHTML = `
-      <div class="section-note">These override the meta title/description the live site shows to Google and social previews — applied at runtime, no code changes needed.</div>
+      <div class="section-note">Ceci remplace le titre/description meta que le site en ligne affiche à Google et aux aperçus sur les réseaux sociaux — appliqué en temps réel, aucune modification du code nécessaire.</div>
       <div class="card card-pad">
-        <div class="field"><label>Meta title</label><input id="seoTitle" value="${state.settings.meta_title||''}" placeholder="Leave blank to keep the site's default title"></div>
-        <div class="field"><label>Meta description</label><textarea id="seoDesc" rows="3" placeholder="Leave blank to keep the site's default description">${state.settings.meta_description||''}</textarea></div>
-        <div class="field"><label>Schema.org business type</label><input value="AutoRental" disabled>
-          <span style="font-size:.72rem;color:var(--ink-dim)">Structured data is defined in index.html's JSON-LD block — edit the code directly for structural changes (this dashboard only overrides the title/description text).</span>
+        <div class="field"><label>Titre meta</label><input id="seoTitle" value="${state.settings.meta_title||''}" placeholder="Laissez vide pour garder le titre par défaut du site"></div>
+        <div class="field"><label>Description meta</label><textarea id="seoDesc" rows="3" placeholder="Laissez vide pour garder la description par défaut du site">${state.settings.meta_description||''}</textarea></div>
+        <div class="field"><label>Type d'entreprise Schema.org</label><input value="AutoRental" disabled>
+          <span style="font-size:.72rem;color:var(--ink-dim)">Les données structurées sont définies dans le bloc JSON-LD d'index.html — modifiez le code directement pour des changements structurels (ce tableau de bord ne remplace que le texte du titre/description).</span>
         </div>
-        ${isEditor() ? `<button class="btn btn-primary" id="seoSave">Save SEO settings</button>` : ''}
+        ${isEditor() ? `<button class="btn btn-primary" id="seoSave">Enregistrer les paramètres SEO</button>` : ''}
       </div>
     `;
     if(isEditor()){
       document.getElementById('seoSave').addEventListener('click', async ()=>{
         await apiPost({ action:'saveSetting', key:'meta_title', value: document.getElementById('seoTitle').value });
         await apiPost({ action:'saveSetting', key:'meta_description', value: document.getElementById('seoDesc').value });
-        toast('SEO settings saved');
+        toast('Paramètres SEO enregistrés');
         await refreshAdminData();
       });
     }
   } else if(tab === 'roles'){
     el.innerHTML = `
-      <div class="section-note warn">Passwords are set in the Apps Script code (ADMIN_ROLES), not editable from here — change them in the backend if needed, then redeploy.</div>
+      <div class="section-note warn">Les mots de passe sont définis dans le code Apps Script (ADMIN_ROLES), non modifiables ici — changez-les dans le backend si nécessaire, puis redéployez.</div>
       <div class="card"><div class="table-wrap"><table>
-        <thead><tr><th>Role</th><th>Can do</th></tr></thead>
+        <thead><tr><th>Rôle</th><th>Peut faire</th></tr></thead>
         <tbody>
-          <tr><td><span class="pill pill-blue">Super Admin</span></td><td>Full access to every module. Currently the only role in use — one shared password for the whole team.</td></tr>
+          <tr><td><span class="pill pill-blue">Super Admin</span></td><td>Accès complet à tous les modules. Actuellement le seul rôle utilisé — un mot de passe partagé pour toute l'équipe.</td></tr>
         </tbody>
       </table></div>
-      <div class="card-pad" style="color:var(--ink-dim);font-size:.8rem">The dashboard's code still supports splitting this into separate Manager/Employee roles with restricted access later — just add more entries to ADMIN_ROLES in the backend if that's ever needed.</div>
+      <div class="card-pad" style="color:var(--ink-dim);font-size:.8rem">Le code du tableau de bord permet encore de séparer ceci en rôles distincts Gérant/Employé avec un accès restreint plus tard — ajoutez simplement d'autres entrées à ADMIN_ROLES dans le backend si besoin.</div>
       </div>
     `;
   } else if(tab === 'log'){
     el.innerHTML = `
       <div class="card"><div class="table-wrap"><table>
-        <thead><tr><th>When</th><th>Role</th><th>Action</th><th>Details</th></tr></thead>
+        <thead><tr><th>Quand</th><th>Rôle</th><th>Action</th><th>Détails</th></tr></thead>
         <tbody>${state.activityLog.map(l=>`<tr><td>${fmtDate(l.timestamp)}</td><td><span class="pill pill-gray">${l.role}</span></td><td>${l.action}</td><td>${l.details||''}</td></tr>`).join('')
-          || `<tr><td colspan="4" class="empty-state">No activity recorded yet.</td></tr>`}</tbody>
+          || `<tr><td colspan="4" class="empty-state">Aucune activité enregistrée pour le moment.</td></tr>`}</tbody>
       </table></div></div>
     `;
   } else {
     el.innerHTML = `
-      <div class="section-note">One-click exports of your current data — a simple, reliable stand-in for scheduled server backups.</div>
+      <div class="section-note">Exports en un clic de vos données actuelles — une alternative simple et fiable aux sauvegardes serveur planifiées.</div>
       <div class="card card-pad tag-row">
-        <button class="btn btn-outline" id="bkCars">⬇ Export Cars (CSV)</button>
-        <button class="btn btn-outline" id="bkBookings">⬇ Export Bookings (CSV)</button>
-        <button class="btn btn-outline" id="bkSeasons">⬇ Export Seasons (CSV)</button>
-        <button class="btn btn-primary" id="bkAll">⬇ Full backup (JSON)</button>
+        <button class="btn btn-outline" id="bkCars">⬇ Exporter les voitures (CSV)</button>
+        <button class="btn btn-outline" id="bkBookings">⬇ Exporter les réservations (CSV)</button>
+        <button class="btn btn-outline" id="bkSeasons">⬇ Exporter les saisons (CSV)</button>
+        <button class="btn btn-primary" id="bkAll">⬇ Sauvegarde complète (JSON)</button>
       </div>
     `;
     document.getElementById('bkCars').addEventListener('click', ()=> csvDownload('cars-backup.csv', state.cars.map(c=>({...c, body:(c.body||[]).join(',')}))));
