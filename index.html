@@ -1779,13 +1779,29 @@ function populateBrandSelect(){
   sel.value = fleetBrandFilter;
 }
 
-function applyFleetFiltersAndSort(list){
+function applyFleetFiltersAndSort(list, qbRange){
   let out = list;
   if(fleetBrandFilter !== 'all') out = out.filter(c => getCarBrand(c) === fleetBrandFilter);
   if(fleetSeatsFilter !== 'all') out = out.filter(c => String(c.seats) === fleetSeatsFilter);
   if(fleetMaxPrice !== 'all') out = out.filter(c => c.price <= Number(fleetMaxPrice));
   if(fleetSortKey === 'price_asc') out = [...out].sort((a,b)=>a.price-b.price);
   else if(fleetSortKey === 'price_desc') out = [...out].sort((a,b)=>b.price-a.price);
+  // Available cars always float above unavailable ones, regardless of brand/
+  // seats/price filters or the chosen sort — so a customer never has to
+  // scroll past a wall of "Not Available" cards to find one they can
+  // actually book. Array#sort is stable in every engine this site targets,
+  // so cars WITHIN the same availability group keep whatever relative order
+  // the filters/sort above already gave them (price order, featured order,
+  // etc.) — only the two groups themselves get reordered. Uses the exact
+  // same getRemainingStockForRange call renderFleet uses for each card's own
+  // "Not Available" badge, so the ordering and the badges always agree.
+  if(qbRange){
+    out = [...out].sort((a,b)=>{
+      const aBooked = getRemainingStockForRange(a, qbRange.pickup, qbRange.ret) <= 0;
+      const bBooked = getRemainingStockForRange(b, qbRange.pickup, qbRange.ret) <= 0;
+      return (aBooked === bBooked) ? 0 : (aBooked ? 1 : -1);
+    });
+  }
   return out;
 }
 
@@ -2667,13 +2683,14 @@ async function uploadBookingDocument(ref, docType, file){
 function renderFleet(dict, cat){
   const grid = document.getElementById('fleetGrid');
   grid.innerHTML = '';
-  const matching = applyFleetFiltersAndSort(CARS.filter(c => carMatchesCategory(c, cat)));
+  // Availability shown here (and used to sort available cars to the top,
+  // see applyFleetFiltersAndSort) reflects the specific dates picked in the
+  // Quick Booking widget (if any) — a car with a booking that doesn't
+  // overlap those dates must still show as bookable, not "Not Available".
+  const qbRange = getQuickBookingRange();
+  const matching = applyFleetFiltersAndSort(CARS.filter(c => carMatchesCategory(c, cat)), qbRange);
   const emptyEl = document.getElementById('fleetEmpty');
   if(emptyEl) emptyEl.hidden = matching.length > 0;
-  // Availability shown here reflects the specific dates picked in the Quick
-  // Booking widget (if any) — a car with a booking that doesn't overlap
-  // those dates must still show as bookable, not "Not Available".
-  const qbRange = getQuickBookingRange();
   matching.forEach(c=>{
     const gearLabel = c.gearKey === 'auto' ? dict.gear_auto : dict.gear_manual;
     const fuelLabel = dict['fuel_' + c.fuelKey];
