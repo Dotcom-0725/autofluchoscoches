@@ -925,6 +925,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
         </select>
       </div>
       <p class="qb-error" id="qbError" data-i18n="min_rental_error">The minimum car rental period is 3 days.</p>
+      <p class="qb-error" id="qbAvailError" data-i18n="qb_no_cars_available_error">No vehicles are available for these dates. Please choose different dates or a different category.</p>
       <button type="submit" class="btn btn-blue qb-submit" data-i18n="qb_search_btn">Search</button>
     </form>
   </div>
@@ -1901,6 +1902,7 @@ const I18N = {
     hours_warning:'Outside business hours (08:00–20:00): a €10 surcharge has been added per pickup/return outside these hours.',
     pickup_delay_error:'For a booking today, the earliest pickup time is 2 hours from now.',
     min_rental_error:'The minimum car rental period is 3 days.',
+    qb_no_cars_available_error:'No vehicles are available for these dates. Please choose different dates or a different category.',
     dates_unavailable_error:'These dates are not available for this car. Please choose a different date range or vehicle.',
     sold_out_error:'Sorry, this vehicle was just booked by someone else. Please pick another car.',
     modal_resources_title:'Resources', res_second_driver:'Second driver', res_baby_0_15:'Baby seat Birth to 15 Months',
@@ -2035,6 +2037,7 @@ const I18N = {
     hours_warning:'En dehors des heures d\'ouverture (08h00–20h00) : un supplément de 10€ a été ajouté par prise en charge/retour hors de ces heures.',
     pickup_delay_error:'Pour une réservation aujourd\'hui, l\'heure de prise en charge la plus proche est dans 2 heures.',
     min_rental_error:'La durée minimale de location est de 3 jours.',
+    qb_no_cars_available_error:'Aucun véhicule n\'est disponible pour ces dates. Merci de choisir d\'autres dates ou une autre catégorie.',
     dates_unavailable_error:'Ces dates ne sont pas disponibles pour cette voiture. Merci de choisir une autre période ou un autre véhicule.',
     sold_out_error:'Désolé, ce véhicule vient d\'être réservé par quelqu\'un d\'autre. Veuillez choisir une autre voiture.',
     modal_resources_title:'Ressources', res_second_driver:'Deuxième conducteur', res_baby_0_15:'Siège bébé Naissance à 15 mois',
@@ -2170,6 +2173,7 @@ const I18N = {
     hours_warning:'Fuera del horario comercial (08:00–20:00): se ha añadido un recargo de 10€ por cada recogida/devolución fuera de este horario.',
     pickup_delay_error:'Para una reserva de hoy, la hora de recogida más próxima es dentro de 2 horas.',
     min_rental_error:'La duración mínima del alquiler es de 3 días.',
+    qb_no_cars_available_error:'No hay vehículos disponibles para estas fechas. Elija otras fechas u otra categoría.',
     dates_unavailable_error:'Estas fechas no están disponibles para este coche. Elija otro periodo u otro vehículo.',
     sold_out_error:'Lo sentimos, este vehículo acaba de ser reservado por otra persona. Elija otro coche.',
     modal_resources_title:'Recursos', res_second_driver:'Segundo conductor', res_baby_0_15:'Silla bebé Nacimiento a 15 meses',
@@ -2305,6 +2309,7 @@ const I18N = {
     hours_warning:'خارج ساعات العمل (08:00–20:00): تمت إضافة 10€ لكل عملية استلام/إرجاع خارج هذه الساعات.',
     pickup_delay_error:'بالنسبة لحجز اليوم، أقرب وقت للاستلام هو بعد ساعتين من الآن.',
     min_rental_error:'الحد الأدنى لمدة كراء السيارة هو 3 أيام.',
+    qb_no_cars_available_error:'لا توجد سيارات متاحة لهذه التواريخ. يرجى اختيار تواريخ أخرى أو فئة أخرى.',
     dates_unavailable_error:'هذه التواريخ غير متاحة لهذه السيارة. يرجى اختيار فترة أخرى أو سيارة أخرى.',
     sold_out_error:'عذراً، تم حجز هذه السيارة للتو من طرف شخص آخر. يرجى اختيار سيارة أخرى.',
     modal_resources_title:'إضافات', res_second_driver:'سائق ثاني', res_baby_0_15:'مقعد طفل من الولادة إلى 15 شهر',
@@ -2716,10 +2721,34 @@ function qbRentalDays(){
   if(!pickup || !ret) return null;
   return Math.round((new Date(ret) - new Date(pickup)) / (1000 * 60 * 60 * 24));
 }
+/* Beyond the min-rental-days check, also warns immediately — without the
+   customer needing to open the calendar or scroll down to the fleet grid —
+   when the exact currently-selected pickup/return/category combo has zero
+   remaining stock across the ENTIRE matching fleet. Uses the same
+   isDayFullyBookedForFleetRange (paired-range) check the calendar's own
+   shading relies on, so the banner and the calendar always agree. Doesn't
+   block the Search button itself: the fleet section below still needs to be
+   reachable so the customer can see exactly which vehicles are (un)available
+   and adjust dates or category from there. */
 function validateQbDates(){
   const days = qbRentalDays();
   const tooShort = days !== null && days < MIN_RENTAL_DAYS;
   document.getElementById('qbError').classList.toggle('show', tooShort);
+
+  const availError = document.getElementById('qbAvailError');
+  let noAvailability = false;
+  if(!tooShort){
+    const pickupDate = document.getElementById('qbPickupDate').value;
+    const pickupTime = document.getElementById('qbPickupTime').value || '10:00';
+    const returnDate = document.getElementById('qbReturnDate').value;
+    const returnTime = document.getElementById('qbReturnTime').value || '10:00';
+    const cat = document.getElementById('qbCategory').value;
+    if(pickupDate && returnDate){
+      noAvailability = isDayFullyBookedForFleetRange(`${pickupDate}T${pickupTime}`, `${returnDate}T${returnTime}`, cat);
+    }
+  }
+  availError.classList.toggle('show', noAvailability);
+
   return !tooShort;
 }
 /* Keeps the return date from ever silently sitting before/too-close-to the
@@ -2748,7 +2777,7 @@ function ensureQbMinReturn(){
 }
 function pad2(n){ return String(n).padStart(2, '0'); }
 document.getElementById('qbPickupDate').addEventListener('change', ensureQbMinReturn);
-['qbPickupDate', 'qbReturnDate'].forEach(id=>{
+['qbPickupDate', 'qbReturnDate', 'qbPickupTime', 'qbReturnTime', 'qbCategory'].forEach(id=>{
   document.getElementById(id).addEventListener('change', validateQbDates);
 });
 document.getElementById('quickBookingForm').addEventListener('submit', e=>{
@@ -4059,6 +4088,12 @@ document.querySelectorAll('.currency-switch-group button').forEach(b=>{
 // once it arrives (the page still works instantly off local/no data while this resolves).
 fetchBookedCars().then(()=>{
   renderFleet(I18N[currentLang], document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
+  // The hero widget's pickup/return defaults are set before this data exists
+  // (see setQuickBookingDefaults2 above) — re-check them now that real
+  // availability is known, so a customer whose default dates happen to land
+  // on a fully-booked window sees the warning immediately, without needing
+  // to touch any field or open the calendar first.
+  if(typeof validateQbDates === 'function') validateQbDates();
 });
 // Same pattern for the fleet catalog itself: paint instantly off the fallback array,
 // then swap in the live admin-managed catalog once it arrives.
@@ -4128,28 +4163,68 @@ function isQuickBookingDateInput(input){
   return input.id === 'qbPickupDate' || input.id === 'qbReturnDate';
 }
 /* True only if EVERY car matching the hero widget's current Category filter
-   is fully booked on this day — i.e. the agency genuinely has zero vehicles
-   left to offer, not just one particular model. Mirrors isDayFullyBooked's
-   per-car math (same overlap test, same turnaround buffer, same effective
-   stock/unit count), just applied across the whole matching fleet instead of
-   a single car, so the hero calendar never shades a day that's still
-   bookable on some other vehicle. */
+   is fully booked on this day IN ISOLATION (i.e. no moment of this single day
+   works for any matching car) — used as a fallback while the customer hasn't
+   picked the OTHER date yet (see isDayFullyBookedForFleetRange below for the
+   more precise, paired-date-aware check used once both dates are known). */
 function isDayFullyBookedForFleet(cellDate, catKey){
   const candidates = CARS.filter(c => carMatchesCategory(c, catKey || 'all'));
   if(!candidates.length) return false;
   return candidates.every(c => isDayFullyBooked(c.id, cellDate));
 }
+/* True only if EVERY car matching catKey has zero remaining stock for the
+   EXACT [pickupIso, retIso) range — the same getRemainingStockForRange math
+   that drives the fleet grid's "Indisponible" badges. This is the check that
+   actually matters once both hero-widget dates are chosen: a day can easily
+   have SOME free moment in isolation (so isDayFullyBookedForFleet says it's
+   fine) while still being incompatible with whichever date the customer
+   already picked on the other side — e.g. every matching car's bookings
+   collectively (not necessarily any single one) already cover the whole
+   pickup→return span requested. Shading must reflect that combined range,
+   not just "is this day booked out on its own", or a fully-unavailable
+   pickup/return combo can silently pass as bookable. */
+function isDayFullyBookedForFleetRange(pickupIso, retIso, catKey){
+  const candidates = CARS.filter(c => carMatchesCategory(c, catKey || 'all'));
+  if(!candidates.length) return false;
+  return candidates.every(c => getRemainingStockForRange(c, pickupIso, retIso) <= 0);
+}
+/* Builds the "YYYY-MM-DDTHH:MM" range to test a candidate hero-widget day
+   against: cellDate paired with whichever OTHER qb date the customer already
+   selected (using the live qbPickupTime/qbReturnTime values — the hero
+   widget keeps date and time as separate fields, unlike the datetime-local
+   fields elsewhere). Returns null when the other date isn't chosen yet, so
+   the caller can fall back to the day-in-isolation check instead. */
+function getQuickBookingPairedRange(input, cellDate){
+  const pad = n => String(n).padStart(2, '0');
+  const cellIso = (d, t) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${t}`;
+  const pickupTime = document.getElementById('qbPickupTime')?.value || '10:00';
+  const returnTime = document.getElementById('qbReturnTime')?.value || '10:00';
+  if(input.id === 'qbPickupDate'){
+    const otherReturnDate = document.getElementById('qbReturnDate')?.value;
+    if(!otherReturnDate) return null;
+    return { pickup: cellIso(cellDate, pickupTime), ret: `${otherReturnDate}T${returnTime}` };
+  }
+  if(input.id === 'qbReturnDate'){
+    const otherPickupDate = document.getElementById('qbPickupDate')?.value;
+    if(!otherPickupDate) return null;
+    return { pickup: `${otherPickupDate}T${pickupTime}`, ret: cellIso(cellDate, returnTime) };
+  }
+  return null;
+}
 /* Single entry point the calendar grid uses to decide whether to shade+disable
    a day, regardless of which date input opened it — a specific car for the
    booking modal, or the whole matching fleet for the car-agnostic hero
-   widget. Both read from the same remoteBookedIntervals data (populated from
-   the backend's single Bookings sheet, shared by website AND manual
+   widget (paired-range-aware once both hero dates are set, day-in-isolation
+   otherwise). Both read from the same remoteBookedIntervals data (populated
+   from the backend's single Bookings sheet, shared by website AND manual
    reservations), so availability always agrees across the two. */
 function isDayUnavailableForInput(input, cellDate){
   const carId = getCarIdForDateInput(input);
   if(carId) return isDayFullyBooked(carId, cellDate);
   if(isQuickBookingDateInput(input)){
     const cat = document.getElementById('qbCategory')?.value || 'all';
+    const paired = getQuickBookingPairedRange(input, cellDate);
+    if(paired) return isDayFullyBookedForFleetRange(paired.pickup, paired.ret, cat);
     return isDayFullyBookedForFleet(cellDate, cat);
   }
   return false;
