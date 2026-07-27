@@ -562,6 +562,8 @@ function listActiveBookings_() {
       paymentMethod: rows[i][12] || 'none',
       paymentStatus: rows[i][13] || 'pending',
       bookingStatus: rows[i][14] || 'pending_payment',
+      licenseUrl: rows[i][15] || '',
+      passportUrl: rows[i][16] || '',
       nationality: rows[i][17] || '',
       unitId: rows[i][18] || '',
     });

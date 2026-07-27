@@ -6,7 +6,7 @@
 <title>Tableau de bord admin — Auto Fluchos Coches</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cairo:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#f6f7f9; --sidebar:#14161a; --sidebar-text:#a7acb8; --sidebar-text-active:#fff;
@@ -223,6 +223,8 @@ tr.dragging{opacity:.4}
   <div class="modal-box" id="modalBox"></div>
 </div>
 
+<!-- jsPDF: used only to generate the downloadable/printable reservation PDF client-side, no backend involved -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxKZk3f58C67EZArO4uLRSu7chg3soBBgIBQYNOq3-NXUkoZ0--82S5NgS7ccWbiuOi/exec';
 
@@ -1099,6 +1101,294 @@ const PAYMENT_STATUS_OPTIONS = [
 function paymentMethodLabel(method){
   return { bank_transfer: 'Virement bancaire', wise: 'Wise', cash_on_pickup: 'Espèces à la prise en charge', none: '—' }[method] || method || '—';
 }
+
+/* ================= RESERVATION PDF (download / print) =================
+   Lets the admin generate the exact same reservation document customers get
+   from the public website checkout, for ANY booking — website or manual —
+   directly from the Reservations table. Ported from index.html's booking PDF
+   generator (same jsPDF layout: logo/business info, centered title, bill-to
+   block, blue product table with car thumbnail + bulleted details, blue
+   Subtotal/Total/Payment bars, legal footer) so both sources produce a
+   visually identical document. The one real difference: fields the website
+   only ever held in the browser during checkout (pickup/drop-off location,
+   deposit choice, extra resources, license years) were never written to the
+   Bookings sheet, so they simply aren't available to reprint later — this
+   affects website and manual bookings equally, since both read from the same
+   sheet columns. Everything that IS persisted (customer, dates, nationality,
+   total, payment method, license/passport document links, vehicle photo)
+   renders identically for both. */
+const LEGAL_FOOTER_TEXT = 'RC : 29173 - Pattente : 51405048 - ICE : 002803339000014';
+
+function imageUrlToPngDataUrlAdmin(url, { maxWidth = 500, format = 'image/jpeg', quality = 0.82 } = {}){
+  return new Promise((resolve)=>{
+    if(!url){ resolve(null); return; }
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, maxWidth / img.naturalWidth);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.naturalWidth * scale);
+        canvas.height = Math.round(img.naturalHeight * scale);
+        const ctx = canvas.getContext('2d');
+        if(format === 'image/jpeg'){ ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL(format, quality));
+      } catch(e){ resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+function formatDateTimeForPdfAdmin(value){
+  if(!value) return '';
+  const d = new Date(value);
+  if(isNaN(d)) return String(value);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return `${dd}-${mm}-${d.getFullYear()} ${hh}:${mi}`;
+}
+/* jsPDF's built-in fonts have no Arabic glyphs — customer names/nationalities
+   entered via the Arabic version of the public site render as mojibake
+   otherwise. Rasterizes Arabic text onto an offscreen canvas (browser's own
+   text engine shapes/joins the letters correctly) and places it as an image;
+   Latin text keeps normal vector jsPDF text. Mirrors index.html exactly. */
+function containsArabicTextAdmin(str){
+  return /[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/.test(str);
+}
+function rasterizeArabicTextAdmin(text, { bold=false, sizePt=9.5, color=[20,20,20] } = {}){
+  const scale = 3;
+  const sizePx = sizePt * (96 / 72) * scale;
+  const fontSpec = `${bold ? '700' : '400'} ${sizePx}px Cairo, sans-serif`;
+  const measure = document.createElement('canvas').getContext('2d');
+  measure.font = fontSpec;
+  measure.direction = 'rtl';
+  const metrics = measure.measureText(text);
+  const ascent = metrics.actualBoundingBoxAscent || sizePx * 0.8;
+  const descent = metrics.actualBoundingBoxDescent || sizePx * 0.25;
+  const width = Math.max(1, Math.ceil(metrics.width) + 4);
+  const height = Math.max(1, Math.ceil(ascent + descent) + 4);
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.font = fontSpec;
+  ctx.direction = 'rtl';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+  ctx.fillText(text, width - 2, ascent + 2);
+  const pxToMm = 25.4 / 96 / scale;
+  return {
+    dataUrl: canvas.toDataURL('image/png'),
+    widthMm: width * pxToMm,
+    heightMm: height * pxToMm,
+    ascentMm: ascent * pxToMm,
+  };
+}
+function wrapArabicTextAdmin(text, sizePt, bold, maxWidthMm){
+  const scale = 3;
+  const sizePx = sizePt * (96 / 72) * scale;
+  const ctx = document.createElement('canvas').getContext('2d');
+  ctx.font = `${bold ? '700' : '400'} ${sizePx}px Cairo, sans-serif`;
+  const maxWidthPx = maxWidthMm / (25.4 / 96 / scale);
+  const words = text.split(' ');
+  const lines = [];
+  let current = '';
+  words.forEach(word=>{
+    const candidate = current ? current + ' ' + word : word;
+    if(current && ctx.measureText(candidate).width > maxWidthPx){
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  });
+  if(current) lines.push(current);
+  return lines;
+}
+function pdfTextAdmin(doc, text, x, y, { align='left', bold=false, sizePt=9.5, color=[20,20,20], url=null } = {}){
+  const str = String(text);
+  if(containsArabicTextAdmin(str)){
+    const { dataUrl, widthMm, heightMm, ascentMm } = rasterizeArabicTextAdmin(str, { bold, sizePt, color });
+    let imgX = x;
+    if(align === 'right') imgX = x - widthMm;
+    else if(align === 'center') imgX = x - widthMm / 2;
+    try { doc.addImage(dataUrl, 'PNG', imgX, y - ascentMm, widthMm, heightMm); } catch(e){}
+    return widthMm;
+  }
+  doc.setFontSize(sizePt);
+  doc.setFont(undefined, bold ? 'bold' : 'normal');
+  doc.setTextColor(...color);
+  if(url){
+    doc.textWithLink(str, x, y, { url, align });
+    return doc.getTextWidth(str);
+  }
+  doc.text(str, x, y, { align });
+  return doc.getTextWidth(str);
+}
+function pdfTextWrappedAdmin(doc, text, x, y, maxWidthMm, lineHeightMm, opts={}){
+  const str = String(text);
+  const { bold=false, sizePt=9.5, color=[20,20,20] } = opts;
+  if(containsArabicTextAdmin(str)){
+    const lines = wrapArabicTextAdmin(str, sizePt, bold, maxWidthMm);
+    lines.forEach((line, i)=> pdfTextAdmin(doc, line, x, y + i * lineHeightMm, { align: 'left', bold, sizePt, color }));
+    return lines.length;
+  }
+  doc.setFontSize(sizePt);
+  doc.setFont(undefined, bold ? 'bold' : 'normal');
+  doc.setTextColor(...color);
+  const wrapped = doc.splitTextToSize(str, maxWidthMm);
+  doc.text(wrapped, x, y);
+  return wrapped.length;
+}
+// Fixed French labels — admin.html has no i18n toggle (see earlier French
+// translation), so these mirror index.html's I18N.fr pdf_*/modal_* strings
+// directly instead of going through a dict lookup.
+const PDF_FR = {
+  doc_title: 'Réservation', reservation_label: 'Réservation :', reservation_date_label: 'Date de réservation :',
+  bill_to: 'Facturé à', col_thumbnail: 'Photo', col_product: 'Produit', col_quantity: 'Quantité', col_price: 'Prix',
+  subtotal: 'Sous-total :', total_row: 'Total :', payment_method: 'Mode de paiement :',
+  payment_cash: 'Paiement à la livraison',
+  pickup: 'Date de prise en charge', ret: 'Date de retour', nationality: 'Nationalité',
+  license: 'Permis de conduire', passport: 'Passeport',
+};
+/* Reservation PDF — identical visual layout to index.html's generateBookingPdf.
+   `data` fields that the Bookings sheet never persisted (pickup/drop-off
+   location, deposit choice, resources, license years) are simply omitted
+   from the bullet list when absent, which happens the same way regardless of
+   whether the booking came from the website or a manual reservation. */
+async function generateReservationPdfAdmin(data){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const pageW = 210;
+  const marginX = 14;
+  const rightX = 196;
+  const BLUE = [31, 111, 235];
+  const DARK = [20, 20, 20];
+  const GRAY = [100, 100, 100];
+  const WHITE = [255, 255, 255];
+
+  try { await Promise.all([document.fonts.load('700 40px Cairo'), document.fonts.load('400 40px Cairo')]); } catch(e){}
+
+  if(data.logoImg){
+    try { doc.addImage(data.logoImg, 'PNG', marginX, 10, 24, 24); } catch(e){}
+  }
+  pdfTextAdmin(doc, 'autofluchoscoches.com', marginX, 40, { bold: true, sizePt: 11, color: DARK });
+  pdfTextAdmin(doc, 'Phone: +212 661-304574', marginX, 46, { sizePt: 9, color: GRAY });
+  pdfTextAdmin(doc, 'Auto.fluchos@gmail.com', marginX, 51, { sizePt: 9, color: GRAY });
+  pdfTextAdmin(doc, 'https://autofluchoscoches.com', marginX, 56, { sizePt: 9, color: GRAY });
+
+  pdfTextAdmin(doc, PDF_FR.doc_title, pageW / 2, 26, { align: 'center', bold: true, sizePt: 22, color: DARK });
+
+  let ry = 14;
+  const labelValueRight = (label, value) => {
+    const valueText = ' ' + value;
+    const valueW = pdfTextAdmin(doc, valueText, rightX, ry, { align: 'right', sizePt: 9.5, color: DARK });
+    pdfTextAdmin(doc, label, rightX - valueW, ry, { align: 'right', bold: true, sizePt: 9.5, color: DARK });
+    ry += 5;
+  };
+  labelValueRight(PDF_FR.reservation_label, '#' + data.ref);
+  labelValueRight(PDF_FR.reservation_date_label, data.date);
+  pdfTextAdmin(doc, PDF_FR.bill_to, rightX, ry, { align: 'right', bold: true, sizePt: 9.5, color: DARK }); ry += 5;
+  pdfTextAdmin(doc, data.name, rightX, ry, { align: 'right', sizePt: 9.5, color: DARK }); ry += 5;
+  pdfTextAdmin(doc, data.phone, rightX, ry, { align: 'right', sizePt: 9.5, color: DARK }); ry += 5;
+
+  doc.setDrawColor(...BLUE);
+  doc.setLineWidth(0.6);
+  doc.line(marginX, 62, rightX, 62);
+
+  let y = 70;
+  doc.setFillColor(...BLUE);
+  doc.rect(marginX, y, rightX - marginX, 8, 'F');
+  pdfTextAdmin(doc, PDF_FR.col_thumbnail, marginX + 2, y + 5.5, { bold: true, sizePt: 9.5, color: WHITE });
+  pdfTextAdmin(doc, PDF_FR.col_product, marginX + 38, y + 5.5, { bold: true, sizePt: 9.5, color: WHITE });
+  pdfTextAdmin(doc, PDF_FR.col_quantity, 152, y + 5.5, { bold: true, sizePt: 9.5, color: WHITE });
+  pdfTextAdmin(doc, PDF_FR.col_price, 174, y + 5.5, { bold: true, sizePt: 9.5, color: WHITE });
+  y += 8;
+  const rowTop = y;
+
+  if(data.carImg){
+    try { doc.addImage(data.carImg, 'JPEG', marginX + 1, y + 3, 32, 22); } catch(e){}
+  }
+  let py = y + 6;
+  const productX = marginX + 38;
+  pdfTextAdmin(doc, data.carName, productX, py, { bold: true, sizePt: 10.5, color: DARK });
+  py += 6;
+
+  const bullets = [
+    [PDF_FR.pickup, data.pickup],
+    [PDF_FR.ret, data.ret],
+  ];
+  if(data.nationality) bullets.push([PDF_FR.nationality, data.nationality]);
+  if(data.licenseUrl) bullets.push([PDF_FR.license, 'Voir le document', data.licenseUrl]);
+  if(data.passportUrl) bullets.push([PDF_FR.passport, 'Voir le document', data.passportUrl]);
+
+  bullets.forEach(([label, value, url])=>{
+    pdfTextAdmin(doc, '• ' + label + ':', productX, py, { bold: true, sizePt: 9.5, color: DARK });
+    py += 4.6;
+    if(url){
+      pdfTextAdmin(doc, value, productX, py, { sizePt: 9.5, color: BLUE, url });
+      py += 4.6;
+    } else {
+      const lineCount = pdfTextWrappedAdmin(doc, value, productX, py, 95, 4.6, { sizePt: 9.5, color: DARK });
+      py += 4.6 * lineCount;
+    }
+  });
+
+  const rowBottom = Math.max(py + 2, rowTop + 30);
+  pdfTextAdmin(doc, String(data.quantity), 154, rowTop + 6, { sizePt: 10, color: DARK });
+  pdfTextAdmin(doc, data.total, 174, rowTop + 6, { sizePt: 10, color: DARK });
+
+  doc.setDrawColor(210, 210, 210);
+  doc.line(marginX, rowBottom, rightX, rowBottom);
+  y = rowBottom;
+
+  const bar = (label, value) => {
+    doc.setFillColor(...BLUE);
+    doc.rect(marginX, y, rightX - marginX, 9, 'F');
+    pdfTextAdmin(doc, label, marginX + 3, y + 6, { bold: true, sizePt: 10, color: WHITE });
+    pdfTextAdmin(doc, String(value), rightX - 3, y + 6, { align: 'right', bold: true, sizePt: 10, color: WHITE });
+    y += 9;
+  };
+  bar(PDF_FR.subtotal, data.total);
+  bar(PDF_FR.total_row, data.total);
+  bar(PDF_FR.payment_method, data.paymentMethodLabel || PDF_FR.payment_cash);
+
+  y += 10;
+  doc.setTextColor(...DARK);
+  doc.setFontSize(9.5);
+  doc.setFont(undefined, 'bolditalic');
+  doc.text(LEGAL_FOOTER_TEXT, marginX, y);
+
+  return doc;
+}
+/* Entry point wired to the Reservations table's "Télécharger / Imprimer"
+   button — builds the same pdfData shape schedulePdfGeneration builds in
+   index.html, but sourced from an already-recorded booking row (state.bookings)
+   instead of a live checkout form, so it works identically whether that
+   booking was placed on the website or created manually from this dashboard. */
+async function downloadReservationPdf(booking){
+  const car = carById(booking.carId);
+  const [carImg, logoImg] = await Promise.all([
+    imageUrlToPngDataUrlAdmin(car?.imgSrc, { maxWidth: 400, format: 'image/jpeg', quality: 0.8 }),
+    imageUrlToPngDataUrlAdmin('images/logo.webp', { maxWidth: 200, format: 'image/png' }),
+  ]);
+  const pdfData = {
+    ref: booking.ref || '—',
+    date: fmtDate(booking.bookedAt || booking.pickup),
+    name: booking.customerName || '—', phone: booking.phone || '—', nationality: booking.nationality || '',
+    carName: booking.carName || (car ? car.name : '—'),
+    pickup: formatDateTimeForPdfAdmin(booking.pickup), ret: formatDateTimeForPdfAdmin(booking.ret),
+    quantity: 1, total: booking.total || '—',
+    licenseUrl: booking.licenseUrl || '', passportUrl: booking.passportUrl || '',
+    carImg, logoImg,
+    paymentMethodLabel: paymentMethodLabel(booking.paymentMethod),
+  };
+  const doc = await generateReservationPdfAdmin(pdfData);
+  doc.save(`reservation-${booking.ref || booking.row}.pdf`);
+}
 /* Which specific physical unit (by plate/nickname) a booking is linked to —
    resolves booking.unitId (set automatically by the backend at booking time,
    see findAvailableUnitForBooking_) against the Fleet Units registry, so the
@@ -1127,15 +1417,26 @@ function renderReservationsRows(){
           ${PAYMENT_STATUS_OPTIONS.map(o=> `<option value="${o.value}" ${o.value===paymentStatus?'selected':''}>${o.label}</option>`).join('')}
         </select>
       </td>
-      <td>
+      <td class="tag-row">
         <button class="btn btn-outline btn-sm" data-edit="${b.row}">Modifier</button>
+        <button class="btn btn-outline btn-sm" data-pdf="${b.row}">🖨️ PDF</button>
         <button class="btn btn-danger btn-sm" data-cancel="${b.row}">Annuler</button>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="12" class="empty-state">Aucune réservation pour le moment.</td></tr>`;
+  }).join('') || `<tr><td colspan="13" class="empty-state">Aucune réservation pour le moment.</td></tr>`;
   tbody.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', ()=>{
     const booking = state.bookings.find(b => String(b.row) === btn.dataset.edit);
     if(booking) openBookingEditModal(booking);
+  }));
+  tbody.querySelectorAll('[data-pdf]').forEach(btn => btn.addEventListener('click', async ()=>{
+    const booking = state.bookings.find(b => String(b.row) === btn.dataset.pdf);
+    if(!booking) return;
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = '…';
+    try { await downloadReservationPdf(booking); }
+    catch(e){ toast('Échec de la génération du PDF'); }
+    finally { btn.disabled = false; btn.textContent = originalText; }
   }));
   tbody.querySelectorAll('[data-cancel]').forEach(btn => btn.addEventListener('click', async ()=>{
     if(!confirm('Annuler cette réservation et libérer le véhicule ?')) return;
