@@ -1501,6 +1501,13 @@ function openManualBookingModal(){
     const note = document.getElementById('mbAvailNote');
     const unitField = document.getElementById('mbUnitField');
     const unitSelect = document.getElementById('mbUnit');
+    // Remember whatever the admin already picked BEFORE wiping the <select>
+    // below — this function reruns on every pickup/return/car change (e.g.
+    // the admin tweaking the time after already choosing a unit), and without
+    // this, rebuilding the options with fresh innerHTML silently resets the
+    // selection back to the first option, so the admin's actual choice would
+    // get quietly discarded and a different vehicle assigned on save.
+    const previousSelection = unitSelect.value;
     unitField.style.display = 'none';
     unitSelect.innerHTML = '';
     if(!car){ note.style.display = 'none'; return; }
@@ -1527,7 +1534,10 @@ function openManualBookingModal(){
       ? `${free.length} unités de ${car.name} sont libres pour ces dates — choisissez laquelle assigner à cette réservation.`
       : `${car.name} a ${free.length} unité(s) enregistrée(s) — choisissez-en une, ou sélectionnez la prise en charge et le retour pour ne voir que celles qui sont libres.`;
     unitField.style.display = '';
-    unitSelect.innerHTML = free.map(u=>`<option value="${u.unitId}">${u.plate || u.nickname || u.unitId}${u.nickname && u.plate ? ' — ' + u.nickname : ''}</option>`).join('');
+    unitSelect.innerHTML = free.map(u=>{
+      const selected = u.unitId === previousSelection ? 'selected' : '';
+      return `<option value="${u.unitId}" ${selected}>${u.plate || u.nickname || u.unitId}${u.nickname && u.plate ? ' — ' + u.nickname : ''}</option>`;
+    }).join('');
   }
   document.getElementById('mbCar').addEventListener('change', refreshUnitPicker);
   refreshUnitPicker();
@@ -1623,6 +1633,14 @@ function openBookingEditModal(booking){
     const note = document.getElementById('ebAvailNote');
     const unitField = document.getElementById('ebUnitField');
     const unitSelect = document.getElementById('ebUnit');
+    // Remember whatever is currently selected BEFORE wiping the <select>
+    // below (the admin's own manual re-pick if they already changed it away
+    // from the booking's original unit, otherwise still booking.unitId from
+    // the very first render) — this function reruns on every pickup/return/
+    // car change, and without this, rebuilding the options would silently
+    // reset the selection back to booking.unitId, discarding a manual
+    // re-assignment the admin already made before tweaking the dates further.
+    const previousSelection = unitSelect.value || booking.unitId;
     unitField.style.display = 'none';
     unitSelect.innerHTML = '';
     if(!car){ note.textContent = ''; return; }
@@ -1644,7 +1662,7 @@ function openBookingEditModal(booking){
       : `${car.name} a ${free.length} unité(s) enregistrée(s) — choisissez les dates pour ne voir que celles qui sont libres.`;
     unitField.style.display = '';
     unitSelect.innerHTML = free.map(u=>{
-      const selected = u.unitId === booking.unitId ? 'selected' : '';
+      const selected = u.unitId === previousSelection ? 'selected' : '';
       return `<option value="${u.unitId}" ${selected}>${u.plate || u.nickname || u.unitId}${u.nickname && u.plate ? ' — ' + u.nickname : ''}</option>`;
     }).join('');
   }
