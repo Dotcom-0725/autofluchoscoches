@@ -667,7 +667,7 @@ function openAdminDatePicker(input, carId, excludeRow){
     const doneBtn = document.createElement('button');
     doneBtn.type = 'button';
     doneBtn.className = 'custom-datepicker-done';
-    doneBtn.textContent = 'Done';
+    doneBtn.textContent = 'Terminé';
     doneBtn.addEventListener('click', closeAdminDatePicker);
     popup.appendChild(doneBtn);
 
@@ -1204,22 +1204,27 @@ function openManualBookingModal(){
     unitSelect.innerHTML = '';
     if(!car){ note.style.display = 'none'; return; }
     note.style.display = '';
-    const free = availableUnitsForRangeAdmin(car.id, pickup, ret, null);
-    if(free === null){
+    const allUnits = state.fleetUnits.filter(u => u.carId === car.id);
+    if(!allUnits.length){
       note.textContent = `${car.name} a ${car.stock || 1} unité(s) au total (aucune plaque encore enregistrée dans Unités de flotte — la disponibilité est estimée par le nombre). Cliquez sur Prise en charge/Retour ci-dessous pour voir les jours libres.`;
       return;
     }
-    if(!pickup || !ret){
-      note.textContent = `${car.name} a ${free.length} unité(s) enregistrée(s) (${free.map(u=>u.plate||u.nickname||u.unitId).join(', ')}). Sélectionnez la prise en charge et le retour pour voir quelles unités sont libres.`;
-      return;
-    }
-    if(free.length === 0){ note.textContent = `Aucune unité de ${car.name} n'est libre pour ces dates.`; return; }
-    if(free.length === 1){
+    // Show the picker as soon as the vehicle is chosen (listing every
+    // registered unit), even before dates are picked — otherwise the admin
+    // sees only a note asking for dates and it looks like the picker is
+    // missing. Once both dates are set, the list narrows to only the units
+    // actually free for that range.
+    const hasDates = !!(pickup && ret);
+    const free = hasDates ? availableUnitsForRangeAdmin(car.id, pickup, ret, null) : allUnits;
+    if(hasDates && free.length === 0){ note.textContent = `Aucune unité de ${car.name} n'est libre pour ces dates.`; return; }
+    if(hasDates && free.length === 1){
       unitSelect.innerHTML = `<option value="${free[0].unitId}">${free[0].plate||free[0].nickname||free[0].unitId}</option>`;
       note.textContent = `Une seule unité de ${car.name} est libre pour ces dates (${free[0].plate||free[0].nickname||free[0].unitId}) — elle sera assignée automatiquement.`;
       return;
     }
-    note.textContent = `${free.length} unités de ${car.name} sont libres pour ces dates — choisissez laquelle assigner à cette réservation.`;
+    note.textContent = hasDates
+      ? `${free.length} unités de ${car.name} sont libres pour ces dates — choisissez laquelle assigner à cette réservation.`
+      : `${car.name} a ${free.length} unité(s) enregistrée(s) — choisissez-en une, ou sélectionnez la prise en charge et le retour pour ne voir que celles qui sont libres.`;
     unitField.style.display = '';
     unitSelect.innerHTML = free.map(u=>`<option value="${u.unitId}">${u.plate || u.nickname || u.unitId}${u.nickname && u.plate ? ' — ' + u.nickname : ''}</option>`).join('');
   }
@@ -1234,14 +1239,23 @@ function openManualBookingModal(){
     const pickup = document.getElementById('mbPickup').value;
     const ret = document.getElementById('mbReturn').value;
     if(!car || !name || !phone || !pickup || !ret){ toast('Veuillez remplir tous les champs requis'); return; }
-    const free = availableUnitsForRangeAdmin(carId, pickup, ret, null);
+    const allUnits = state.fleetUnits.filter(u => u.carId === carId);
     let unitId = '';
-    if(free !== null){
+    if(allUnits.length){
+      // Re-check availability against the FINAL dates at save time — the
+      // admin may have picked a unit before finishing the date pickers, so
+      // whatever they chose must still be validated as actually free now.
+      const free = availableUnitsForRangeAdmin(carId, pickup, ret, null);
       if(free.length === 0){ toast('Aucune unité disponible pour ces dates'); return; }
       if(free.length === 1){ unitId = free[0].unitId; }
       else {
-        unitId = document.getElementById('mbUnit').value;
-        if(!unitId){ toast('Veuillez choisir une unité à assigner'); return; }
+        const chosen = document.getElementById('mbUnit').value;
+        if(!chosen || !free.some(u => u.unitId === chosen)){
+          toast('Veuillez choisir une unité libre pour ces dates');
+          refreshUnitPicker();
+          return;
+        }
+        unitId = chosen;
       }
     }
     const ref = 'AFC-M-' + Date.now().toString().slice(-8);
@@ -1311,22 +1325,22 @@ function openBookingEditModal(booking){
     unitField.style.display = 'none';
     unitSelect.innerHTML = '';
     if(!car){ note.textContent = ''; return; }
-    const free = availableUnitsForRangeAdmin(car.id, pickup, ret, booking.row);
-    if(free === null){
+    const allUnits = state.fleetUnits.filter(u => u.carId === car.id);
+    if(!allUnits.length){
       note.textContent = `${car.name} a ${car.stock || 1} unité(s) au total (aucune plaque enregistrée dans Unités de flotte).`;
       return;
     }
-    if(!pickup || !ret){
-      note.textContent = `${car.name} a ${free.length} unité(s) enregistrée(s). Choisissez les dates pour voir quelles unités sont libres.`;
-      return;
-    }
-    if(free.length === 0){ note.textContent = `Aucune unité de ${car.name} n'est libre pour ces dates.`; return; }
-    if(free.length === 1){
+    const hasDates = !!(pickup && ret);
+    const free = hasDates ? availableUnitsForRangeAdmin(car.id, pickup, ret, booking.row) : allUnits;
+    if(hasDates && free.length === 0){ note.textContent = `Aucune unité de ${car.name} n'est libre pour ces dates.`; return; }
+    if(hasDates && free.length === 1){
       unitSelect.innerHTML = `<option value="${free[0].unitId}">${free[0].plate||free[0].nickname||free[0].unitId}</option>`;
       note.textContent = `Une seule unité de ${car.name} est libre pour ces dates (${free[0].plate||free[0].nickname||free[0].unitId}) — elle sera assignée automatiquement.`;
       return;
     }
-    note.textContent = `${free.length} unités de ${car.name} sont libres pour ces dates — choisissez laquelle assigner à cette réservation.`;
+    note.textContent = hasDates
+      ? `${free.length} unités de ${car.name} sont libres pour ces dates — choisissez laquelle assigner à cette réservation.`
+      : `${car.name} a ${free.length} unité(s) enregistrée(s) — choisissez les dates pour ne voir que celles qui sont libres.`;
     unitField.style.display = '';
     unitSelect.innerHTML = free.map(u=>{
       const selected = u.unitId === booking.unitId ? 'selected' : '';
@@ -1347,14 +1361,20 @@ function openBookingEditModal(booking){
     const pickup = document.getElementById('ebPickup').value;
     const ret = document.getElementById('ebReturn').value;
     if(!car || !pickup || !ret){ toast('Veuillez remplir tous les champs requis'); return; }
-    const free = availableUnitsForRangeAdmin(carId, pickup, ret, booking.row);
+    const allUnits = state.fleetUnits.filter(u => u.carId === carId);
     let unitId = '';
-    if(free !== null){
+    if(allUnits.length){
+      const free = availableUnitsForRangeAdmin(carId, pickup, ret, booking.row);
       if(free.length === 0){ toast('Aucune unité disponible pour ces dates'); return; }
       if(free.length === 1){ unitId = free[0].unitId; }
       else {
-        unitId = document.getElementById('ebUnit').value;
-        if(!unitId){ toast('Veuillez choisir une unité à assigner'); return; }
+        const chosen = document.getElementById('ebUnit').value;
+        if(!chosen || !free.some(u => u.unitId === chosen)){
+          toast('Veuillez choisir une unité libre pour ces dates');
+          refreshUnitPicker();
+          return;
+        }
+        unitId = chosen;
       }
     }
     const r = await apiPost({
