@@ -537,6 +537,31 @@ function writeAdminDateValue(input, date, time){
   input.dispatchEvent(new Event('input', { bubbles: true }));
   input.dispatchEvent(new Event('change', { bubbles: true }));
 }
+/* The earliest bookable time on `cellDate` for `carId`, accounting for the
+   mandatory CAR_TURNAROUND_BUFFER_MS_ADMIN after any booking's return — e.g.
+   a car returning at 10:00 with a 2h buffer becomes bookable at 12:00 THAT
+   SAME DAY. Mirrors index.html's getEarliestAvailableTimeOnDay exactly, but
+   reads state.bookings (already fully loaded in the admin dashboard) instead
+   of the public site's remoteBookedIntervals. */
+function getEarliestAvailableTimeOnDayAdmin(carId, cellDate, excludeRow){
+  const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+  const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+  const car = carById(carId);
+  if(!car) return dayStart;
+  const stock = Number(car.stock) || 1;
+  const bookingsPool = (excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings)
+    .filter(b => b.carId === carId);
+  const events = bookingsPool
+    .map(b => ({ start: new Date(b.pickup).getTime(), end: new Date(b.ret).getTime() + CAR_TURNAROUND_BUFFER_MS_ADMIN }))
+    .filter(iv => iv.end > dayStart.getTime() && iv.start < dayEnd.getTime());
+  const candidates = [dayStart.getTime(), ...events.map(iv => iv.end).filter(t => t > dayStart.getTime() && t < dayEnd.getTime())];
+  candidates.sort((a, b) => a - b);
+  for(const t of candidates){
+    const activeCount = events.filter(iv => iv.start <= t && t < iv.end).length;
+    if(activeCount < stock) return new Date(t);
+  }
+  return dayStart;
+}
 function openAdminDatePicker(input, carId, excludeRow){
   closeAdminDatePicker();
   const { date: selected, time: initialTime } = parseAdminDateValue(input);
@@ -589,7 +614,18 @@ function openAdminDatePicker(input, carId, excludeRow){
       }
       btn.addEventListener('click', e=>{
         e.stopPropagation();
-        writeAdminDateValue(input, cellDate, currentTime || '10:00');
+        let timeToUse = currentTime || '10:00';
+        // Picking the pickup day auto-suggests the earliest moment THAT DAY
+        // the car is actually free (its last return + the mandatory
+        // turnaround buffer), matching the website's own booking form,
+        // instead of a generic default time that would just get rejected.
+        if(carId && (input.id === 'mbPickup' || input.id === 'ebPickup')){
+          const earliest = getEarliestAvailableTimeOnDayAdmin(carId, cellDate, excludeRow);
+          const pad = n => String(n).padStart(2, '0');
+          timeToUse = `${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
+          currentTime = timeToUse;
+        }
+        writeAdminDateValue(input, cellDate, timeToUse);
         selected.setFullYear(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
         render();
       });

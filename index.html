@@ -4136,6 +4136,32 @@ function isDayFullyBooked(carId, cellDate){
   const overlap = getOverlapCount(carId, lastInstantStart.toISOString(), dayEnd.toISOString());
   return overlap >= effectiveStock(car);
 }
+/* The earliest bookable time on `cellDate` for `carId`, accounting for the
+   mandatory CAR_TURNAROUND_BUFFER_MS after any booking's return — e.g. a car
+   returning at 10:00 with a 2h buffer becomes bookable at 12:00 THAT SAME
+   DAY, not at midnight and not "the next day". Each existing booking is
+   treated as occupying [pickup, ret + buffer) — exactly what rangesOverlap
+   checks — and this walks the moments where a unit frees up during the day
+   to find the first one where fewer than `stock` units are still occupied.
+   Falls back to the start of the day when nothing on this day restricts it. */
+function getEarliestAvailableTimeOnDay(carId, cellDate){
+  const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+  const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+  const car = CARS.find(c => c.id === carId);
+  if(!car) return dayStart;
+  const stock = effectiveStock(car);
+  const intervals = remoteBookedIntervals[carId] || [];
+  const events = intervals
+    .map(iv => ({ start: new Date(iv.pickup).getTime(), end: new Date(iv.ret).getTime() + CAR_TURNAROUND_BUFFER_MS }))
+    .filter(iv => iv.end > dayStart.getTime() && iv.start < dayEnd.getTime());
+  const candidates = [dayStart.getTime(), ...events.map(iv => iv.end).filter(t => t > dayStart.getTime() && t < dayEnd.getTime())];
+  candidates.sort((a, b) => a - b);
+  for(const t of candidates){
+    const activeCount = events.filter(iv => iv.start <= t && t < iv.end).length;
+    if(activeCount < stock) return new Date(t);
+  }
+  return dayStart;
+}
 function openCustomDatePicker(input){
   closeCustomDatePicker();
   const dict = I18N[currentLang];
@@ -4204,7 +4230,19 @@ function openCustomDatePicker(input){
         // propagation here, the document-level "click outside" listener
         // would see a now-detached e.target and incorrectly close the popup.
         e.stopPropagation();
-        writeDateValue(input, cellDate, currentTime || '10:00');
+        let timeToUse = currentTime || '10:00';
+        // Picking the pickup day auto-suggests the earliest moment THAT DAY
+        // the car is actually free (its last return + the mandatory
+        // turnaround buffer) instead of a generic default time — so choosing
+        // a day the car returns on the same day no longer shows an
+        // incorrect/arbitrary time that would just get rejected on submit.
+        if(carIdForShading && input.id === 'bkPickup'){
+          const earliest = getEarliestAvailableTimeOnDay(carIdForShading, cellDate);
+          const pad = n => String(n).padStart(2, '0');
+          timeToUse = `${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
+          currentTime = timeToUse;
+        }
+        writeDateValue(input, cellDate, timeToUse);
         // Selecting a day never auto-closes the popup anymore — for both
         // date-only and datetime-local fields the user must tap the Done
         // button below to confirm, so re-render to reflect the new selection.
