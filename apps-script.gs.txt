@@ -124,6 +124,13 @@ function doGet(e) {
       bookedIntervals[b.carId].push({
         pickup: new Date(b.pickup).toISOString(),
         ret: new Date(b.ret).toISOString(),
+        // Opaque unit id this specific booking is assigned to (blank for
+        // legacy bookings made before the car had units registered) — needed
+        // client-side to run the exact same per-unit algorithm the admin
+        // dashboard uses (see getRemainingStockForRange in index.html and
+        // findAvailableUnitForBooking_ above); never a plate/nickname, so
+        // this stays safe to expose publicly.
+        unitId: b.unitId || '',
       });
     }
   });
@@ -136,6 +143,11 @@ function doGet(e) {
     // owner has set up specific units for that car, keeping the calendar
     // shading customers see consistent with what booking creation enforces.
     carUnitCounts: countUnitsByCar_(),
+    // The actual opaque unit ids per car (see listUnitIdsByCar_ above) — lets
+    // the public site match each booking's unitId against the car's real
+    // registered units, exactly like the admin dashboard and
+    // findAvailableUnitForBooking_ do, instead of a bare count-vs-stock check.
+    carUnitIds: listUnitIdsByCar_(),
   });
 }
 
@@ -701,6 +713,23 @@ function countUnitsByCar_() {
   const counts = {};
   listFleetUnits_().forEach(u => { counts[u.carId] = (counts[u.carId] || 0) + 1; });
   return counts;
+}
+
+/* Same idea as countUnitsByCar_, but the actual opaque unitId strings per car
+   instead of just a count — safe to expose publicly (a bare "FU-XXXXX" id
+   reveals no plate/nickname/status), and needed so index.html can run the
+   EXACT same per-unit availability algorithm the admin dashboard and
+   findAvailableUnitForBooking_ use (matching a booking's unitId against the
+   car's actual registered units), instead of a simpler count-only check that
+   could disagree with the admin panel in edge cases involving legacy
+   (no-unitId) bookings mixed with unit-assigned ones. */
+function listUnitIdsByCar_() {
+  const ids = {};
+  listFleetUnits_().forEach(u => {
+    if (!ids[u.carId]) ids[u.carId] = [];
+    ids[u.carId].push(u.unitId);
+  });
+  return ids;
 }
 
 function upsertFleetUnit_(unit) {

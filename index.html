@@ -2517,8 +2517,9 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxKZk3f58C67EZA
    default) behaves exactly like the old binary booked/not-booked system. */
 let remoteBookedCounts = null; // null until the first successful fetch; then the shared source of truth
 let remoteBookedReturns = {}; // carId -> sorted (ascending) ISO return-date strings of its active bookings
-let remoteBookedIntervals = {}; // carId -> [{pickup, ret}] ISO strings of every active booking for that car
+let remoteBookedIntervals = {}; // carId -> [{pickup, ret, unitId}] of every active booking for that car
 let remoteCarUnitCounts = {}; // carId -> number of physical units registered in the admin's Fleet Units screen
+let remoteCarUnitIds = {}; // carId -> [unitId, ...] of the actual registered units (opaque ids only)
 
 async function fetchBookedCars(){
   if(APPS_SCRIPT_URL.startsWith('PASTE_')) return; // not deployed yet — stay on local fallback
@@ -2529,6 +2530,7 @@ async function fetchBookedCars(){
     remoteBookedReturns = (data && typeof data.bookedReturns === 'object' && data.bookedReturns) ? data.bookedReturns : {};
     remoteBookedIntervals = (data && typeof data.bookedIntervals === 'object' && data.bookedIntervals) ? data.bookedIntervals : {};
     remoteCarUnitCounts = (data && typeof data.carUnitCounts === 'object' && data.carUnitCounts) ? data.carUnitCounts : {};
+    remoteCarUnitIds = (data && typeof data.carUnitIds === 'object' && data.carUnitIds) ? data.carUnitIds : {};
   } catch(e){
     remoteBookedCounts = null; // offline or backend unreachable — fall back to local-only for this visit
   }
@@ -2567,11 +2569,32 @@ function getOverlapCount(carId, pickupVal, retVal){
 }
 /* Remaining units of `car` for a specific [pickupVal, retVal) range. Falls
    back to the global getRemainingStock() when no date range is supplied or
-   interval data isn't available (e.g. local-only offline fallback). */
+   interval data isn't available (e.g. local-only offline fallback).
+
+   Mirrors the admin dashboard's exact per-unit algorithm (see
+   availableUnitsForRangeAdmin in admin.html and findAvailableUnitForBooking_
+   in apps-script.gs.txt) instead of a bare count-vs-stock check, whenever
+   this car has real fleet units registered: a booking with no matching
+   registered unit (a "legacy" booking made before the car had units set up)
+   still occupies one real physical car, so it still claims one of the free
+   slots below — otherwise a car with older unassigned bookings mixed with
+   newer unit-assigned ones could wrongly look more available here than the
+   admin panel says it actually is. Cars with no units registered yet fall
+   back to the previous simple count-vs-stock check, exactly like the admin
+   dashboard does for the same case. */
 function getRemainingStockForRange(car, pickupVal, retVal){
   if(!pickupVal || !retVal) return getRemainingStock(car);
-  const overlap = getOverlapCount(car.id, pickupVal, retVal);
-  return Math.max(0, effectiveStock(car) - overlap);
+  const unitIds = remoteCarUnitIds[car.id];
+  if(!unitIds || !unitIds.length){
+    const overlap = getOverlapCount(car.id, pickupVal, retVal);
+    return Math.max(0, effectiveStock(car) - overlap);
+  }
+  const intervals = remoteBookedIntervals[car.id] || [];
+  const overlapping = intervals.filter(iv => rangesOverlap(pickupVal, retVal, iv.pickup, iv.ret));
+  const assignedOverlapUnitIds = overlapping.filter(iv => iv.unitId).map(iv => iv.unitId);
+  const legacyOverlapCount = overlapping.filter(iv => !iv.unitId).length;
+  const freeUnits = unitIds.filter(id => assignedOverlapUnitIds.indexOf(id) === -1);
+  return Math.max(0, freeUnits.length - legacyOverlapCount);
 }
 /* Reads the hero Quick Booking widget's currently selected pickup/return
    datetimes (as datetime-local-style strings), if present, so fleet
@@ -4252,12 +4275,28 @@ function isDayUnavailableForInput(input, cellDate){
    of the whole day) is deliberate: a car whose only booking returns at 10:00
    becomes free again at 12:00 (after the 2h buffer) — the customer can still
    pick THIS day and a later time, so the day itself must not be disabled
-   just because part of it was booked. */
+   just because part of it was booked.
+
+   Mirrors the admin dashboard's isDayFullyBookedAdmin exactly: when this car
+   has real fleet units registered, a legacy (no-unitId) booking still claims
+   one of the free slots even though it can't be matched to a specific unit —
+   otherwise this calendar could show a day as bookable when the admin panel
+   (running the same check against the same bookings) would not. Cars with no
+   units registered fall back to the previous simple count-vs-stock check. */
 function isDayFullyBooked(carId, cellDate){
   const car = CARS.find(c => c.id === carId);
   if(!car) return false;
   const dayEnd = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate() + 1);
   const lastInstantStart = new Date(dayEnd.getTime() - 60000); // last minute of the day
+  const unitIds = remoteCarUnitIds[carId];
+  if(unitIds && unitIds.length){
+    const intervals = remoteBookedIntervals[carId] || [];
+    const dayOverlap = intervals.filter(iv => rangesOverlap(lastInstantStart.toISOString(), dayEnd.toISOString(), iv.pickup, iv.ret));
+    const assignedUnitIds = dayOverlap.filter(iv => iv.unitId).map(iv => iv.unitId);
+    const legacyCount = dayOverlap.filter(iv => !iv.unitId).length;
+    const freeUnits = unitIds.filter(id => assignedUnitIds.indexOf(id) === -1);
+    return freeUnits.length <= legacyCount;
+  }
   const overlap = getOverlapCount(carId, lastInstantStart.toISOString(), dayEnd.toISOString());
   return overlap >= effectiveStock(car);
 }
