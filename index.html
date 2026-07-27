@@ -4084,8 +4084,10 @@ loadSeoSettings();
    opens rather than being built once at page load.
 ========================================================= */
 let activeDatePicker = null;
+let activeDatePickerInput = null; // which <input> opened the currently-visible popup, if any
+let activeDatePickerRender = null; // that popup's own render() closure, so external events (category filter change, background refetch) can force a re-shade without reopening it
 function closeCustomDatePicker(){
-  if(activeDatePicker){ activeDatePicker.remove(); activeDatePicker = null; }
+  if(activeDatePicker){ activeDatePicker.remove(); activeDatePicker = null; activeDatePickerInput = null; activeDatePickerRender = null; }
 }
 document.addEventListener('click', e=>{
   if(activeDatePicker && !activeDatePicker.contains(e.target) && !e.target.closest('input[data-custom-picker]')){
@@ -4116,10 +4118,41 @@ function writeDateValue(input, date, time){
 /* Which car (if any) the given date input's calendar should shade booked days
    for. Only the final booking modal's pickup/return fields are tied to one
    specific car — the hero Quick Booking widget is car-agnostic (shown before
-   the customer has picked a vehicle), so it has no per-day shading. */
+   the customer has picked a vehicle), so it's shaded fleet-wide instead (see
+   isDayFullyBookedForFleet below). */
 function getCarIdForDateInput(input){
   if((input.id === 'bkPickup' || input.id === 'bkReturn') && activeBookingCar) return activeBookingCar.id;
   return null;
+}
+function isQuickBookingDateInput(input){
+  return input.id === 'qbPickupDate' || input.id === 'qbReturnDate';
+}
+/* True only if EVERY car matching the hero widget's current Category filter
+   is fully booked on this day — i.e. the agency genuinely has zero vehicles
+   left to offer, not just one particular model. Mirrors isDayFullyBooked's
+   per-car math (same overlap test, same turnaround buffer, same effective
+   stock/unit count), just applied across the whole matching fleet instead of
+   a single car, so the hero calendar never shades a day that's still
+   bookable on some other vehicle. */
+function isDayFullyBookedForFleet(cellDate, catKey){
+  const candidates = CARS.filter(c => carMatchesCategory(c, catKey || 'all'));
+  if(!candidates.length) return false;
+  return candidates.every(c => isDayFullyBooked(c.id, cellDate));
+}
+/* Single entry point the calendar grid uses to decide whether to shade+disable
+   a day, regardless of which date input opened it — a specific car for the
+   booking modal, or the whole matching fleet for the car-agnostic hero
+   widget. Both read from the same remoteBookedIntervals data (populated from
+   the backend's single Bookings sheet, shared by website AND manual
+   reservations), so availability always agrees across the two. */
+function isDayUnavailableForInput(input, cellDate){
+  const carId = getCarIdForDateInput(input);
+  if(carId) return isDayFullyBooked(carId, cellDate);
+  if(isQuickBookingDateInput(input)){
+    const cat = document.getElementById('qbCategory')?.value || 'all';
+    return isDayFullyBookedForFleet(cellDate, cat);
+  }
+  return false;
 }
 /* True if `car` has NO valid moment left to pick on this calendar day — i.e.
    every unit is still busy (accounting for the turnaround buffer) even in
@@ -4178,6 +4211,14 @@ function openCustomDatePicker(input){
   popup.className = 'custom-datepicker';
   document.body.appendChild(popup);
   activeDatePicker = popup;
+  activeDatePickerInput = input;
+
+  // Keep shading fresh: re-fetch the latest bookings in the background as
+  // soon as the calendar opens, and re-render if it's still open when the
+  // response lands — so a booking made (website or manual, via the admin
+  // dashboard) moments ago is reflected without the customer needing to
+  // close and reopen the calendar.
+  fetchBookedCars().then(()=>{ if(activeDatePicker === popup) render(); });
 
   function render(){
     popup.innerHTML = '';
@@ -4217,9 +4258,11 @@ function openCustomDatePicker(input){
         const cmpMin = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
         if(cmpCell < cmpMin) btn.disabled = true;
       }
-      // Shade + disable days that are already fully booked for this specific
-      // car, so the customer can only ever pick genuinely available dates.
-      if(carIdForShading && isDayFullyBooked(carIdForShading, cellDate)){
+      // Shade + disable days that are already fully booked — for the
+      // specific car when this picker belongs to the final booking modal, or
+      // fleet-wide when it's the car-agnostic hero Quick Booking widget — so
+      // the customer can only ever pick genuinely available dates.
+      if(isDayUnavailableForInput(input, cellDate)){
         btn.classList.add('cdp-booked');
         btn.disabled = true;
         btn.title = dict.datepicker_booked_day || '';
@@ -4277,6 +4320,7 @@ function openCustomDatePicker(input){
     prevBtn.addEventListener('click', e=>{ e.stopPropagation(); viewMonth--; if(viewMonth < 0){ viewMonth = 11; viewYear--; } render(); });
     nextBtn.addEventListener('click', e=>{ e.stopPropagation(); viewMonth++; if(viewMonth > 11){ viewMonth = 0; viewYear++; } render(); });
   }
+  activeDatePickerRender = render;
   render();
 
   const rect = input.getBoundingClientRect();
@@ -4305,6 +4349,15 @@ function initCustomDatePickers(){
   });
 }
 initCustomDatePickers();
+
+// Changing the hero widget's Category filter changes which cars count toward
+// isDayFullyBookedForFleet, so re-render whichever Quick Booking date popup
+// is currently open (if any) to reflect the new shading immediately.
+document.getElementById('qbCategory')?.addEventListener('change', ()=>{
+  if(activeDatePicker && activeDatePickerInput && isQuickBookingDateInput(activeDatePickerInput)){
+    activeDatePickerRender();
+  }
+});
 </script>
 
 </body>
