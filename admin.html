@@ -473,6 +473,25 @@ function rangesOverlapAdmin(startA, endA, startB, endB){
 function getOverlapCountAdmin(carId, pickupVal, retVal){
   return state.bookings.filter(b => b.carId === carId && rangesOverlapAdmin(pickupVal, retVal, b.pickup, b.ret)).length;
 }
+/* Which registered fleet units of `carId` are actually free for [pickupVal,
+   retVal) — used by the manual reservation and edit-reservation modals to let
+   the admin pick exactly which physical unit to assign, instead of always
+   silently auto-assigning one. Mirrors findAvailableUnitForBooking_ in
+   apps-script.gs.txt exactly (same overlap test, same legacy-booking
+   handling) so the choices shown here always match what the backend will
+   actually accept. Returns null if this car has no units registered yet
+   (falls back to the old count-vs-stock behavior with no unit picker). */
+function availableUnitsForRangeAdmin(carId, pickupVal, retVal, excludeRow){
+  const units = state.fleetUnits.filter(u => u.carId === carId);
+  if(!units.length) return null;
+  if(!pickupVal || !retVal) return units;
+  const bookingsPool = excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings;
+  const overlapping = bookingsPool.filter(b => b.carId === carId && rangesOverlapAdmin(pickupVal, retVal, b.pickup, b.ret));
+  const assignedOverlapUnitIds = overlapping.filter(b => b.unitId).map(b => b.unitId);
+  const legacyOverlapCount = overlapping.filter(b => !b.unitId).length;
+  const freeUnits = units.filter(u => assignedOverlapUnitIds.indexOf(u.unitId) === -1);
+  return freeUnits.slice(legacyOverlapCount);
+}
 /* True if this car has NO valid moment left to pick on this calendar day —
    i.e. every unit is still busy (accounting for the turnaround buffer) even
    in the very last minute of the day. Checking only that last instant
@@ -1153,6 +1172,7 @@ function openManualBookingModal(){
       <div class="field"><label>Retour</label><input type="text" id="mbReturn" data-custom-picker readonly required placeholder="Sélectionner date et heure"></div>
     </div>
     <div class="section-note" id="mbAvailNote" style="display:none"></div>
+    <div class="field" id="mbUnitField" style="display:none"><label>Unité à assigner</label><select id="mbUnit"></select></div>
     <div class="field"><label>Total (€, optionnel)</label><input id="mbTotal" type="number"></div>
     <div class="modal-actions">
       <button class="btn btn-outline" id="mbCancel">Annuler</button>
@@ -1165,19 +1185,46 @@ function openManualBookingModal(){
   ['mbPickup', 'mbReturn'].forEach(id=>{
     const el = document.getElementById(id);
     el.addEventListener('click', ()=> openAdminDatePicker(el, document.getElementById('mbCar').value));
+    el.addEventListener('change', refreshUnitPicker);
   });
-  const updateAvailNote = ()=>{
+  /* Shows the free-unit picker only when the admin actually has a real choice
+     to make: hidden when the car has no fleet units registered (legacy
+     count-based cars), hidden when dates aren't picked yet, auto-selects
+     silently when exactly one unit is free, and only then surfaces the
+     dropdown — so the agency can deliberately choose which physical car to
+     assign instead of it always being picked for them. */
+  function refreshUnitPicker(){
     const car = carById(document.getElementById('mbCar').value);
+    const pickup = document.getElementById('mbPickup').value;
+    const ret = document.getElementById('mbReturn').value;
     const note = document.getElementById('mbAvailNote');
+    const unitField = document.getElementById('mbUnitField');
+    const unitSelect = document.getElementById('mbUnit');
+    unitField.style.display = 'none';
+    unitSelect.innerHTML = '';
     if(!car){ note.style.display = 'none'; return; }
     note.style.display = '';
-    const units = state.fleetUnits.filter(u => u.carId === car.id);
-    note.textContent = units.length > 0
-      ? `${car.name} a ${units.length} unité(s) enregistrée(s) (${units.map(u=>u.plate||u.nickname||u.unitId).join(', ')}). Une unité libre spécifique est assignée automatiquement à l'enregistrement — le calendrier ci-dessous reflète leur disponibilité combinée exacte.`
-      : `${car.name} a ${car.stock || 1} unité(s) au total (aucune plaque encore enregistrée dans Unités de flotte — la disponibilité est estimée par le nombre). Cliquez sur Prise en charge/Retour ci-dessous pour voir les jours libres.`;
-  };
-  document.getElementById('mbCar').addEventListener('change', updateAvailNote);
-  updateAvailNote();
+    const free = availableUnitsForRangeAdmin(car.id, pickup, ret, null);
+    if(free === null){
+      note.textContent = `${car.name} a ${car.stock || 1} unité(s) au total (aucune plaque encore enregistrée dans Unités de flotte — la disponibilité est estimée par le nombre). Cliquez sur Prise en charge/Retour ci-dessous pour voir les jours libres.`;
+      return;
+    }
+    if(!pickup || !ret){
+      note.textContent = `${car.name} a ${free.length} unité(s) enregistrée(s) (${free.map(u=>u.plate||u.nickname||u.unitId).join(', ')}). Sélectionnez la prise en charge et le retour pour voir quelles unités sont libres.`;
+      return;
+    }
+    if(free.length === 0){ note.textContent = `Aucune unité de ${car.name} n'est libre pour ces dates.`; return; }
+    if(free.length === 1){
+      unitSelect.innerHTML = `<option value="${free[0].unitId}">${free[0].plate||free[0].nickname||free[0].unitId}</option>`;
+      note.textContent = `Une seule unité de ${car.name} est libre pour ces dates (${free[0].plate||free[0].nickname||free[0].unitId}) — elle sera assignée automatiquement.`;
+      return;
+    }
+    note.textContent = `${free.length} unités de ${car.name} sont libres pour ces dates — choisissez laquelle assigner à cette réservation.`;
+    unitField.style.display = '';
+    unitSelect.innerHTML = free.map(u=>`<option value="${u.unitId}">${u.plate || u.nickname || u.unitId}${u.nickname && u.plate ? ' — ' + u.nickname : ''}</option>`).join('');
+  }
+  document.getElementById('mbCar').addEventListener('change', refreshUnitPicker);
+  refreshUnitPicker();
   document.getElementById('mbCancel').addEventListener('click', closeModal);
   document.getElementById('mbSave').addEventListener('click', async ()=>{
     const carId = document.getElementById('mbCar').value;
@@ -1187,9 +1234,19 @@ function openManualBookingModal(){
     const pickup = document.getElementById('mbPickup').value;
     const ret = document.getElementById('mbReturn').value;
     if(!car || !name || !phone || !pickup || !ret){ toast('Veuillez remplir tous les champs requis'); return; }
+    const free = availableUnitsForRangeAdmin(carId, pickup, ret, null);
+    let unitId = '';
+    if(free !== null){
+      if(free.length === 0){ toast('Aucune unité disponible pour ces dates'); return; }
+      if(free.length === 1){ unitId = free[0].unitId; }
+      else {
+        unitId = document.getElementById('mbUnit').value;
+        if(!unitId){ toast('Veuillez choisir une unité à assigner'); return; }
+      }
+    }
     const ref = 'AFC-M-' + Date.now().toString().slice(-8);
     const r = await apiPost({
-      carId, carName: car.name, customerName: name, phone, pickup, ret, ref,
+      carId, carName: car.name, customerName: name, phone, pickup, ret, ref, unitId,
       stock: car.stock, total: document.getElementById('mbTotal').value || '',
       source: document.getElementById('mbSource').value, adminPassword: state.password,
     });
@@ -1234,27 +1291,55 @@ function openBookingEditModal(booking){
       <div class="field"><label>Total (€)</label><input id="ebTotal" type="number" value="${booking.total || ''}"></div>
     </div>
     <div class="section-note" id="ebAvailNote"></div>
+    <div class="field" id="ebUnitField" style="display:none"><label>Unité à assigner</label><select id="ebUnit"></select></div>
     <div class="modal-actions">
       <button class="btn btn-outline" id="ebCancel">Annuler</button>
       <button class="btn btn-primary" id="ebSave">Enregistrer les modifications</button>
     </div>
   `);
-  const updateAvailNote = ()=>{
+  /* Same manual unit-choice picker as the manual reservation modal — a
+     booking's own current unit/dates are excluded from the free-list check
+     (booking.row is passed as excludeRow) so editing a booking without
+     changing its dates never makes its own already-assigned unit look busy. */
+  function refreshUnitPicker(){
     const car = carById(document.getElementById('ebCar').value);
+    const pickup = document.getElementById('ebPickup').value;
+    const ret = document.getElementById('ebReturn').value;
     const note = document.getElementById('ebAvailNote');
+    const unitField = document.getElementById('ebUnitField');
+    const unitSelect = document.getElementById('ebUnit');
+    unitField.style.display = 'none';
+    unitSelect.innerHTML = '';
     if(!car){ note.textContent = ''; return; }
-    const units = state.fleetUnits.filter(u => u.carId === car.id);
-    const assignedNote = booking.unitId ? ` Unité actuellement assignée : ${booking.unitId}.` : '';
-    note.textContent = units.length > 0
-      ? `${car.name} a ${units.length} unité(s) enregistrée(s).${assignedNote} Une unité libre est assignée automatiquement lors de l'enregistrement, en excluant les dates actuelles de cette réservation de la vérification.`
-      : `${car.name} a ${car.stock || 1} unité(s) au total (aucune plaque enregistrée dans Unités de flotte).${assignedNote}`;
-  };
+    const free = availableUnitsForRangeAdmin(car.id, pickup, ret, booking.row);
+    if(free === null){
+      note.textContent = `${car.name} a ${car.stock || 1} unité(s) au total (aucune plaque enregistrée dans Unités de flotte).`;
+      return;
+    }
+    if(!pickup || !ret){
+      note.textContent = `${car.name} a ${free.length} unité(s) enregistrée(s). Choisissez les dates pour voir quelles unités sont libres.`;
+      return;
+    }
+    if(free.length === 0){ note.textContent = `Aucune unité de ${car.name} n'est libre pour ces dates.`; return; }
+    if(free.length === 1){
+      unitSelect.innerHTML = `<option value="${free[0].unitId}">${free[0].plate||free[0].nickname||free[0].unitId}</option>`;
+      note.textContent = `Une seule unité de ${car.name} est libre pour ces dates (${free[0].plate||free[0].nickname||free[0].unitId}) — elle sera assignée automatiquement.`;
+      return;
+    }
+    note.textContent = `${free.length} unités de ${car.name} sont libres pour ces dates — choisissez laquelle assigner à cette réservation.`;
+    unitField.style.display = '';
+    unitSelect.innerHTML = free.map(u=>{
+      const selected = u.unitId === booking.unitId ? 'selected' : '';
+      return `<option value="${u.unitId}" ${selected}>${u.plate || u.nickname || u.unitId}${u.nickname && u.plate ? ' — ' + u.nickname : ''}</option>`;
+    }).join('');
+  }
   ['ebPickup', 'ebReturn'].forEach(id=>{
     const el = document.getElementById(id);
     el.addEventListener('click', ()=> openAdminDatePicker(el, document.getElementById('ebCar').value, booking.row));
+    el.addEventListener('change', refreshUnitPicker);
   });
-  document.getElementById('ebCar').addEventListener('change', updateAvailNote);
-  updateAvailNote();
+  document.getElementById('ebCar').addEventListener('change', refreshUnitPicker);
+  refreshUnitPicker();
   document.getElementById('ebCancel').addEventListener('click', closeModal);
   document.getElementById('ebSave').addEventListener('click', async ()=>{
     const carId = document.getElementById('ebCar').value;
@@ -1262,6 +1347,16 @@ function openBookingEditModal(booking){
     const pickup = document.getElementById('ebPickup').value;
     const ret = document.getElementById('ebReturn').value;
     if(!car || !pickup || !ret){ toast('Veuillez remplir tous les champs requis'); return; }
+    const free = availableUnitsForRangeAdmin(carId, pickup, ret, booking.row);
+    let unitId = '';
+    if(free !== null){
+      if(free.length === 0){ toast('Aucune unité disponible pour ces dates'); return; }
+      if(free.length === 1){ unitId = free[0].unitId; }
+      else {
+        unitId = document.getElementById('ebUnit').value;
+        if(!unitId){ toast('Veuillez choisir une unité à assigner'); return; }
+      }
+    }
     const r = await apiPost({
       action: 'editBooking', row: booking.row,
       carId, carName: car.name,
@@ -1269,7 +1364,7 @@ function openBookingEditModal(booking){
       phone: document.getElementById('ebPhone').value.trim(),
       nationality: document.getElementById('ebNationality').value.trim(),
       email: document.getElementById('ebEmail').value.trim(),
-      pickup, ret,
+      pickup, ret, unitId,
       total: document.getElementById('ebTotal').value || '',
       stock: car.stock,
     });

@@ -188,7 +188,11 @@ function doPost(e) {
     const stock = Number(body.stock) || Number(existing[8]) || 1;
     const pickup = body.pickup || existing[4];
     const ret = body.ret || existing[5];
-    const assignment = findAvailableUnitForBooking_(carId, pickup, ret, stock, rowNum);
+    // body.unitId here is the admin's manual unit choice from the Edit
+    // Reservation modal — role was already verified above to reach this
+    // point, so it's safe to honor (re-validated against the live free list
+    // inside findAvailableUnitForBooking_).
+    const assignment = findAvailableUnitForBooking_(carId, pickup, ret, stock, rowNum, body.unitId || null);
     if (assignment.mode === 'sold_out') {
       return jsonResponse_({ success: false, error: 'sold_out' });
     }
@@ -387,6 +391,14 @@ function doPost(e) {
   lock.waitLock(10000);
   try {
     const stock = Number(body.stock) || 1;
+    // adminPassword is only ever sent by the admin dashboard's manual
+    // reservation form (see admin.html), never by the public website
+    // checkout — so a client-supplied unitId (the admin's manual choice of
+    // which physical unit to assign, from the Reservations > + Manual
+    // reservation modal) is only honored once we've confirmed it actually
+    // came from an authenticated admin, never from an anonymous customer.
+    const manualRole = body.adminPassword ? roleForPassword_(body.adminPassword) : null;
+    const manualUnitId = (body.unitId && manualRole) ? body.unitId : null;
     // Per-unit assignment: if this car has specific units registered (plate/
     // fleet ID, entered by the owner in the admin "Fleet Units" screen), the
     // booking is checked and assigned against those REAL physical units —
@@ -394,7 +406,7 @@ function doPost(e) {
     // ever showing a free date before every one of them frees up, since it's
     // no longer just a bare count. Cars with no units registered yet fall back
     // to the previous count-vs-stock check unchanged.
-    const assignment = findAvailableUnitForBooking_(body.carId, body.pickup, body.ret, stock);
+    const assignment = findAvailableUnitForBooking_(body.carId, body.pickup, body.ret, stock, null, manualUnitId);
     if (assignment.mode === 'sold_out') {
       return jsonResponse_({ success: false, error: 'sold_out' });
     }
@@ -426,10 +438,7 @@ function doPost(e) {
     // displays exactly as entered.
     bookingsSheet.getRange(bookingsSheet.getLastRow(), 4).setNumberFormat('@').setValue(body.phone || '');
     sendBookingEmail_(body);
-    if (body.adminPassword) {
-      const role = roleForPassword_(body.adminPassword);
-      if (role) logActivity_(role, 'manual_booking', (body.source || 'manual') + ' — ' + body.carName);
-    }
+    if (manualRole) logActivity_(manualRole, 'manual_booking', (body.source || 'manual') + ' — ' + body.carName);
     return jsonResponse_({ success: true, unitId: assignment.unitId || '', unitPlate: assignment.plate || '' });
   } finally {
     lock.releaseLock();
@@ -444,8 +453,15 @@ function doPost(e) {
      truly sold out once every registered unit has an overlapping booking
      assigned to it — this is what makes "extend one unit's booking to
      September" correctly leave the OTHER unit (and only that unit) bookable,
-     instead of a bare count that can't tell units apart. */
-function findAvailableUnitForBooking_(carId, pickup, ret, stock, excludeRow) {
+     instead of a bare count that can't tell units apart.
+   - manualUnitId: the admin dashboard's manual reservation/edit modal lets
+     the owner pick exactly which free unit to assign when more than one is
+     available, instead of always silently auto-assigning — so the agency can
+     balance bookings across its fleet by its own plan. Only call sites that
+     already verified an authenticated admin role pass this through (see
+     doPost); it is re-validated here against the actual free list so a stale
+     / raced choice can never double-book a unit. */
+function findAvailableUnitForBooking_(carId, pickup, ret, stock, excludeRow, manualUnitId) {
   const units = listFleetUnits_().filter(u => u.carId === carId);
   const bookingsPool = excludeRow ? listActiveBookings_().filter(b => b.row !== excludeRow) : listActiveBookings_();
   if (units.length === 0) {
@@ -465,6 +481,11 @@ function findAvailableUnitForBooking_(carId, pickup, ret, stock, excludeRow) {
   // wrongly look fully free just because none of them "match" a unit ID.
   const legacyOverlapCount = overlappingBookings.filter(b => !b.unitId).length;
   const freeUnits = units.filter(u => assignedOverlapUnitIds.indexOf(u.unitId) === -1);
+  if (manualUnitId) {
+    const requested = freeUnits.find(u => u.unitId === manualUnitId);
+    if (!requested) return { mode: 'sold_out' };
+    return { mode: 'unit', unitId: requested.unitId, plate: requested.plate || requested.nickname || requested.unitId };
+  }
   if (freeUnits.length <= legacyOverlapCount) return { mode: 'sold_out' };
   const free = freeUnits[legacyOverlapCount];
   return { mode: 'unit', unitId: free.unitId, plate: free.plate || free.nickname || free.unitId };
