@@ -817,6 +817,8 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
   border:1px solid rgba(245,165,36,.35);border-radius:10px;padding:10px 12px;margin:14px 0 0;
 }
 .deposit-methods-note{color:var(--ink-dim);font-size:.78rem;margin:6px 0 0}
+.cancellation-policy-note{color:var(--ink-dim);font-size:.78rem;margin:6px 0 0}
+.cancellation-policy-note [data-i18n="cancellation_policy_badge"]{color:#0a8a3f;font-weight:700}
 .modal-actions{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
 .modal-actions .btn{flex:1}
 .modal-note{
@@ -1407,6 +1409,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       <label data-i18n="modal_deposit_label">Deposit</label>
       <select id="bkDeposit" class="deposit-select"></select>
       <p class="deposit-methods-note" data-i18n="deposit_methods_note">Accepted deposit payment methods: bank transfer or cash.</p>
+      <p class="cancellation-policy-note"><span data-i18n="cancellation_policy_badge">🟢 Free cancellation</span> <span data-i18n="cancellation_policy_text">up to 48h before the rental start. After that, the reservation can no longer be cancelled.</span></p>
 
       <div class="modal-check-row modal-washing-row">
         <span data-i18n="modal_washing_label">Car Washing</span>
@@ -1710,6 +1713,11 @@ const DEPOSITS = [
 ];
 const CAR_WASH_FEE = 5; // mandatory on the original site
 const MIN_RENTAL_DAYS = 3;
+// Customers can cancel their own reservation free of charge up to this many
+// hours before pickup (see the "🟢 Free cancellation" note in the booking
+// form) — enforced both here (hides the button) and server-side in
+// customerCancelBooking, so it can't be bypassed by calling the API directly.
+const CANCELLATION_WINDOW_HOURS = 48;
 
 /* Business hours: bookings outside this window are still allowed, but each
    pickup/return time that falls outside it adds a flat surcharge and shows
@@ -2029,6 +2037,7 @@ const I18N = {
     account_edit_booking_sub:'Update your pick-up and drop-off dates. Availability will be re-checked.',
     account_edit_back_btn:'← Back', account_cancel_confirm_msg:'Cancel this reservation? This cannot be undone.',
     account_error_generic:'Something went wrong. Please try again.',
+    account_error_cancellation_window:'This reservation can no longer be cancelled online (less than 48h before pickup). Please contact us directly.',
     account_error_invalid_credentials:'Incorrect email or password.', account_error_missing_fields:'Please fill in all fields.',
     account_error_invalid_email:'Please enter a valid email address.', account_error_weak_password:'Password must be at least 6 characters.',
     account_error_email_taken:'An account with this email already exists.', account_error_network:'Connection error — please try again.',
@@ -2119,6 +2128,7 @@ const I18N = {
     loc_hotel:'Hotel Delivery', loc_chefchaouen:'Chefchaouen',
     modal_deposit_label:'Deposit', modal_washing_label:'Car Washing', washing_no:'Not needed', washing_yes:'Include car washing',
     deposit_methods_note:'Accepted deposit payment methods: bank transfer or cash.',
+    cancellation_policy_badge:'🟢 Free cancellation', cancellation_policy_text:'up to 48h before the rental start. After that, the reservation can no longer be cancelled.',
     washing_mandatory:'mandatory', deposit_refundable:'deposit (refundable)', deposit_per_day:'/day',
     deposit_no_deposit:'No deposit', deposit_non_refundable:'non-refundable',
     hours_warning:'Outside business hours (08:00–20:00): a €10 surcharge has been added per pickup/return outside these hours.',
@@ -2195,6 +2205,7 @@ const I18N = {
     account_edit_booking_sub:'Modifiez vos dates de prise en charge et de retour. La disponibilité sera revérifiée.',
     account_edit_back_btn:'← Retour', account_cancel_confirm_msg:'Annuler cette réservation ? Cette action est irréversible.',
     account_error_generic:'Une erreur est survenue. Veuillez réessayer.',
+    account_error_cancellation_window:'Cette réservation ne peut plus être annulée en ligne (moins de 48h avant la prise en charge). Merci de nous contacter directement.',
     account_error_invalid_credentials:'Email ou mot de passe incorrect.', account_error_missing_fields:'Merci de remplir tous les champs.',
     account_error_invalid_email:'Merci de saisir une adresse email valide.', account_error_weak_password:'Le mot de passe doit contenir au moins 6 caractères.',
     account_error_email_taken:'Un compte existe déjà avec cet email.', account_error_network:'Erreur de connexion — merci de réessayer.',
@@ -2285,6 +2296,7 @@ const I18N = {
     loc_hotel:'Livraison à l\'hôtel', loc_chefchaouen:'Chefchaouen',
     modal_deposit_label:'Caution', modal_washing_label:'Lavage de la voiture', washing_no:'Non nécessaire', washing_yes:'Inclure le lavage',
     deposit_methods_note:'Moyens de paiement acceptés pour la caution : virement bancaire ou espèces.',
+    cancellation_policy_badge:'🟢 Annulation gratuite', cancellation_policy_text:'jusqu\'à 48h avant le début de la location. Passé ce délai, la réservation ne peut plus être annulée.',
     washing_mandatory:'obligatoire', deposit_refundable:'de caution (remboursable)', deposit_per_day:'/jour',
     deposit_no_deposit:'Sans caution', deposit_non_refundable:'non remboursable',
     hours_warning:'En dehors des heures d\'ouverture (08h00–20h00) : un supplément de 10€ a été ajouté par prise en charge/retour hors de ces heures.',
@@ -2361,6 +2373,7 @@ const I18N = {
     account_edit_booking_sub:'Actualice sus fechas de recogida y devolución. Se volverá a comprobar la disponibilidad.',
     account_edit_back_btn:'← Volver', account_cancel_confirm_msg:'¿Cancelar esta reserva? Esta acción no se puede deshacer.',
     account_error_generic:'Algo salió mal. Inténtelo de nuevo.',
+    account_error_cancellation_window:'Esta reserva ya no se puede cancelar en línea (menos de 48h antes de la recogida). Por favor contáctenos directamente.',
     account_error_invalid_credentials:'Email o contraseña incorrectos.', account_error_missing_fields:'Por favor complete todos los campos.',
     account_error_invalid_email:'Por favor introduzca un email válido.', account_error_weak_password:'La contraseña debe tener al menos 6 caracteres.',
     account_error_email_taken:'Ya existe una cuenta con este email.', account_error_network:'Error de conexión — inténtelo de nuevo.',
@@ -2452,6 +2465,7 @@ const I18N = {
     loc_hotel:'Entrega en el hotel', loc_chefchaouen:'Chefchaouen',
     modal_deposit_label:'Depósito', modal_washing_label:'Lavado del coche', washing_no:'No necesario', washing_yes:'Incluir lavado',
     deposit_methods_note:'Métodos de pago aceptados para el depósito: transferencia bancaria o efectivo.',
+    cancellation_policy_badge:'🟢 Cancelación gratuita', cancellation_policy_text:'hasta 48h antes del inicio del alquiler. Pasado ese plazo, la reserva ya no se puede cancelar.',
     washing_mandatory:'obligatorio', deposit_refundable:'de depósito (reembolsable)', deposit_per_day:'/día',
     deposit_no_deposit:'Sin depósito', deposit_non_refundable:'no reembolsable',
     hours_warning:'Fuera del horario comercial (08:00–20:00): se ha añadido un recargo de 10€ por cada recogida/devolución fuera de este horario.',
@@ -2528,6 +2542,7 @@ const I18N = {
     account_edit_booking_sub:'حدّث تواريخ الاستلام والإرجاع. سيتم التحقق من التوفر مجدداً.',
     account_edit_back_btn:'→ رجوع', account_cancel_confirm_msg:'هل تريد إلغاء هذا الحجز؟ لا يمكن التراجع عن هذا الإجراء.',
     account_error_generic:'حدث خطأ ما. يرجى المحاولة مرة أخرى.',
+    account_error_cancellation_window:'لم يعد بالإمكان إلغاء هذا الحجز عبر الإنترنت (أقل من 48 ساعة قبل الاستلام). يرجى التواصل معنا مباشرة.',
     account_error_invalid_credentials:'البريد الإلكتروني أو كلمة المرور غير صحيحة.', account_error_missing_fields:'يرجى ملء جميع الحقول.',
     account_error_invalid_email:'يرجى إدخال بريد إلكتروني صحيح.', account_error_weak_password:'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.',
     account_error_email_taken:'يوجد حساب بالفعل بهذا البريد الإلكتروني.', account_error_network:'خطأ في الاتصال — يرجى المحاولة مرة أخرى.',
@@ -2619,6 +2634,7 @@ const I18N = {
     loc_hotel:'التوصيل للفندق', loc_chefchaouen:'شفشاون',
     modal_deposit_label:'الضمان', modal_washing_label:'غسل السيارة', washing_no:'غير مطلوب', washing_yes:'شامل غسل السيارة',
     deposit_methods_note:'طرق الدفع المقبولة للضمان: تحويل بنكي أو نقداً.',
+    cancellation_policy_badge:'🟢 إلغاء مجاني', cancellation_policy_text:'حتى 48 ساعة قبل بداية الإيجار. بعد ذلك، لا يمكن إلغاء الحجز.',
     washing_mandatory:'إجباري', deposit_refundable:'ضمان (قابل للاسترجاع)', deposit_per_day:'/اليوم',
     deposit_no_deposit:'بدون ضمان', deposit_non_refundable:'غير قابل للاسترجاع',
     hours_warning:'خارج ساعات العمل (08:00–20:00): تمت إضافة 10€ لكل عملية استلام/إرجاع خارج هذه الساعات.',
@@ -4374,8 +4390,8 @@ function showAccountAuth(which){
   document.getElementById('accountDashboardPanel').style.display = 'none';
   document.getElementById('accountLoginForm').style.display = which === 'login' ? 'block' : 'none';
   document.getElementById('accountSignupForm').style.display = which === 'signup' ? 'block' : 'none';
-  document.getElementById('accountLoginError').hidden = true;
-  document.getElementById('accountSignupError').hidden = true;
+  document.getElementById('accountLoginError').classList.remove('show');
+  document.getElementById('accountSignupError').classList.remove('show');
 }
 document.getElementById('accountShowSignup').addEventListener('click', e=>{ e.preventDefault(); showAccountAuth('signup'); });
 document.getElementById('accountShowLogin').addEventListener('click', e=>{ e.preventDefault(); showAccountAuth('login'); });
@@ -4412,7 +4428,7 @@ async function showAccountDashboard(){
     updateAccountNavLabel();
     showAccountAuth('login');
     document.getElementById('accountLoginError').textContent = accountErrorMessage(dict, result.error);
-    document.getElementById('accountLoginError').hidden = false;
+    document.getElementById('accountLoginError').classList.add('show');
     return;
   }
   saveCustomerSession({ email: customerSession.email, password: customerSession.password, name: result.customer.name, phone: result.customer.phone });
@@ -4434,7 +4450,7 @@ function renderAccountBookings(bookings){
   const list = document.getElementById('accountBookingsList');
   const emptyMsg = document.getElementById('accountBookingsEmpty');
   document.getElementById('accountEditBookingPanel').style.display = 'none';
-  document.getElementById('accountBookingsError').hidden = true;
+  document.getElementById('accountBookingsError').classList.remove('show');
   list.style.display = '';
   list.innerHTML = '';
   if(!bookings.length){ emptyMsg.style.display = 'block'; return; }
@@ -4450,6 +4466,11 @@ function renderAccountBookings(bookings){
     const isUpcoming = new Date(b.pickup) > new Date();
     const isCancelled = b.paymentStatus === 'cancelled' || b.bookingStatus === 'cancelled';
     const canManage = isUpcoming && !isCancelled;
+    // Free cancellation only up to CANCELLATION_WINDOW_HOURS before pickup —
+    // past that cutoff the "Cancel" button itself is hidden (the backend
+    // enforces the same cutoff independently, see customerCancelBooking).
+    const hoursUntilPickup = (new Date(b.pickup) - new Date()) / (60 * 60 * 1000);
+    const canCancel = canManage && hoursUntilPickup >= CANCELLATION_WINDOW_HOURS;
     item.innerHTML = `
       <div>
         <b>${b.carName || ''}</b>
@@ -4461,7 +4482,7 @@ function renderAccountBookings(bookings){
       <div class="account-booking-actions">
         <button type="button" class="btn btn-outline" data-dl-row="${b.row}">${dict.account_download_pdf_btn}</button>
         ${canManage ? `<button type="button" class="btn btn-outline" data-edit-row="${b.row}">${dict.account_edit_btn}</button>` : ''}
-        ${canManage ? `<button type="button" class="btn btn-outline account-cancel-btn" data-cancel-row="${b.row}">${dict.account_cancel_btn}</button>` : ''}
+        ${canCancel ? `<button type="button" class="btn btn-outline account-cancel-btn" data-cancel-row="${b.row}">${dict.account_cancel_btn}</button>` : ''}
       </div>`;
     item.querySelector('[data-dl-row]').addEventListener('click', ()=> downloadAccountBookingPdf(b));
     const editBtn = item.querySelector('[data-edit-row]');
@@ -4477,7 +4498,7 @@ function openEditBookingPanel(booking){
   editingBookingRef = booking.ref;
   document.getElementById('accEditPickup').value = toDatetimeLocalString(new Date(booking.pickup));
   document.getElementById('accEditReturn').value = toDatetimeLocalString(new Date(booking.ret));
-  document.getElementById('accountEditBookingError').hidden = true;
+  document.getElementById('accountEditBookingError').classList.remove('show');
   document.getElementById('accountBookingsList').style.display = 'none';
   document.getElementById('accountBookingsEmpty').style.display = 'none';
   document.getElementById('accountEditBookingPanel').style.display = 'block';
@@ -4492,7 +4513,7 @@ document.getElementById('accountEditBookingSaveBtn').addEventListener('click', a
   const ret = document.getElementById('accEditReturn').value;
   if(!pickup || !ret || new Date(ret) <= new Date(pickup)){
     errorEl.textContent = dict.required_field;
-    errorEl.hidden = false;
+    errorEl.classList.add('show');
     return;
   }
   const btn = document.getElementById('accountEditBookingSaveBtn');
@@ -4504,7 +4525,7 @@ document.getElementById('accountEditBookingSaveBtn').addEventListener('click', a
     });
     if(!result.success){
       errorEl.textContent = result.error === 'sold_out' ? dict.sold_out_error : dict.account_error_generic;
-      errorEl.hidden = false;
+      errorEl.classList.add('show');
       return;
     }
     await showAccountDashboard();
@@ -4517,14 +4538,14 @@ async function cancelAccountBooking(booking){
   const dict = I18N[currentLang];
   if(!confirm(dict.account_cancel_confirm_msg)) return;
   const errorEl = document.getElementById('accountBookingsError');
-  errorEl.hidden = true;
+  errorEl.classList.remove('show');
   const result = await customerApiPost({
     action: 'customerCancelBooking', email: customerSession.email, password: customerSession.password,
     ref: booking.ref,
   });
   if(!result.success){
-    errorEl.textContent = dict.account_error_generic;
-    errorEl.hidden = false;
+    errorEl.textContent = result.error === 'cancellation_window_passed' ? dict.account_error_cancellation_window : dict.account_error_generic;
+    errorEl.classList.add('show');
     return;
   }
   await showAccountDashboard();
@@ -4582,13 +4603,13 @@ document.getElementById('accountLoginForm').addEventListener('submit', async e=>
   const password = document.getElementById('accLoginPassword').value;
   const errorEl = document.getElementById('accountLoginError');
   const btn = document.getElementById('accountLoginBtn');
-  errorEl.hidden = true;
+  errorEl.classList.remove('show');
   btn.disabled = true;
   const result = await customerApiPost({ action: 'customerLogin', email, password });
   btn.disabled = false;
   if(!result.success){
     errorEl.textContent = accountErrorMessage(dict, result.error);
-    errorEl.hidden = false;
+    errorEl.classList.add('show');
     return;
   }
   saveCustomerSession({ email: result.customer.email, password, name: result.customer.name, phone: result.customer.phone });
@@ -4606,10 +4627,10 @@ document.getElementById('accountSignupForm').addEventListener('submit', async e=
   const password = document.getElementById('accSignupPassword').value;
   const errorEl = document.getElementById('accountSignupError');
   const btn = document.getElementById('accountSignupBtn');
-  errorEl.hidden = true;
+  errorEl.classList.remove('show');
   if(!name || !email || !password){
     errorEl.textContent = dict.account_error_missing_fields;
-    errorEl.hidden = false;
+    errorEl.classList.add('show');
     return;
   }
   btn.disabled = true;
@@ -4617,7 +4638,7 @@ document.getElementById('accountSignupForm').addEventListener('submit', async e=
   btn.disabled = false;
   if(!result.success){
     errorEl.textContent = accountErrorMessage(dict, result.error);
-    errorEl.hidden = false;
+    errorEl.classList.add('show');
     return;
   }
   saveCustomerSession({ email: result.customer.email, password, name: result.customer.name, phone: result.customer.phone });
@@ -4634,14 +4655,14 @@ document.getElementById('accountProfileForm').addEventListener('submit', async e
   const errorEl = document.getElementById('accountProfileError');
   const savedEl = document.getElementById('accountProfileSaved');
   const btn = document.getElementById('accountProfileSaveBtn');
-  errorEl.hidden = true;
+  errorEl.classList.remove('show');
   savedEl.style.display = 'none';
   btn.disabled = true;
   const result = await customerApiPost({ action: 'customerUpdateProfile', email: customerSession.email, password: customerSession.password, name, phone });
   btn.disabled = false;
   if(!result.success){
     errorEl.textContent = accountErrorMessage(dict, result.error);
-    errorEl.hidden = false;
+    errorEl.classList.add('show');
     return;
   }
   saveCustomerSession({ ...customerSession, name, phone });

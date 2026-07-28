@@ -172,6 +172,11 @@ function doGet(e) {
 // return, on the same day if that's when the buffer elapses.
 const CAR_TURNAROUND_BUFFER_MS = 2 * 60 * 60 * 1000;
 
+// Customers can cancel their own reservation online free of charge up to
+// this many hours before pickup (see customerCancelBooking below and the
+// "🟢 Free cancellation" notice in index.html's booking form).
+const CANCELLATION_WINDOW_HOURS = 48;
+
 /* True if [startA, endA) conflicts with [startB, endB) once a mandatory
    CAR_TURNAROUND_BUFFER_MS gap is required between one range's end and the
    other's start (in either direction) — not just a bare interval overlap.
@@ -470,8 +475,17 @@ function doPost(e) {
     const row = findBookingRowByRef_(body.ref);
     if (row === -1) return jsonResponse_({ success: false, error: 'Booking not found' });
     const sheet = getBookingsSheet_();
-    const ownerEmail = String(sheet.getRange(row, 12).getValue() || '').trim().toLowerCase();
+    const bookingRow = sheet.getRange(row, 1, 1, 12).getValues()[0];
+    const ownerEmail = String(bookingRow[11] || '').trim().toLowerCase();
     if (ownerEmail !== customer.email.trim().toLowerCase()) return jsonResponse_({ success: false, error: 'not_owner' });
+    // Free cancellation window: matches the "🟢 Free cancellation up to 48h
+    // before pickup" notice shown in the booking form/account dashboard —
+    // enforced here too so a customer can't bypass the UI by calling the API
+    // directly once that window has passed.
+    const pickupDate = bookingRow[4];
+    if (pickupDate && new Date(pickupDate).getTime() - Date.now() < CANCELLATION_WINDOW_HOURS * 60 * 60 * 1000) {
+      return jsonResponse_({ success: false, error: 'cancellation_window_passed' });
+    }
     sheet.deleteRow(row);
     return jsonResponse_({ success: true });
   }
