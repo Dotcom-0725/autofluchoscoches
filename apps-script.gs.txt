@@ -52,6 +52,7 @@ const SETTINGS_SHEET_NAME = 'Settings';
 const ACTIVITY_SHEET_NAME = 'ActivityLog';
 const AVAILABILITY_SHEET_NAME = 'AvailabilityRequests';
 const FLEET_UNITS_SHEET_NAME = 'FleetUnits';
+const CUSTOMERS_SHEET_NAME = 'Customers';
 
 // Single shared admin password — full access (super_admin role), no separate
 // Manager/Employee tiers. Change it here any time; redeploy afterwards.
@@ -101,6 +102,20 @@ function doGet(e) {
   if (action === 'settings') {
     // Public: index.html applies SEO meta overrides (title/description) from here.
     return jsonResponse_({ settings: listSettings_() });
+  }
+
+  // Customer-initiated: the "My Account" bookings list. Auth is just
+  // email+password re-checked on every call (see customerLogin above) —
+  // there's no separate session-token layer, matching how admin.html
+  // re-sends the admin password on every request.
+  if (action === 'customerBookings') {
+    const customer = findCustomerByEmail_(String(e.parameter.email || '').trim().toLowerCase());
+    if (!customer || hashPassword_(e.parameter.password, customer.salt) !== customer.passwordHash) {
+      return jsonResponse_({ success: false, error: 'invalid_credentials' });
+    }
+    const email = customer.email;
+    const bookings = listActiveBookings_().filter(b => (b.email || '').trim().toLowerCase() === email);
+    return jsonResponse_({ success: true, customer: { email: customer.email, name: customer.name, phone: customer.phone }, bookings: bookings });
   }
 
   // Public: for each car, how many units are currently booked overall (kept
@@ -390,6 +405,55 @@ function doPost(e) {
     getAvailabilityRequestsSheet_().appendRow([
       body.carId, body.carName || '', body.contact, new Date(), '',
     ]);
+    return jsonResponse_({ success: true });
+  }
+
+  // ---- Customer accounts (self-service signup/login/profile) ----
+  // Customer-initiated: create an account, normally right after a booking
+  // (see index.html's "create an account" checkbox). No admin password
+  // involved — this is a completely separate, low-privilege account system
+  // from the ADMIN_ROLES used by the dashboard.
+  if (body.action === 'customerSignup') {
+    if (!body.email || !body.password) return jsonResponse_({ success: false, error: 'Missing fields' });
+    const email = String(body.email).trim().toLowerCase();
+    if (!email || email.indexOf('@') === -1) return jsonResponse_({ success: false, error: 'invalid_email' });
+    if (String(body.password).length < 6) return jsonResponse_({ success: false, error: 'weak_password' });
+    if (findCustomerByEmail_(email)) return jsonResponse_({ success: false, error: 'email_taken' });
+    const salt = generateSalt_();
+    getCustomersSheet_().appendRow([
+      email, hashPassword_(body.password, salt), salt,
+      body.name || '', body.phone || '', new Date(),
+    ]);
+    return jsonResponse_({ success: true, customer: { email: email, name: body.name || '', phone: body.phone || '' } });
+  }
+
+  // Customer-initiated: log in with email/password. Returns the customer's
+  // own profile fields on success — the frontend then stores {email,
+  // password} in localStorage (mirroring how admin.html keeps the admin
+  // password in sessionStorage) and resends both on every subsequent
+  // customerBookings/customerUpdateProfile call, since there's no separate
+  // session-token layer here.
+  if (body.action === 'customerLogin') {
+    if (!body.email || !body.password) return jsonResponse_({ success: false, error: 'Missing fields' });
+    const customer = findCustomerByEmail_(String(body.email).trim().toLowerCase());
+    if (!customer || hashPassword_(body.password, customer.salt) !== customer.passwordHash) {
+      return jsonResponse_({ success: false, error: 'invalid_credentials' });
+    }
+    return jsonResponse_({ success: true, customer: { email: customer.email, name: customer.name, phone: customer.phone } });
+  }
+
+  // Customer-initiated: update their own name/phone. Re-verifies the
+  // password (same as every other customer action) before writing.
+  if (body.action === 'customerUpdateProfile') {
+    if (!body.email || !body.password) return jsonResponse_({ success: false, error: 'Missing fields' });
+    const customer = findCustomerByEmail_(String(body.email).trim().toLowerCase());
+    if (!customer || hashPassword_(body.password, customer.salt) !== customer.passwordHash) {
+      return jsonResponse_({ success: false, error: 'invalid_credentials' });
+    }
+    getCustomersSheet_().getRange(customer.row, 4, 1, 2).setValues([[
+      body.name != null ? body.name : customer.name,
+      body.phone != null ? body.phone : customer.phone,
+    ]]);
     return jsonResponse_({ success: true });
   }
 
@@ -943,6 +1007,50 @@ function getAvailabilityRequestsSheet_() {
     sheet.appendRow(['car_id', 'car_name', 'contact', 'requested_at', 'notified']);
   }
   return sheet;
+}
+
+/* ---- Customer accounts ----
+   A separate, low-privilege account system from ADMIN_ROLES: lets a
+   customer sign up with email/password during booking, log back in on a
+   future visit, and see only their own bookings (matched by email against
+   the Bookings sheet's existing customer_email column — no schema change
+   needed there). Passwords are never stored in plain text: each account
+   gets its own random salt, and only a salted SHA-256 hash is saved. */
+function getCustomersSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(CUSTOMERS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(CUSTOMERS_SHEET_NAME);
+    sheet.appendRow(['email', 'password_hash', 'salt', 'name', 'phone', 'created_at']);
+  }
+  return sheet;
+}
+function generateSalt_() {
+  return Utilities.getUuid();
+}
+function hashPassword_(password, salt) {
+  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(password) + salt);
+  return digest.map(b => (b < 0 ? b + 256 : b).toString(16).padStart(2, '0')).join('');
+}
+/* Finds a customer account by email (case-insensitive — caller is expected
+   to have already lowercased/trimmed it). Returns null if not found. */
+function findCustomerByEmail_(email) {
+  if (!email) return null;
+  const rows = getCustomersSheet_().getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]).trim().toLowerCase() === email) {
+      return {
+        row: i + 1,
+        email: rows[i][0],
+        passwordHash: rows[i][1],
+        salt: rows[i][2],
+        name: rows[i][3] || '',
+        phone: rows[i][4] || '',
+        createdAt: rows[i][5],
+      };
+    }
+  }
+  return null;
 }
 
 function jsonResponse_(obj) {

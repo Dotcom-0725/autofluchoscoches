@@ -281,6 +281,12 @@ footer .logo-text{font-size:1.4rem;font-weight:800}
 .phone-pill{
   display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:700;font-size:.88rem;
 }
+.account-btn{
+  display:flex;align-items:center;gap:6px;background:var(--navy-800);border:1px solid var(--card-border);
+  color:var(--ink);font-weight:700;font-size:.82rem;padding:8px 14px;border-radius:999px;
+}
+.account-btn:hover{border-color:var(--blue-400);color:var(--blue-500)}
+@media (max-width:1080px){ .account-btn span:last-child{display:none} .account-btn{padding:8px 10px} }
 .burger{display:none;background:none;border:none;color:var(--ink);font-size:1.5rem;cursor:pointer}
 
 @media (max-width:1080px){
@@ -657,6 +663,11 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
   color:var(--ink-dim);cursor:pointer;border-bottom:2px solid transparent;
 }
 .admin-tab.active{color:var(--blue-500);border-bottom-color:var(--blue-500)}
+.account-tab{
+  background:none;border:none;padding:10px 4px;margin-right:16px;font-weight:700;font-size:.88rem;
+  color:var(--ink-dim);cursor:pointer;border-bottom:2px solid transparent;
+}
+.account-tab.active{color:var(--blue-500);border-bottom-color:var(--blue-500)}
 .admin-seasons-help{color:var(--ink-dim);font-size:.82rem;margin-bottom:14px}
 .admin-season-form{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
 .admin-season-form input,.admin-season-form select{
@@ -670,6 +681,14 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
   padding:12px 16px;margin-bottom:10px;font-size:.85rem;
 }
 .admin-booking-item .btn{flex:none;padding:9px 16px;font-size:.8rem}
+
+/* ---------- Customer account modal ---------- */
+.account-switch-line{text-align:center;font-size:.85rem;margin-top:16px !important}
+.account-switch-line a{color:var(--blue-500);font-weight:700}
+.account-hint{font-size:.76rem;margin-top:-10px !important;margin-bottom:14px !important}
+#accountProfileSaved{color:var(--success,#12a150) !important}
+.account-logout-btn{margin-top:18px}
+.account-booking-status{font-weight:700}
 
 /* ---------- Floating WhatsApp ---------- */
 .float-whatsapp{
@@ -906,6 +925,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
         <button data-currency="USD">USD</button>
       </div>
       <a href="tel:+212661304574" class="phone-pill">📞 <bdi dir="ltr">+212 661-304574</bdi></a>
+      <button type="button" class="account-btn" id="accountNavBtn"><span>👤</span> <span id="accountNavLabel" data-i18n="account_nav_guest">My Account</span></button>
       <button class="burger" id="burgerBtn" aria-label="Menu">☰</button>
     </div>
   </div>
@@ -1334,6 +1354,14 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       </div>
       <label data-i18n="modal_email_optional_label">Email (optional, for payment confirmation)</label>
       <input type="email" id="bkEmail">
+      <p class="account-hint" id="bkLoggedInAsNote" style="display:none"></p>
+      <label class="modal-check-row" id="bkCreateAccountRow">
+        <span><input type="checkbox" id="bkCreateAccount"> <span data-i18n="bk_create_account_label">Create an account to track this booking (optional)</span></span>
+      </label>
+      <div id="bkCreateAccountPasswordField" style="display:none">
+        <label data-i18n="bk_create_account_password_label">Choose a password for your account</label>
+        <input type="password" id="bkCreateAccountPassword" minlength="6" autocomplete="new-password">
+      </div>
 
       <h4 class="modal-section-title" data-i18n="modal_resources_title">Resources</h4>
       <label class="modal-check-row">
@@ -1459,6 +1487,80 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
         <div id="adminSeasonsList"></div>
         <p id="adminSeasonsEmpty" data-i18n="admin_no_seasons" style="display:none">No seasonal pricing periods yet.</p>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= CUSTOMER ACCOUNT MODAL ================= -->
+<div class="modal-overlay" id="accountOverlay">
+  <div class="modal-box modal-box-lg">
+    <button class="modal-close" id="accountClose" aria-label="Close">✕</button>
+    <h3 data-i18n="account_title">My Account</h3>
+
+    <!-- ---- Logged out: login / signup ---- -->
+    <div id="accountAuthPanel">
+      <form id="accountLoginForm" class="modal-panel active">
+        <p data-i18n="account_login_sub">Log in to see your reservations and download your contracts.</p>
+        <label data-i18n="account_email_label">Email</label>
+        <input type="email" id="accLoginEmail" required autocomplete="email">
+        <label data-i18n="account_password_label">Password</label>
+        <input type="password" id="accLoginPassword" required autocomplete="current-password">
+        <p class="modal-error" id="accountLoginError" hidden></p>
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-blue btn-block" id="accountLoginBtn" data-i18n="account_login_btn">Log in</button>
+        </div>
+        <p class="account-switch-line"><span data-i18n="account_no_account_yet">No account yet?</span> <a href="#" id="accountShowSignup" data-i18n="account_signup_link">Sign up</a></p>
+      </form>
+
+      <form id="accountSignupForm" class="modal-panel active" style="display:none">
+        <p data-i18n="account_signup_sub">Create an account to track every reservation you make with us.</p>
+        <label data-i18n="account_name_label">Full name</label>
+        <input type="text" id="accSignupName" required autocomplete="name">
+        <label data-i18n="account_email_label">Email</label>
+        <input type="email" id="accSignupEmail" required autocomplete="email">
+        <label data-i18n="account_phone_label">Phone</label>
+        <input type="tel" id="accSignupPhone" autocomplete="tel">
+        <label data-i18n="account_password_label">Password</label>
+        <input type="password" id="accSignupPassword" required minlength="6" autocomplete="new-password">
+        <p class="account-hint" data-i18n="account_password_hint">At least 6 characters.</p>
+        <p class="modal-error" id="accountSignupError" hidden></p>
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-blue btn-block" id="accountSignupBtn" data-i18n="account_signup_btn">Create account</button>
+        </div>
+        <p class="account-switch-line"><span data-i18n="account_have_account">Already have an account?</span> <a href="#" id="accountShowLogin" data-i18n="account_login_link">Log in</a></p>
+      </form>
+    </div>
+
+    <!-- ---- Logged in: profile + reservations ---- -->
+    <div id="accountDashboardPanel" style="display:none">
+      <p data-i18n-skip><span data-i18n="account_welcome">Welcome back,</span> <b id="accountWelcomeName"></b></p>
+      <div class="admin-tabs">
+        <button type="button" class="account-tab active" data-account-tab="bookings" data-i18n="account_tab_bookings">My Reservations</button>
+        <button type="button" class="account-tab" data-account-tab="profile" data-i18n="account_tab_profile">My Information</button>
+      </div>
+
+      <div id="accountBookingsTab">
+        <div id="accountBookingsList"></div>
+        <p id="accountBookingsEmpty" data-i18n="account_no_bookings" style="display:none">No reservations yet.</p>
+      </div>
+
+      <div id="accountProfileTab" style="display:none">
+        <form id="accountProfileForm" class="modal-panel active">
+          <label data-i18n="account_email_label">Email</label>
+          <input type="email" id="accProfileEmail" disabled>
+          <label data-i18n="account_name_label">Full name</label>
+          <input type="text" id="accProfileName">
+          <label data-i18n="account_phone_label">Phone</label>
+          <input type="tel" id="accProfilePhone">
+          <p class="modal-error" id="accountProfileError" hidden></p>
+          <p class="account-hint" id="accountProfileSaved" data-i18n="account_profile_saved" style="display:none">Saved!</p>
+          <div class="modal-actions">
+            <button type="submit" class="btn btn-blue" id="accountProfileSaveBtn" data-i18n="account_save_btn">Save changes</button>
+          </div>
+        </form>
+      </div>
+
+      <button type="button" class="btn btn-outline btn-block account-logout-btn" id="accountLogoutBtn" data-i18n="account_logout_btn">Log out</button>
     </div>
   </div>
 </div>
@@ -1894,6 +1996,27 @@ const I18N = {
     datepicker_booked_day:'Already booked — not available',
     logo_sub:'CAR RENTAL TÉTOUAN — TANGIER',
     nav_home:'Home', nav_fleet:'Cars List', nav_why:'About', nav_reviews:'Reviews', nav_faq:'FAQ', nav_contact:'Contact',
+    account_nav_guest:'My Account', account_nav_greeting:'Hi, {name}',
+    account_title:'My Account', account_email_label:'Email', account_password_label:'Password',
+    account_login_sub:'Log in to see your reservations and download your contracts.', account_login_btn:'Log in',
+    account_no_account_yet:'No account yet?', account_signup_link:'Sign up',
+    account_signup_sub:'Create an account to track every reservation you make with us.',
+    account_name_label:'Full name', account_phone_label:'Phone',
+    account_password_hint:'At least 6 characters.', account_signup_btn:'Create account',
+    account_have_account:'Already have an account?', account_login_link:'Log in',
+    account_welcome:'Welcome back,', account_tab_bookings:'My Reservations', account_tab_profile:'My Information',
+    account_no_bookings:'No reservations yet.', account_save_btn:'Save changes', account_profile_saved:'Saved!',
+    account_logout_btn:'Log out', account_download_pdf_btn:'⬇ Download PDF', account_ref_label:'Ref.',
+    account_error_invalid_credentials:'Incorrect email or password.', account_error_missing_fields:'Please fill in all fields.',
+    account_error_invalid_email:'Please enter a valid email address.', account_error_weak_password:'Password must be at least 6 characters.',
+    account_error_email_taken:'An account with this email already exists.', account_error_network:'Connection error — please try again.',
+    document_view_label:'View document',
+    bk_create_account_label:'Create an account to track this booking (optional)',
+    bk_create_account_password_label:'Choose a password for your account',
+    bk_create_account_validation:'Please enter your email and a password (at least 6 characters) to create an account.',
+    bk_logged_in_as:'Booking as {email} — not you? Log out from My Account.',
+    account_payment_pending:'Pending', account_payment_awaiting_verification:'Awaiting Verification',
+    account_payment_paid:'Paid', account_payment_cancelled:'Cancelled', account_payment_refunded:'Refunded',
     badge_know_us:'GET TO KNOW US',
     hero_title:'Search, Book &amp; Rent Vehicle Easily',
     hero_lead:'Find your ideal vehicle in seconds. Browse, book, and hit the road — fast, effortless, and always reliable.',
@@ -2035,6 +2158,27 @@ const I18N = {
     datepicker_booked_day:'Déjà réservé — indisponible',
     logo_sub:'LOCATION DE VOITURE TÉTOUAN — TANGER',
     nav_home:'Accueil', nav_fleet:'Liste des voitures', nav_why:'À propos', nav_reviews:'Avis', nav_faq:'FAQ', nav_contact:'Contact',
+    account_nav_guest:'Mon compte', account_nav_greeting:'Bonjour, {name}',
+    account_title:'Mon compte', account_email_label:'Email', account_password_label:'Mot de passe',
+    account_login_sub:'Connectez-vous pour voir vos réservations et télécharger vos contrats.', account_login_btn:'Se connecter',
+    account_no_account_yet:'Pas encore de compte ?', account_signup_link:'Créer un compte',
+    account_signup_sub:'Créez un compte pour suivre chaque réservation effectuée chez nous.',
+    account_name_label:'Nom complet', account_phone_label:'Téléphone',
+    account_password_hint:'Au moins 6 caractères.', account_signup_btn:'Créer le compte',
+    account_have_account:'Vous avez déjà un compte ?', account_login_link:'Se connecter',
+    account_welcome:'Bon retour,', account_tab_bookings:'Mes réservations', account_tab_profile:'Mes informations',
+    account_no_bookings:'Aucune réservation pour le moment.', account_save_btn:'Enregistrer', account_profile_saved:'Enregistré !',
+    account_logout_btn:'Se déconnecter', account_download_pdf_btn:'⬇ Télécharger le PDF', account_ref_label:'Réf.',
+    account_error_invalid_credentials:'Email ou mot de passe incorrect.', account_error_missing_fields:'Merci de remplir tous les champs.',
+    account_error_invalid_email:'Merci de saisir une adresse email valide.', account_error_weak_password:'Le mot de passe doit contenir au moins 6 caractères.',
+    account_error_email_taken:'Un compte existe déjà avec cet email.', account_error_network:'Erreur de connexion — merci de réessayer.',
+    document_view_label:'Voir le document',
+    bk_create_account_label:'Créer un compte pour suivre cette réservation (facultatif)',
+    bk_create_account_password_label:'Choisissez un mot de passe pour votre compte',
+    bk_create_account_validation:'Merci de saisir votre email et un mot de passe (6 caractères minimum) pour créer un compte.',
+    bk_logged_in_as:'Réservation au nom de {email} — ce n\'est pas vous ? Déconnectez-vous depuis Mon compte.',
+    account_payment_pending:'En attente', account_payment_awaiting_verification:'Vérification en attente',
+    account_payment_paid:'Payé', account_payment_cancelled:'Annulé', account_payment_refunded:'Remboursé',
     badge_know_us:'FAITES CONNAISSANCE',
     hero_title:'Cherchez, Réservez &amp; Louez Facilement',
     hero_lead:"Trouvez le véhicule idéal en quelques secondes. Parcourez, réservez et prenez la route — rapide, simple et toujours fiable.",
@@ -2176,6 +2320,27 @@ const I18N = {
     datepicker_booked_day:'Ya reservado — no disponible',
     logo_sub:'ALQUILER DE COCHES TETUÁN — TÁNGER',
     nav_home:'Inicio', nav_fleet:'Lista de coches', nav_why:'Sobre nosotros', nav_reviews:'Opiniones', nav_faq:'Preguntas', nav_contact:'Contacto',
+    account_nav_guest:'Mi cuenta', account_nav_greeting:'Hola, {name}',
+    account_title:'Mi cuenta', account_email_label:'Email', account_password_label:'Contraseña',
+    account_login_sub:'Inicie sesión para ver sus reservas y descargar sus contratos.', account_login_btn:'Iniciar sesión',
+    account_no_account_yet:'¿Aún no tiene cuenta?', account_signup_link:'Crear cuenta',
+    account_signup_sub:'Cree una cuenta para seguir cada reserva que haga con nosotros.',
+    account_name_label:'Nombre completo', account_phone_label:'Teléfono',
+    account_password_hint:'Al menos 6 caracteres.', account_signup_btn:'Crear cuenta',
+    account_have_account:'¿Ya tiene una cuenta?', account_login_link:'Iniciar sesión',
+    account_welcome:'Bienvenido de nuevo,', account_tab_bookings:'Mis reservas', account_tab_profile:'Mi información',
+    account_no_bookings:'Aún no tiene reservas.', account_save_btn:'Guardar cambios', account_profile_saved:'¡Guardado!',
+    account_logout_btn:'Cerrar sesión', account_download_pdf_btn:'⬇ Descargar PDF', account_ref_label:'Ref.',
+    account_error_invalid_credentials:'Email o contraseña incorrectos.', account_error_missing_fields:'Por favor complete todos los campos.',
+    account_error_invalid_email:'Por favor introduzca un email válido.', account_error_weak_password:'La contraseña debe tener al menos 6 caracteres.',
+    account_error_email_taken:'Ya existe una cuenta con este email.', account_error_network:'Error de conexión — inténtelo de nuevo.',
+    document_view_label:'Ver documento',
+    bk_create_account_label:'Crear una cuenta para seguir esta reserva (opcional)',
+    bk_create_account_password_label:'Elija una contraseña para su cuenta',
+    bk_create_account_validation:'Introduzca su email y una contraseña (mínimo 6 caracteres) para crear una cuenta.',
+    bk_logged_in_as:'Reservando como {email} — ¿no es usted? Cierre sesión desde Mi cuenta.',
+    account_payment_pending:'Pendiente', account_payment_awaiting_verification:'Verificación pendiente',
+    account_payment_paid:'Pagado', account_payment_cancelled:'Cancelado', account_payment_refunded:'Reembolsado',
     badge_know_us:'CONÓZCANOS',
     hero_title:'Busque, Reserve &amp; Alquile su Vehículo Fácilmente',
     hero_lead:'Encuentre su vehículo ideal en segundos. Explore, reserve y póngase en marcha — rápido, sencillo y siempre fiable.',
@@ -2318,6 +2483,27 @@ const I18N = {
     datepicker_booked_day:'محجوز بالفعل — غير متاح',
     logo_sub:'كراء السيارات تطوان — طنجة',
     nav_home:'الرئيسية', nav_fleet:'لائحة السيارات', nav_why:'من نحن', nav_reviews:'آراء الزبناء', nav_faq:'الأسئلة الشائعة', nav_contact:'اتصل بنا',
+    account_nav_guest:'حسابي', account_nav_greeting:'مرحباً، {name}',
+    account_title:'حسابي', account_email_label:'البريد الإلكتروني', account_password_label:'كلمة المرور',
+    account_login_sub:'سجّل الدخول لمشاهدة حجوزاتك وتحميل عقودك.', account_login_btn:'تسجيل الدخول',
+    account_no_account_yet:'ليس لديك حساب بعد؟', account_signup_link:'إنشاء حساب',
+    account_signup_sub:'أنشئ حساباً لتتبع كل حجز تقوم به معنا.',
+    account_name_label:'الاسم الكامل', account_phone_label:'الهاتف',
+    account_password_hint:'6 أحرف على الأقل.', account_signup_btn:'إنشاء الحساب',
+    account_have_account:'لديك حساب بالفعل؟', account_login_link:'تسجيل الدخول',
+    account_welcome:'مرحباً بعودتك،', account_tab_bookings:'حجوزاتي', account_tab_profile:'معلوماتي',
+    account_no_bookings:'لا توجد حجوزات بعد.', account_save_btn:'حفظ التغييرات', account_profile_saved:'تم الحفظ!',
+    account_logout_btn:'تسجيل الخروج', account_download_pdf_btn:'⬇ تحميل PDF', account_ref_label:'المرجع:',
+    account_error_invalid_credentials:'البريد الإلكتروني أو كلمة المرور غير صحيحة.', account_error_missing_fields:'يرجى ملء جميع الحقول.',
+    account_error_invalid_email:'يرجى إدخال بريد إلكتروني صحيح.', account_error_weak_password:'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.',
+    account_error_email_taken:'يوجد حساب بالفعل بهذا البريد الإلكتروني.', account_error_network:'خطأ في الاتصال — يرجى المحاولة مرة أخرى.',
+    document_view_label:'عرض المستند',
+    bk_create_account_label:'إنشاء حساب لتتبع هذا الحجز (اختياري)',
+    bk_create_account_password_label:'اختر كلمة مرور لحسابك',
+    bk_create_account_validation:'يرجى إدخال بريدك الإلكتروني وكلمة مرور (6 أحرف على الأقل) لإنشاء حساب.',
+    bk_logged_in_as:'الحجز باسم {email} — ليس أنت؟ سجّل الخروج من حسابي.',
+    account_payment_pending:'قيد الانتظار', account_payment_awaiting_verification:'بانتظار التحقق',
+    account_payment_paid:'مدفوع', account_payment_cancelled:'ملغى', account_payment_refunded:'مسترجع',
     badge_know_us:'تعرف علينا',
     hero_title:'ابحث واحجز واكرِ سيارتك بكل سهولة',
     hero_lead:'ابحث عن السيارة المناسبة لك في ثوانٍ. تصفح، احجز وانطلق — بسرعة وسهولة وموثوقية دائمة.',
@@ -2496,6 +2682,7 @@ function applyLang(lang){
   populateNationalitySelect(dict);
   if(typeof populateCarSelect === 'function') populateCarSelect(dict);
   if(typeof updateTotal === 'function') updateTotal();
+  if(typeof updateAccountNavLabel === 'function') updateAccountNavLabel();
 }
 
 /* =========================================================
@@ -3129,6 +3316,29 @@ document.getElementById('modalCarSelect').addEventListener('change', e=>{
   updateTotal();
 });
 
+function updateBookingFormAccountUI(){
+  const emailInput = document.getElementById('bkEmail');
+  const loggedInNote = document.getElementById('bkLoggedInAsNote');
+  const createAccountRow = document.getElementById('bkCreateAccountRow');
+  const passwordField = document.getElementById('bkCreateAccountPasswordField');
+  if(customerSession){
+    emailInput.value = customerSession.email;
+    emailInput.disabled = true;
+    loggedInNote.textContent = I18N[currentLang].bk_logged_in_as.replace('{email}', customerSession.email);
+    loggedInNote.style.display = '';
+    createAccountRow.style.display = 'none';
+    passwordField.style.display = 'none';
+  } else {
+    emailInput.disabled = false;
+    loggedInNote.style.display = 'none';
+    createAccountRow.style.display = '';
+    // passwordField visibility stays driven by the checkbox listener below
+  }
+}
+document.getElementById('bkCreateAccount').addEventListener('change', function(){
+  document.getElementById('bkCreateAccountPasswordField').style.display = this.checked ? '' : 'none';
+});
+
 async function openBookingModal(carId){
   activeBookingCar = CARS.find(c => c.id === carId);
   if(!activeBookingCar) return;
@@ -3137,6 +3347,8 @@ async function openBookingModal(carId){
   ['bkLicense','bkPassport'].forEach(k => resetFilePicker(k, I18N[currentLang]));
   document.getElementById('bkPhoneCodeOther').style.display = 'none';
   document.getElementById('bkNationalityOther').style.display = 'none';
+  document.getElementById('bkCreateAccountPasswordField').style.display = 'none';
+  updateBookingFormAccountUI();
   bookingOverlay.classList.add('open');
 
   // Populate the form immediately, before the network round-trip below — so
@@ -3915,10 +4127,15 @@ async function generateBookingPdf(dict, data){
   if(data.licenseFileName) bullets.push([dict.modal_license_label, data.licenseFileName, data.licenseUrl]);
   if(data.passportFileName) bullets.push([dict.modal_passport_label, data.passportFileName, data.passportUrl]);
   if(data.licenseYears) bullets.push([dict.modal_license_years_label, String(data.licenseYears)]);
-  bullets.push([dict.modal_pickup_location_label, data.pickupLoc]);
-  bullets.push([dict.modal_dropoff_location_label, data.dropoffLoc]);
-  bullets.push([dict.modal_deposit_label, data.deposit]);
-  bullets.push([dict.modal_washing_label, dict.pdf_washing_value]);
+  // pickupLoc/dropoffLoc/deposit/washing are only known at the moment of a
+  // live checkout (see finalizeBooking) — they're never persisted to the
+  // Bookings sheet, so a PDF regenerated later (My Account > Download, or
+  // the admin dashboard's reprint) simply omits these bullets instead of
+  // printing "undefined".
+  if(data.pickupLoc) bullets.push([dict.modal_pickup_location_label, data.pickupLoc]);
+  if(data.dropoffLoc) bullets.push([dict.modal_dropoff_location_label, data.dropoffLoc]);
+  if(data.deposit) bullets.push([dict.modal_deposit_label, data.deposit]);
+  if(data.includeWashing !== false) bullets.push([dict.modal_washing_label, dict.pdf_washing_value]);
   if(data.resources) bullets.push([dict.modal_resources_title, data.resources]);
 
   bullets.forEach(([label, value, url])=>{
@@ -3973,7 +4190,11 @@ bookingForm.addEventListener('submit', async e=>{
     ? document.getElementById('bkPhoneCodeOther').value.trim()
     : bkPhoneCodeSelect;
   const phone = bkPhoneNumber ? `${phoneCode} ${bkPhoneNumber}` : '';
-  const email = document.getElementById('bkEmail').value.trim();
+  // Logged-in customers always book under their own account email (the field
+  // is shown disabled+pre-filled in that case, but read the session directly
+  // too as a safety net) — this is what actually links the new reservation to
+  // their account, since customerBookings matches by email.
+  const email = customerSession ? customerSession.email : document.getElementById('bkEmail').value.trim();
   const nationalitySelectValue = document.getElementById('bkNationality').value;
   const nationalityCode = nationalitySelectValue === 'other'
     ? document.getElementById('bkNationalityOther').value.trim()
@@ -3981,9 +4202,20 @@ bookingForm.addEventListener('submit', async e=>{
   const pickup = document.getElementById('bkPickup').value;
   const ret = document.getElementById('bkReturn').value;
   const termsChecked = document.getElementById('bkTerms').checked;
+  // Only offer to create an account when the customer isn't already logged
+  // in and actually ticked the box — captured here (not re-read later from
+  // the DOM) since the form/modal state may have moved on by the time
+  // finalizeBooking actually runs the signup.
+  const createAccount = !customerSession && document.getElementById('bkCreateAccount').checked;
+  const accountPassword = document.getElementById('bkCreateAccountPassword').value;
 
   if(!name || !phone || !phoneCode || !nationalityCode || !pickup || !ret || !termsChecked){
     bookingError.textContent = dict.required_field;
+    bookingError.classList.add('show');
+    return;
+  }
+  if(createAccount && (!email || accountPassword.length < 6)){
+    bookingError.textContent = dict.bk_create_account_validation;
     bookingError.classList.add('show');
     return;
   }
@@ -4021,9 +4253,296 @@ bookingForm.addEventListener('submit', async e=>{
   pendingBookingData = {
     car: activeBookingCar, name, phone, email, nationality, pickup, ret,
     licenseYears, pickupLoc, dropoffLoc, deposit, resources, total,
+    createAccount, accountPassword,
   };
   openBookingPreview(pendingBookingData);
 });
+
+/* =========================================================
+   CUSTOMER ACCOUNTS — self-service signup/login so a customer can see their
+   reservation history and re-download their contract PDF later, without
+   needing to keep the original download around.
+
+   Deliberately mirrors the site's existing auth model (admin.html's
+   sessionStorage password, index.html's own adminPassword variable above):
+   there's no server-side session/token layer — the email+password pair is
+   just re-sent and re-verified by the backend on every request. The one
+   difference: this is stored in localStorage rather than sessionStorage,
+   since a customer expects to still be logged in on a LATER visit, not just
+   later in the same tab.
+========================================================= */
+let customerSession = null; // { email, password, name, phone } once logged in
+(function loadCustomerSession(){
+  try {
+    const raw = localStorage.getItem('afc_customer');
+    if(raw) customerSession = JSON.parse(raw);
+  } catch(e){ customerSession = null; }
+})();
+function saveCustomerSession(session){
+  customerSession = session;
+  try { localStorage.setItem('afc_customer', JSON.stringify(session)); } catch(e){}
+}
+function clearCustomerSession(){
+  customerSession = null;
+  try { localStorage.removeItem('afc_customer'); } catch(e){}
+}
+async function customerApiPost(body){
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body),
+    });
+    return await res.json();
+  } catch(e){ return { success: false, error: 'network' }; }
+}
+async function customerApiGet(params){
+  try {
+    const qs = new URLSearchParams(params).toString();
+    const res = await fetch(APPS_SCRIPT_URL + '?' + qs);
+    return await res.json();
+  } catch(e){ return { success: false, error: 'network' }; }
+}
+function accountErrorMessage(dict, code){
+  return {
+    invalid_credentials: dict.account_error_invalid_credentials,
+    invalid_email: dict.account_error_invalid_email,
+    weak_password: dict.account_error_weak_password,
+    email_taken: dict.account_error_email_taken,
+    network: dict.account_error_network,
+    'Missing fields': dict.account_error_missing_fields,
+  }[code] || dict.account_error_network;
+}
+function paymentMethodLabelForAccount(method, dict){
+  return {
+    bank_transfer: dict.payment_method_bank_transfer, wise: dict.payment_method_wise,
+    cash_on_pickup: dict.payment_method_cash_pickup, none: '—',
+  }[method] || dict.pdf_payment_cash;
+}
+function paymentStatusLabelForAccount(status, dict){
+  return {
+    pending: dict.account_payment_pending, awaiting_verification: dict.account_payment_awaiting_verification,
+    paid: dict.account_payment_paid, cancelled: dict.account_payment_cancelled, refunded: dict.account_payment_refunded,
+  }[status] || dict.account_payment_pending;
+}
+
+const accountOverlay = document.getElementById('accountOverlay');
+function openAccountModal(){
+  accountOverlay.classList.add('open');
+  if(customerSession) showAccountDashboard(); else showAccountAuth('login');
+}
+function closeAccountModal(){ accountOverlay.classList.remove('open'); }
+document.getElementById('accountNavBtn').addEventListener('click', openAccountModal);
+document.getElementById('accountClose').addEventListener('click', closeAccountModal);
+accountOverlay.addEventListener('click', e=>{ if(e.target === accountOverlay) closeAccountModal(); });
+
+function showAccountAuth(which){
+  document.getElementById('accountAuthPanel').style.display = 'block';
+  document.getElementById('accountDashboardPanel').style.display = 'none';
+  document.getElementById('accountLoginForm').style.display = which === 'login' ? 'block' : 'none';
+  document.getElementById('accountSignupForm').style.display = which === 'signup' ? 'block' : 'none';
+  document.getElementById('accountLoginError').hidden = true;
+  document.getElementById('accountSignupError').hidden = true;
+}
+document.getElementById('accountShowSignup').addEventListener('click', e=>{ e.preventDefault(); showAccountAuth('signup'); });
+document.getElementById('accountShowLogin').addEventListener('click', e=>{ e.preventDefault(); showAccountAuth('login'); });
+
+/* Reflects login state in the header button — first name once logged in
+   (falls back to the guest label). Called on load, after login/signup/
+   logout, and on every language switch (see setLanguage below). */
+function updateAccountNavLabel(){
+  const dict = I18N[currentLang];
+  const label = document.getElementById('accountNavLabel');
+  if(!label) return;
+  if(customerSession && customerSession.name){
+    label.textContent = dict.account_nav_greeting.replace('{name}', customerSession.name.split(' ')[0]);
+  } else {
+    label.textContent = dict.account_nav_guest;
+  }
+}
+
+async function showAccountDashboard(){
+  const dict = I18N[currentLang];
+  document.getElementById('accountAuthPanel').style.display = 'none';
+  document.getElementById('accountDashboardPanel').style.display = 'block';
+  document.getElementById('accountWelcomeName').textContent = customerSession.name || customerSession.email;
+  document.getElementById('accProfileEmail').value = customerSession.email;
+  document.getElementById('accProfileName').value = customerSession.name || '';
+  document.getElementById('accProfilePhone').value = customerSession.phone || '';
+  document.getElementById('accountBookingsList').innerHTML = '';
+  document.getElementById('accountBookingsEmpty').style.display = 'none';
+  const result = await customerApiGet({ action: 'customerBookings', email: customerSession.email, password: customerSession.password });
+  if(!result.success){
+    // Stored credentials no longer work (password changed elsewhere, etc.) —
+    // log out cleanly instead of silently showing stale/wrong data.
+    clearCustomerSession();
+    updateAccountNavLabel();
+    showAccountAuth('login');
+    document.getElementById('accountLoginError').textContent = accountErrorMessage(dict, result.error);
+    document.getElementById('accountLoginError').hidden = false;
+    return;
+  }
+  saveCustomerSession({ email: customerSession.email, password: customerSession.password, name: result.customer.name, phone: result.customer.phone });
+  document.getElementById('accountWelcomeName').textContent = result.customer.name || result.customer.email;
+  document.getElementById('accProfileName').value = result.customer.name || '';
+  document.getElementById('accProfilePhone').value = result.customer.phone || '';
+  updateAccountNavLabel();
+  renderAccountBookings(result.bookings || []);
+}
+
+function renderAccountBookings(bookings){
+  const dict = I18N[currentLang];
+  const list = document.getElementById('accountBookingsList');
+  const emptyMsg = document.getElementById('accountBookingsEmpty');
+  list.innerHTML = '';
+  if(!bookings.length){ emptyMsg.style.display = 'block'; return; }
+  emptyMsg.style.display = 'none';
+  // Most recent pickup first, so a customer's latest/upcoming trip is what they see first.
+  const sorted = [...bookings].sort((a,b)=> new Date(b.pickup) - new Date(a.pickup));
+  sorted.forEach(b=>{
+    const item = document.createElement('div');
+    item.className = 'admin-booking-item';
+    item.innerHTML = `
+      <div>
+        <b>${b.carName || ''}</b>
+        <div class="admin-booking-details">
+          ${formatDateTimeForPdf(b.pickup, dict.htmlLang)} → ${formatDateTimeForPdf(b.ret, dict.htmlLang)}<br>
+          ${dict.account_ref_label} ${b.ref || '—'} · <span class="account-booking-status">${paymentStatusLabelForAccount(b.paymentStatus, dict)}</span>${b.total ? ' · ' + b.total : ''}
+        </div>
+      </div>
+      <button type="button" class="btn btn-outline" data-dl-row="${b.row}">${dict.account_download_pdf_btn}</button>`;
+    item.querySelector('[data-dl-row]').addEventListener('click', ()=> downloadAccountBookingPdf(b));
+    list.appendChild(item);
+  });
+}
+
+/* Regenerates the reservation PDF from the booking data already persisted
+   in the Bookings sheet, reusing the exact same generateBookingPdf() the
+   live checkout flow uses. Fields that were only ever known in-browser at
+   the moment of checkout (pickup/drop-off location, deposit choice, extra
+   resources, license years) were never saved there, so they're simply
+   omitted here (see the `if(data.x)` guards added to generateBookingPdf) —
+   everything that WAS persisted (customer, dates, nationality, total,
+   payment method, license/passport document links, vehicle photo) still
+   renders identically to the original. */
+async function downloadAccountBookingPdf(booking){
+  const dict = I18N[currentLang];
+  const car = CARS.find(c => c.id === booking.carId);
+  const [carImg, logoImg] = await Promise.all([
+    imageUrlToPngDataUrl(car ? car.imgSrc : '', { maxWidth: 400, format: 'image/jpeg', quality: 0.8 }),
+    imageUrlToPngDataUrl('images/logo.webp', { maxWidth: 200, format: 'image/png' }),
+  ]);
+  const pdfData = {
+    ref: booking.ref || '—',
+    date: new Date(booking.bookedAt || booking.pickup).toLocaleDateString(dict.htmlLang, { year: 'numeric', month: 'long', day: 'numeric' }),
+    name: booking.customerName || customerSession.name || '', phone: booking.phone || '', nationality: booking.nationality || '',
+    carName: booking.carName || (car ? car.name : ''),
+    pickup: formatDateTimeForPdf(booking.pickup, dict.htmlLang), ret: formatDateTimeForPdf(booking.ret, dict.htmlLang),
+    quantity: 1, total: booking.total || '',
+    licenseFileName: booking.licenseUrl ? dict.document_view_label : '',
+    licenseUrl: booking.licenseUrl || '',
+    passportFileName: booking.passportUrl ? dict.document_view_label : '',
+    passportUrl: booking.passportUrl || '',
+    carImg, logoImg,
+    paymentMethodLabel: paymentMethodLabelForAccount(booking.paymentMethod, dict),
+  };
+  const doc = await generateBookingPdf(dict, pdfData);
+  doc.save(`booking-${booking.ref || booking.row}.pdf`);
+}
+
+/* ---- Tabs (My Reservations / My Information) ---- */
+document.querySelectorAll('.account-tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.account-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('accountBookingsTab').style.display = tab.dataset.accountTab === 'bookings' ? 'block' : 'none';
+    document.getElementById('accountProfileTab').style.display = tab.dataset.accountTab === 'profile' ? 'block' : 'none';
+  });
+});
+
+/* ---- Login ---- */
+document.getElementById('accountLoginForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const dict = I18N[currentLang];
+  const email = document.getElementById('accLoginEmail').value.trim().toLowerCase();
+  const password = document.getElementById('accLoginPassword').value;
+  const errorEl = document.getElementById('accountLoginError');
+  const btn = document.getElementById('accountLoginBtn');
+  errorEl.hidden = true;
+  btn.disabled = true;
+  const result = await customerApiPost({ action: 'customerLogin', email, password });
+  btn.disabled = false;
+  if(!result.success){
+    errorEl.textContent = accountErrorMessage(dict, result.error);
+    errorEl.hidden = false;
+    return;
+  }
+  saveCustomerSession({ email: result.customer.email, password, name: result.customer.name, phone: result.customer.phone });
+  document.getElementById('accountLoginForm').reset();
+  showAccountDashboard();
+});
+
+/* ---- Signup ---- */
+document.getElementById('accountSignupForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const dict = I18N[currentLang];
+  const name = document.getElementById('accSignupName').value.trim();
+  const email = document.getElementById('accSignupEmail').value.trim().toLowerCase();
+  const phone = document.getElementById('accSignupPhone').value.trim();
+  const password = document.getElementById('accSignupPassword').value;
+  const errorEl = document.getElementById('accountSignupError');
+  const btn = document.getElementById('accountSignupBtn');
+  errorEl.hidden = true;
+  if(!name || !email || !password){
+    errorEl.textContent = dict.account_error_missing_fields;
+    errorEl.hidden = false;
+    return;
+  }
+  btn.disabled = true;
+  const result = await customerApiPost({ action: 'customerSignup', email, password, name, phone });
+  btn.disabled = false;
+  if(!result.success){
+    errorEl.textContent = accountErrorMessage(dict, result.error);
+    errorEl.hidden = false;
+    return;
+  }
+  saveCustomerSession({ email: result.customer.email, password, name: result.customer.name, phone: result.customer.phone });
+  document.getElementById('accountSignupForm').reset();
+  showAccountDashboard();
+});
+
+/* ---- Profile update ---- */
+document.getElementById('accountProfileForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const dict = I18N[currentLang];
+  const name = document.getElementById('accProfileName').value.trim();
+  const phone = document.getElementById('accProfilePhone').value.trim();
+  const errorEl = document.getElementById('accountProfileError');
+  const savedEl = document.getElementById('accountProfileSaved');
+  const btn = document.getElementById('accountProfileSaveBtn');
+  errorEl.hidden = true;
+  savedEl.style.display = 'none';
+  btn.disabled = true;
+  const result = await customerApiPost({ action: 'customerUpdateProfile', email: customerSession.email, password: customerSession.password, name, phone });
+  btn.disabled = false;
+  if(!result.success){
+    errorEl.textContent = accountErrorMessage(dict, result.error);
+    errorEl.hidden = false;
+    return;
+  }
+  saveCustomerSession({ ...customerSession, name, phone });
+  document.getElementById('accountWelcomeName').textContent = name || customerSession.email;
+  updateAccountNavLabel();
+  savedEl.style.display = 'block';
+  setTimeout(()=>{ savedEl.style.display = 'none'; }, 2500);
+});
+
+document.getElementById('accountLogoutBtn').addEventListener('click', ()=>{
+  clearCustomerSession();
+  updateAccountNavLabel();
+  showAccountAuth('login');
+});
+
+updateAccountNavLabel();
 
 /* ---------------------------------------------------------------
    BOOKING PREVIEW STEP — shown once the booking form passes validation,
@@ -4132,6 +4651,23 @@ async function finalizeBooking(choice){
   }
   renderFleet(dict, document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
   closePreviewModal();
+
+  // Optional account creation, requested via the checkbox in the booking form.
+  // The booking itself already succeeded above, so a signup failure here (e.g.
+  // the email is already registered) must never block or alarm the customer —
+  // just skip silently; they can log in to an existing account separately.
+  if(data.createAccount){
+    try{
+      const signupResult = await customerApiPost({
+        action: 'customerSignup', email: data.email, password: data.accountPassword,
+        name: data.name, phone: data.phone,
+      });
+      if(signupResult && signupResult.success){
+        saveCustomerSession({ email: data.email, password: data.accountPassword, name: data.name, phone: data.phone });
+        updateAccountNavLabel();
+      }
+    } catch(err){ /* non-blocking — booking already succeeded */ }
+  }
 
   // Generate the PDF in the background instead of awaiting it here. It re-encodes
   // images and draws dozens of text/label pairs, which is comparatively slow —
