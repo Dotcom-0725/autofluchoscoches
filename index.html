@@ -223,16 +223,16 @@ h2.section-title{
    the start and overlap the top bar above it. */
 header{
   position:sticky;top:0;left:0;right:0;z-index:100;
-  background:rgba(255,255,255,.85);
-  backdrop-filter:blur(10px);
+  background:#ffffff;
   border-bottom:1px solid var(--card-border);
+  box-shadow:0 2px 10px rgba(20,24,43,.05);
 }
 .nav-wrap{
   position:relative;
   display:flex;align-items:center;justify-content:space-between;
-  padding:14px 20px;max-width:1200px;margin:0 auto;
+  padding:16px 20px;max-width:1200px;margin:0 auto;
 }
-.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.15rem}
+.logo{display:flex;align-items:center;gap:14px;font-weight:800;font-size:1.15rem}
 .logo-badge{
   width:42px;height:42px;border-radius:12px;
   background:linear-gradient(135deg,var(--blue-500),var(--navy-600));
@@ -241,6 +241,19 @@ header{
   overflow:hidden;flex:none;
 }
 .logo-badge img{width:100%;height:100%;object-fit:cover}
+/* Header-only logo treatment: bigger badge, white card behind the mark
+   (instead of the blue gradient used elsewhere, e.g. the dark footer) so the
+   logo reads cleanly against the white header, plus a larger brand wordmark
+   next to it — the "more prominent, more professional" look requested. */
+header .logo{gap:16px}
+header .logo-badge{
+  width:64px;height:64px;border-radius:16px;
+  background:#ffffff;box-shadow:0 4px 16px rgba(20,24,43,.12);
+  border:1px solid var(--card-border);padding:6px;
+}
+header .logo-badge img{width:100%;height:100%;object-fit:contain}
+header .logo-text{font-size:1.5rem;font-weight:800;letter-spacing:.01em}
+header .logo-text small{font-size:.68rem;letter-spacing:.1em}
 .logo-text small{display:block;font-size:.62rem;color:var(--ink-dim);font-weight:600;letter-spacing:.12em}
 .nav-links{display:flex;gap:26px;align-items:center}
 .nav-links a{font-weight:600;font-size:.9rem;color:var(--ink-dim);transition:color .15s}
@@ -314,6 +327,10 @@ header{
   .logo{font-size:1rem;gap:8px}
   .logo-badge{width:36px;height:36px}
   .logo-text small{font-size:.56rem;letter-spacing:.06em}
+  header .logo{gap:10px}
+  header .logo-badge{width:48px;height:48px;padding:4px;border-radius:12px}
+  header .logo-text{font-size:1.15rem}
+  header .logo-text small{font-size:.58rem}
 }
 
 /* ---------- Hero (booking form directly on the background photo) ---------- */
@@ -515,6 +532,12 @@ input[data-custom-picker]{cursor:pointer}
 .about-stats div{display:flex;flex-direction:column;gap:4px}
 .about-stats b{font-size:1.15rem;color:var(--ink)}
 .about-stats span{font-size:.82rem;color:var(--ink-dim)}
+.about-founder{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  margin-top:28px;padding-top:20px;border-top:1px solid var(--card-border);
+}
+.about-founder-name{font-weight:800;font-size:1rem;color:var(--ink);letter-spacing:.02em}
+.about-founder-title{font-size:.8rem;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
 .why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px}
 .why-card{
   background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);
@@ -755,6 +778,7 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
   color:#a16207 !important;font-size:.82rem;background:rgba(245,165,36,.12);
   border:1px solid rgba(245,165,36,.35);border-radius:10px;padding:10px 12px;margin:14px 0 0;
 }
+.deposit-methods-note{color:var(--ink-dim);font-size:.78rem;margin:6px 0 0}
 .modal-actions{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
 .modal-actions .btn{flex:1}
 .modal-note{
@@ -1021,6 +1045,10 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
         <div><b>5.0 / 5 ⭐</b><span data-i18n="trust_google">Google rating (484 reviews)</span></div>
         <div><b data-i18n="trust_open">Open 24/7</b></div>
         <div><b data-i18n="about_stat_area">Tétouan &amp; Tangier</b><span data-i18n="about_stat_area_sub">Northern Morocco service area</span></div>
+      </div>
+      <div class="about-founder">
+        <span class="about-founder-name">NADIR ES SGHIAR</span>
+        <span class="about-founder-title" data-i18n="about_founder_title">Founder &amp; Managing Director</span>
       </div>
     </div>
   </div>
@@ -1323,6 +1351,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       </div>
       <label data-i18n="modal_deposit_label">Deposit</label>
       <select id="bkDeposit" class="deposit-select"></select>
+      <p class="deposit-methods-note" data-i18n="deposit_methods_note">Accepted deposit payment methods: bank transfer or cash.</p>
 
       <div class="modal-check-row modal-washing-row">
         <span data-i18n="modal_washing_label">Car Washing</span>
@@ -1869,6 +1898,7 @@ const I18N = {
     about_eyebrow:'Our story', about_title:'About Auto Fluchos Coches',
     about_text:'Auto Fluchos Coches is a car rental agency based in Tétouan, Morocco, serving customers across Tétouan, Tangier and Northern Morocco. We\'re open 24/7 and rated 5.0 out of 5 on Google from 484 reviews, with fast airport, hotel and city delivery and a straightforward, no-hidden-fees booking process.',
     about_stat_area:'Tétouan &amp; Tangier', about_stat_area_sub:'Northern Morocco service area',
+    about_founder_title:'Founder &amp; Managing Director',
     why1_title:'Modern & fully air-conditioned vehicles',
     why2_title:'Airport, hotel & city delivery service',
     why3_title:'Affordable rates with no hidden fees',
@@ -1917,6 +1947,7 @@ const I18N = {
     loc_agency:'Tétouan Agency', loc_tangier_airport:'Tangier Airport', loc_tangier_city:'Tangier City',
     loc_hotel:'Hotel Delivery', loc_chefchaouen:'Chefchaouen',
     modal_deposit_label:'Deposit', modal_washing_label:'Car Washing', washing_no:'Not needed', washing_yes:'Include car washing',
+    deposit_methods_note:'Accepted deposit payment methods: bank transfer or cash.',
     washing_mandatory:'mandatory', deposit_refundable:'deposit (refundable)', deposit_per_day:'/day',
     deposit_no_deposit:'No deposit', deposit_non_refundable:'non-refundable',
     hours_warning:'Outside business hours (08:00–20:00): a €10 surcharge has been added per pickup/return outside these hours.',
@@ -2006,6 +2037,7 @@ const I18N = {
     about_eyebrow:'Notre histoire', about_title:'À propos d\'Auto Fluchos Coches',
     about_text:'Auto Fluchos Coches est une agence de location de voitures basée à Tétouan, au Maroc, qui sert les clients à Tétouan, Tanger et dans tout le Nord du Maroc. Nous sommes ouverts 24h/24 et 7j/7, notés 5,0/5 sur Google avec 484 avis, avec un service de livraison rapide à l\'aéroport, à l\'hôtel et en ville, et un processus de réservation simple, sans frais cachés.',
     about_stat_area:'Tétouan &amp; Tanger', about_stat_area_sub:'Zone de service : Nord du Maroc',
+    about_founder_title:'Fondateur &amp; Directeur Général',
     why1_title:'Véhicules modernes et entièrement climatisés',
     why2_title:'Service de livraison aéroport, hôtel et ville',
     why3_title:'Tarifs abordables sans frais cachés',
@@ -2054,6 +2086,7 @@ const I18N = {
     loc_agency:'Agence de Tétouan', loc_tangier_airport:'Aéroport de Tanger', loc_tangier_city:'Ville de Tanger',
     loc_hotel:'Livraison à l\'hôtel', loc_chefchaouen:'Chefchaouen',
     modal_deposit_label:'Caution', modal_washing_label:'Lavage de la voiture', washing_no:'Non nécessaire', washing_yes:'Inclure le lavage',
+    deposit_methods_note:'Moyens de paiement acceptés pour la caution : virement bancaire ou espèces.',
     washing_mandatory:'obligatoire', deposit_refundable:'de caution (remboursable)', deposit_per_day:'/jour',
     deposit_no_deposit:'Sans caution', deposit_non_refundable:'non remboursable',
     hours_warning:'En dehors des heures d\'ouverture (08h00–20h00) : un supplément de 10€ a été ajouté par prise en charge/retour hors de ces heures.',
@@ -2143,6 +2176,7 @@ const I18N = {
     about_eyebrow:'Nuestra historia', about_title:'Sobre Auto Fluchos Coches',
     about_text:'Auto Fluchos Coches es una agencia de alquiler de coches con sede en Tetuán, Marruecos, que atiende a clientes en Tetuán, Tánger y el norte de Marruecos. Estamos abiertos 24/7 y tenemos una calificación de 5.0 sobre 5 en Google con 484 reseñas, con servicio rápido de entrega en el aeropuerto, hotel y ciudad, y un proceso de reserva sencillo, sin cargos ocultos.',
     about_stat_area:'Tetuán y Tánger', about_stat_area_sub:'Zona de servicio: norte de Marruecos',
+    about_founder_title:'Fundador y Director General',
     why1_title:'Vehículos modernos y totalmente climatizados',
     why2_title:'Servicio de entrega en aeropuerto, hotel y ciudad',
     why3_title:'Tarifas asequibles sin cargos ocultos',
@@ -2192,6 +2226,7 @@ const I18N = {
     loc_agency:'Agencia de Tetuán', loc_tangier_airport:'Aeropuerto de Tánger', loc_tangier_city:'Ciudad de Tánger',
     loc_hotel:'Entrega en el hotel', loc_chefchaouen:'Chefchaouen',
     modal_deposit_label:'Depósito', modal_washing_label:'Lavado del coche', washing_no:'No necesario', washing_yes:'Incluir lavado',
+    deposit_methods_note:'Métodos de pago aceptados para el depósito: transferencia bancaria o efectivo.',
     washing_mandatory:'obligatorio', deposit_refundable:'de depósito (reembolsable)', deposit_per_day:'/día',
     deposit_no_deposit:'Sin depósito', deposit_non_refundable:'no reembolsable',
     hours_warning:'Fuera del horario comercial (08:00–20:00): se ha añadido un recargo de 10€ por cada recogida/devolución fuera de este horario.',
@@ -2281,6 +2316,7 @@ const I18N = {
     about_eyebrow:'قصتنا', about_title:'من نحن - Auto Fluchos Coches',
     about_text:'أوطو فلوشوس كوشيس هي وكالة لكراء السيارات مقرها تطوان، المغرب، تخدم الزبناء في تطوان وطنجة وشمال المغرب. نحن مفتوحون على مدار الساعة طوال أيام الأسبوع، وحاصلون على تقييم 5.0 من 5 على غوغل بناءً على 484 تقييماً، مع خدمة توصيل سريعة للمطار والفندق والمدينة، وعملية حجز بسيطة بدون رسوم خفية.',
     about_stat_area:'تطوان وطنجة', about_stat_area_sub:'منطقة الخدمة: شمال المغرب',
+    about_founder_title:'المؤسس والمدير العام',
     why1_title:'سيارات حديثة ومكيفة بالكامل',
     why2_title:'خدمة توصيل للمطار والفندق والمدينة',
     why3_title:'أسعار مناسبة بدون رسوم خفية',
@@ -2330,6 +2366,7 @@ const I18N = {
     loc_agency:'وكالة تطوان', loc_tangier_airport:'مطار طنجة', loc_tangier_city:'مدينة طنجة',
     loc_hotel:'التوصيل للفندق', loc_chefchaouen:'شفشاون',
     modal_deposit_label:'الضمان', modal_washing_label:'غسل السيارة', washing_no:'غير مطلوب', washing_yes:'شامل غسل السيارة',
+    deposit_methods_note:'طرق الدفع المقبولة للضمان: تحويل بنكي أو نقداً.',
     washing_mandatory:'إجباري', deposit_refundable:'ضمان (قابل للاسترجاع)', deposit_per_day:'/اليوم',
     deposit_no_deposit:'بدون ضمان', deposit_non_refundable:'غير قابل للاسترجاع',
     hours_warning:'خارج ساعات العمل (08:00–20:00): تمت إضافة 10€ لكل عملية استلام/إرجاع خارج هذه الساعات.',
