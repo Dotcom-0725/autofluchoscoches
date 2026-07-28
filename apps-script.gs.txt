@@ -457,6 +457,55 @@ function doPost(e) {
     return jsonResponse_({ success: true });
   }
 
+  // Customer-initiated: cancel one of their own reservations from the "My
+  // Account" dashboard. Ownership is checked against the booking's stored
+  // customer_email (not just "any authenticated customer") so one customer
+  // can never cancel another's reservation by guessing a reference.
+  if (body.action === 'customerCancelBooking') {
+    if (!body.email || !body.password || !body.ref) return jsonResponse_({ success: false, error: 'Missing fields' });
+    const customer = findCustomerByEmail_(String(body.email).trim().toLowerCase());
+    if (!customer || hashPassword_(body.password, customer.salt) !== customer.passwordHash) {
+      return jsonResponse_({ success: false, error: 'invalid_credentials' });
+    }
+    const row = findBookingRowByRef_(body.ref);
+    if (row === -1) return jsonResponse_({ success: false, error: 'Booking not found' });
+    const sheet = getBookingsSheet_();
+    const ownerEmail = String(sheet.getRange(row, 12).getValue() || '').trim().toLowerCase();
+    if (ownerEmail !== customer.email.trim().toLowerCase()) return jsonResponse_({ success: false, error: 'not_owner' });
+    sheet.deleteRow(row);
+    return jsonResponse_({ success: true });
+  }
+
+  // Customer-initiated: change their own reservation's pickup/return dates
+  // from the "My Account" dashboard. Everything else about the booking
+  // (vehicle, price, customer details) stays untouched — this is a
+  // self-service date change, not a full edit. Re-runs the same
+  // availability check used everywhere else (excluding this booking's own
+  // row) so a customer can never double-book a unit that's since been
+  // taken by someone else.
+  if (body.action === 'customerEditBooking') {
+    if (!body.email || !body.password || !body.ref || !body.pickup || !body.ret) {
+      return jsonResponse_({ success: false, error: 'Missing fields' });
+    }
+    const customer = findCustomerByEmail_(String(body.email).trim().toLowerCase());
+    if (!customer || hashPassword_(body.password, customer.salt) !== customer.passwordHash) {
+      return jsonResponse_({ success: false, error: 'invalid_credentials' });
+    }
+    const row = findBookingRowByRef_(body.ref);
+    if (row === -1) return jsonResponse_({ success: false, error: 'Booking not found' });
+    const sheet = getBookingsSheet_();
+    const existing = sheet.getRange(row, 1, 1, 19).getValues()[0];
+    const ownerEmail = String(existing[11] || '').trim().toLowerCase();
+    if (ownerEmail !== customer.email.trim().toLowerCase()) return jsonResponse_({ success: false, error: 'not_owner' });
+    const carId = existing[0];
+    const stock = Number(existing[8]) || 1;
+    const assignment = findAvailableUnitForBooking_(carId, body.pickup, body.ret, stock, row, null);
+    if (assignment.mode === 'sold_out') return jsonResponse_({ success: false, error: 'sold_out' });
+    sheet.getRange(row, 5, 1, 2).setValues([[body.pickup, body.ret]]);
+    sheet.getRange(row, 19).setValue(assignment.unitId || '');
+    return jsonResponse_({ success: true });
+  }
+
   // Default action: record a new booking (website checkout OR a manual
   // reservation created from the admin dashboard — same code path, so
   // inventory updates automatically either way).

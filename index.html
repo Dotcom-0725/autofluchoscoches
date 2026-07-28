@@ -689,6 +689,9 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
 #accountProfileSaved{color:var(--success,#12a150) !important}
 .account-logout-btn{margin-top:18px}
 .account-booking-status{font-weight:700}
+.account-booking-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.account-booking-actions .btn{white-space:nowrap;padding:8px 14px;font-size:.8rem}
+.account-cancel-btn{color:#d33;border-color:#d33}
 
 /* ---------- Floating WhatsApp ---------- */
 .float-whatsapp{
@@ -1542,6 +1545,21 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       <div id="accountBookingsTab">
         <div id="accountBookingsList"></div>
         <p id="accountBookingsEmpty" data-i18n="account_no_bookings" style="display:none">No reservations yet.</p>
+        <p class="modal-error" id="accountBookingsError" hidden></p>
+
+        <div id="accountEditBookingPanel" class="modal-panel active" style="display:none">
+          <h4 data-i18n="account_edit_booking_title">Edit Reservation</h4>
+          <p class="account-hint" data-i18n="account_edit_booking_sub">Update your pick-up and drop-off dates. Availability will be re-checked.</p>
+          <label data-i18n="modal_pickup_label">Pick-up Date</label>
+          <input type="datetime-local" id="accEditPickup">
+          <label data-i18n="modal_return_label">Drop-off Date</label>
+          <input type="datetime-local" id="accEditReturn">
+          <p class="modal-error" id="accountEditBookingError" hidden></p>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-blue" id="accountEditBookingSaveBtn" data-i18n="account_save_btn">Save changes</button>
+            <button type="button" class="btn btn-outline" id="accountEditBookingBackBtn" data-i18n="account_edit_back_btn">← Back</button>
+          </div>
+        </div>
       </div>
 
       <div id="accountProfileTab" style="display:none">
@@ -2007,6 +2025,10 @@ const I18N = {
     account_welcome:'Welcome back,', account_tab_bookings:'My Reservations', account_tab_profile:'My Information',
     account_no_bookings:'No reservations yet.', account_save_btn:'Save changes', account_profile_saved:'Saved!',
     account_logout_btn:'Log out', account_download_pdf_btn:'⬇ Download PDF', account_ref_label:'Ref.',
+    account_edit_btn:'Edit', account_cancel_btn:'Cancel', account_edit_booking_title:'Edit Reservation',
+    account_edit_booking_sub:'Update your pick-up and drop-off dates. Availability will be re-checked.',
+    account_edit_back_btn:'← Back', account_cancel_confirm_msg:'Cancel this reservation? This cannot be undone.',
+    account_error_generic:'Something went wrong. Please try again.',
     account_error_invalid_credentials:'Incorrect email or password.', account_error_missing_fields:'Please fill in all fields.',
     account_error_invalid_email:'Please enter a valid email address.', account_error_weak_password:'Password must be at least 6 characters.',
     account_error_email_taken:'An account with this email already exists.', account_error_network:'Connection error — please try again.',
@@ -2169,6 +2191,10 @@ const I18N = {
     account_welcome:'Bon retour,', account_tab_bookings:'Mes réservations', account_tab_profile:'Mes informations',
     account_no_bookings:'Aucune réservation pour le moment.', account_save_btn:'Enregistrer', account_profile_saved:'Enregistré !',
     account_logout_btn:'Se déconnecter', account_download_pdf_btn:'⬇ Télécharger le PDF', account_ref_label:'Réf.',
+    account_edit_btn:'Modifier', account_cancel_btn:'Annuler', account_edit_booking_title:'Modifier la réservation',
+    account_edit_booking_sub:'Modifiez vos dates de prise en charge et de retour. La disponibilité sera revérifiée.',
+    account_edit_back_btn:'← Retour', account_cancel_confirm_msg:'Annuler cette réservation ? Cette action est irréversible.',
+    account_error_generic:'Une erreur est survenue. Veuillez réessayer.',
     account_error_invalid_credentials:'Email ou mot de passe incorrect.', account_error_missing_fields:'Merci de remplir tous les champs.',
     account_error_invalid_email:'Merci de saisir une adresse email valide.', account_error_weak_password:'Le mot de passe doit contenir au moins 6 caractères.',
     account_error_email_taken:'Un compte existe déjà avec cet email.', account_error_network:'Erreur de connexion — merci de réessayer.',
@@ -2331,6 +2357,10 @@ const I18N = {
     account_welcome:'Bienvenido de nuevo,', account_tab_bookings:'Mis reservas', account_tab_profile:'Mi información',
     account_no_bookings:'Aún no tiene reservas.', account_save_btn:'Guardar cambios', account_profile_saved:'¡Guardado!',
     account_logout_btn:'Cerrar sesión', account_download_pdf_btn:'⬇ Descargar PDF', account_ref_label:'Ref.',
+    account_edit_btn:'Editar', account_cancel_btn:'Cancelar', account_edit_booking_title:'Editar reserva',
+    account_edit_booking_sub:'Actualice sus fechas de recogida y devolución. Se volverá a comprobar la disponibilidad.',
+    account_edit_back_btn:'← Volver', account_cancel_confirm_msg:'¿Cancelar esta reserva? Esta acción no se puede deshacer.',
+    account_error_generic:'Algo salió mal. Inténtelo de nuevo.',
     account_error_invalid_credentials:'Email o contraseña incorrectos.', account_error_missing_fields:'Por favor complete todos los campos.',
     account_error_invalid_email:'Por favor introduzca un email válido.', account_error_weak_password:'La contraseña debe tener al menos 6 caracteres.',
     account_error_email_taken:'Ya existe una cuenta con este email.', account_error_network:'Error de conexión — inténtelo de nuevo.',
@@ -2494,6 +2524,10 @@ const I18N = {
     account_welcome:'مرحباً بعودتك،', account_tab_bookings:'حجوزاتي', account_tab_profile:'معلوماتي',
     account_no_bookings:'لا توجد حجوزات بعد.', account_save_btn:'حفظ التغييرات', account_profile_saved:'تم الحفظ!',
     account_logout_btn:'تسجيل الخروج', account_download_pdf_btn:'⬇ تحميل PDF', account_ref_label:'المرجع:',
+    account_edit_btn:'تعديل', account_cancel_btn:'إلغاء', account_edit_booking_title:'تعديل الحجز',
+    account_edit_booking_sub:'حدّث تواريخ الاستلام والإرجاع. سيتم التحقق من التوفر مجدداً.',
+    account_edit_back_btn:'→ رجوع', account_cancel_confirm_msg:'هل تريد إلغاء هذا الحجز؟ لا يمكن التراجع عن هذا الإجراء.',
+    account_error_generic:'حدث خطأ ما. يرجى المحاولة مرة أخرى.',
     account_error_invalid_credentials:'البريد الإلكتروني أو كلمة المرور غير صحيحة.', account_error_missing_fields:'يرجى ملء جميع الحقول.',
     account_error_invalid_email:'يرجى إدخال بريد إلكتروني صحيح.', account_error_weak_password:'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.',
     account_error_email_taken:'يوجد حساب بالفعل بهذا البريد الإلكتروني.', account_error_network:'خطأ في الاتصال — يرجى المحاولة مرة أخرى.',
@@ -4389,10 +4423,19 @@ async function showAccountDashboard(){
   renderAccountBookings(result.bookings || []);
 }
 
+// Kept around so the "← Back" button on the edit-dates panel can redraw the
+// list instantly without a round-trip, and so cancel/edit success handlers
+// can just re-run showAccountDashboard() to get a fresh copy from the server.
+let lastAccountBookings = [];
+
 function renderAccountBookings(bookings){
+  lastAccountBookings = bookings;
   const dict = I18N[currentLang];
   const list = document.getElementById('accountBookingsList');
   const emptyMsg = document.getElementById('accountBookingsEmpty');
+  document.getElementById('accountEditBookingPanel').style.display = 'none';
+  document.getElementById('accountBookingsError').hidden = true;
+  list.style.display = '';
   list.innerHTML = '';
   if(!bookings.length){ emptyMsg.style.display = 'block'; return; }
   emptyMsg.style.display = 'none';
@@ -4401,6 +4444,12 @@ function renderAccountBookings(bookings){
   sorted.forEach(b=>{
     const item = document.createElement('div');
     item.className = 'admin-booking-item';
+    // Only upcoming, still-active reservations can be changed/cancelled by the
+    // customer themselves — a trip that's already started or a cancelled row
+    // shouldn't offer buttons that no longer make sense.
+    const isUpcoming = new Date(b.pickup) > new Date();
+    const isCancelled = b.paymentStatus === 'cancelled' || b.bookingStatus === 'cancelled';
+    const canManage = isUpcoming && !isCancelled;
     item.innerHTML = `
       <div>
         <b>${b.carName || ''}</b>
@@ -4409,10 +4458,76 @@ function renderAccountBookings(bookings){
           ${dict.account_ref_label} ${b.ref || '—'} · <span class="account-booking-status">${paymentStatusLabelForAccount(b.paymentStatus, dict)}</span>${b.total ? ' · ' + b.total : ''}
         </div>
       </div>
-      <button type="button" class="btn btn-outline" data-dl-row="${b.row}">${dict.account_download_pdf_btn}</button>`;
+      <div class="account-booking-actions">
+        <button type="button" class="btn btn-outline" data-dl-row="${b.row}">${dict.account_download_pdf_btn}</button>
+        ${canManage ? `<button type="button" class="btn btn-outline" data-edit-row="${b.row}">${dict.account_edit_btn}</button>` : ''}
+        ${canManage ? `<button type="button" class="btn btn-outline account-cancel-btn" data-cancel-row="${b.row}">${dict.account_cancel_btn}</button>` : ''}
+      </div>`;
     item.querySelector('[data-dl-row]').addEventListener('click', ()=> downloadAccountBookingPdf(b));
+    const editBtn = item.querySelector('[data-edit-row]');
+    if(editBtn) editBtn.addEventListener('click', ()=> openEditBookingPanel(b));
+    const cancelBtn = item.querySelector('[data-cancel-row]');
+    if(cancelBtn) cancelBtn.addEventListener('click', ()=> cancelAccountBooking(b));
     list.appendChild(item);
   });
+}
+
+let editingBookingRef = null;
+function openEditBookingPanel(booking){
+  editingBookingRef = booking.ref;
+  document.getElementById('accEditPickup').value = toDatetimeLocalString(new Date(booking.pickup));
+  document.getElementById('accEditReturn').value = toDatetimeLocalString(new Date(booking.ret));
+  document.getElementById('accountEditBookingError').hidden = true;
+  document.getElementById('accountBookingsList').style.display = 'none';
+  document.getElementById('accountBookingsEmpty').style.display = 'none';
+  document.getElementById('accountEditBookingPanel').style.display = 'block';
+}
+document.getElementById('accountEditBookingBackBtn').addEventListener('click', ()=>{
+  renderAccountBookings(lastAccountBookings);
+});
+document.getElementById('accountEditBookingSaveBtn').addEventListener('click', async ()=>{
+  const dict = I18N[currentLang];
+  const errorEl = document.getElementById('accountEditBookingError');
+  const pickup = document.getElementById('accEditPickup').value;
+  const ret = document.getElementById('accEditReturn').value;
+  if(!pickup || !ret || new Date(ret) <= new Date(pickup)){
+    errorEl.textContent = dict.required_field;
+    errorEl.hidden = false;
+    return;
+  }
+  const btn = document.getElementById('accountEditBookingSaveBtn');
+  btn.disabled = true;
+  try{
+    const result = await customerApiPost({
+      action: 'customerEditBooking', email: customerSession.email, password: customerSession.password,
+      ref: editingBookingRef, pickup, ret,
+    });
+    if(!result.success){
+      errorEl.textContent = result.error === 'sold_out' ? dict.sold_out_error : dict.account_error_generic;
+      errorEl.hidden = false;
+      return;
+    }
+    await showAccountDashboard();
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+async function cancelAccountBooking(booking){
+  const dict = I18N[currentLang];
+  if(!confirm(dict.account_cancel_confirm_msg)) return;
+  const errorEl = document.getElementById('accountBookingsError');
+  errorEl.hidden = true;
+  const result = await customerApiPost({
+    action: 'customerCancelBooking', email: customerSession.email, password: customerSession.password,
+    ref: booking.ref,
+  });
+  if(!result.success){
+    errorEl.textContent = dict.account_error_generic;
+    errorEl.hidden = false;
+    return;
+  }
+  await showAccountDashboard();
 }
 
 /* Regenerates the reservation PDF from the booking data already persisted
