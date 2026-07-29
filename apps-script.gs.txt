@@ -64,6 +64,27 @@ const EDITOR_ROLES = ['super_admin', 'manager']; // allowed to edit fleet/pricin
 const NOTIFICATION_EMAIL = 'Contact@autofluchoscoches.com';
 const SITE_URL = 'https://autofluchoscoches.com/';
 
+// Instant booking alerts via Telegram (in addition to the email above).
+// The bot token/chat id are NOT hardcoded here (this file is public on
+// GitHub) - they're read from this project's Script Properties instead.
+// Set them once via Project Settings > Script Properties in the Apps
+// Script editor: keys TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID (chat id
+// captured from getUpdates after the owner sent /start to the bot).
+function sendTelegramMessage_(text) {
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const token = props.getProperty('TELEGRAM_BOT_TOKEN');
+    const chatId = props.getProperty('TELEGRAM_CHAT_ID');
+    if (!token || !chatId) return;
+    UrlFetchApp.fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
+      method: 'post',
+      contentType: 'application/x-www-form-urlencoded',
+      payload: { chat_id: chatId, text: text },
+      muteHttpExceptions: true,
+    });
+  } catch (e) { /* don't fail the caller over a Telegram outage/quota */ }
+}
+
 function roleForPassword_(password) {
   return ADMIN_ROLES[password] || null;
 }
@@ -972,21 +993,22 @@ function formatDateOnly_(value) {
 }
 
 function sendBookingEmail_(body) {
+  const subject = 'New booking: ' + (body.carName || body.carId) + ' — ' + (body.ref || '');
+  const lines = [
+    'A new booking was just made ' + (body.source && body.source !== 'website' ? '(source: ' + body.source + ')' : 'on the website') + '.',
+    '',
+    'Reference: ' + (body.ref || ''),
+    'Customer: ' + (body.customerName || ''),
+    'Phone: ' + (body.phone || ''),
+    'Vehicle: ' + (body.carName || body.carId),
+    'Pickup: ' + (body.pickup || ''),
+    'Return: ' + (body.ret || ''),
+    'Total: ' + (body.total || ''),
+  ];
   try {
-    const subject = 'New booking: ' + (body.carName || body.carId) + ' — ' + (body.ref || '');
-    const lines = [
-      'A new booking was just made ' + (body.source && body.source !== 'website' ? '(source: ' + body.source + ')' : 'on the website') + '.',
-      '',
-      'Reference: ' + (body.ref || ''),
-      'Customer: ' + (body.customerName || ''),
-      'Phone: ' + (body.phone || ''),
-      'Vehicle: ' + (body.carName || body.carId),
-      'Pickup: ' + (body.pickup || ''),
-      'Return: ' + (body.ret || ''),
-      'Total: ' + (body.total || ''),
-    ];
     MailApp.sendEmail(NOTIFICATION_EMAIL, subject, lines.join('\n'));
   } catch (e) { /* don't fail the booking over an email quota/error */ }
+  sendTelegramMessage_('🚗 ' + subject + '\n\n' + lines.slice(1).join('\n'));
 }
 
 /* Sent to the CUSTOMER (not the agency) once an admin marks a booking's
