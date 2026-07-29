@@ -846,7 +846,7 @@ function fileToWebpDataUrl(file, maxWidth){
 }
 function openCarModal(car){
   const isNew = !car;
-  car = car || { id:'', name:'', price:30, seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', body:[], stock:1, imgSrc:'', cat:'citadine' };
+  car = car || { id:'', name:'', price:30, seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', body:[], stock:1, imgSrc:'', imgSrc2:'', imgSrc3:'', cat:'citadine' };
   openModal(`
     <h3>${isNew ? 'Nouveau véhicule' : 'Modifier le véhicule'}</h3>
     <div class="field-grid">
@@ -865,10 +865,19 @@ function openCarModal(car){
       <div class="field field-check"><input type="checkbox" id="cfSuv" ${(car.body||[]).includes('suv')?'checked':''}><label style="text-transform:none">Étiquette SUV</label></div>
       <div class="field field-check"><input type="checkbox" id="cfLuxury" ${(car.body||[]).includes('luxury')?'checked':''}><label style="text-transform:none">Étiquette Luxe</label></div>
     </div>
-    <div class="field"><label>Photo</label>
+    <div class="field"><label>Photo 1 (principale)</label>
       <input id="cfImgSrc" value="${car.imgSrc}" placeholder="images/votre-photo.webp ou rempli automatiquement par l'import ci-dessous">
       <input type="file" id="cfImgUpload" accept="image/*" style="margin-top:6px">
       <span style="font-size:.72rem;color:var(--ink-dim)">L'import convertit automatiquement la photo en WebP compressé intégré. Pour une photo en pleine résolution, téléversez-la vous-même dans le dossier images/ et collez son chemin ci-dessus.</span>
+    </div>
+    <div class="field"><label>Photo 2 (optionnelle)</label>
+      <input id="cfImgSrc2" value="${car.imgSrc2 || ''}" placeholder="images/votre-photo-2.webp">
+      <input type="file" id="cfImgUpload2" accept="image/*" style="margin-top:6px">
+    </div>
+    <div class="field"><label>Photo 3 (optionnelle)</label>
+      <input id="cfImgSrc3" value="${car.imgSrc3 || ''}" placeholder="images/votre-photo-3.webp">
+      <input type="file" id="cfImgUpload3" accept="image/*" style="margin-top:6px">
+      <span style="font-size:.72rem;color:var(--ink-dim)">Les photos 2 et 3 s'affichent en galerie (avec flèches) sur la fiche du véhicule si elles sont renseignées.</span>
     </div>
     <div class="modal-actions">
       <button class="btn btn-outline" id="cfCancel">Annuler</button>
@@ -883,6 +892,20 @@ function openCarModal(car){
     const dataUrl = await fileToWebpDataUrl(file, 640);
     document.getElementById('cfImgSrc').value = dataUrl;
     toast('Photo prête — cliquez sur Enregistrer pour appliquer');
+  });
+  document.getElementById('cfImgUpload2').addEventListener('change', async e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    toast('Conversion de la photo 2…');
+    document.getElementById('cfImgSrc2').value = await fileToWebpDataUrl(file, 640);
+    toast('Photo 2 prête — cliquez sur Enregistrer pour appliquer');
+  });
+  document.getElementById('cfImgUpload3').addEventListener('change', async e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    toast('Conversion de la photo 3…');
+    document.getElementById('cfImgSrc3').value = await fileToWebpDataUrl(file, 640);
+    toast('Photo 3 prête — cliquez sur Enregistrer pour appliquer');
   });
   document.getElementById('cfSave').addEventListener('click', async ()=>{
     const id = isNew ? document.getElementById('cfId').value.trim().toLowerCase().replace(/[^a-z0-9-]+/g,'-') : car.id;
@@ -900,6 +923,8 @@ function openCarModal(car){
       fuelKey: document.getElementById('cfFuel').value,
       body, cat: car.cat || 'citadine',
       imgSrc: document.getElementById('cfImgSrc').value.trim(),
+      imgSrc2: document.getElementById('cfImgSrc2').value.trim(),
+      imgSrc3: document.getElementById('cfImgSrc3').value.trim(),
       offer: (Number(document.getElementById('cfPrice').value) || 0) + '€',
       sortOrder: car.sortOrder,
     };

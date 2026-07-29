@@ -472,6 +472,22 @@ footer .logo-text{font-size:1.4rem;font-weight:800}
   padding:5px 10px;border-radius:999px;backdrop-filter:blur(4px);
 }
 .car-stock-badge.is-delayed-badge{background:rgba(180,120,10,.88)}
+.car-photo img{transition:opacity .15s}
+.car-gallery-nav{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:2;
+  width:26px;height:26px;border-radius:50%;border:none;
+  background:rgba(20,24,43,.55);color:#fff;font-size:.85rem;line-height:1;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px);
+}
+.car-gallery-nav:hover{background:rgba(20,24,43,.8)}
+.car-gallery-prev{inset-inline-start:8px}
+.car-gallery-next{inset-inline-end:8px}
+.car-gallery-dots{
+  position:absolute;bottom:8px;left:0;right:0;z-index:2;
+  display:flex;justify-content:center;gap:5px;
+}
+.car-gallery-dots span{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5);transition:background .15s}
+.car-gallery-dots span.active{background:#fff}
 .car-body{padding:18px;display:flex;flex-direction:column;gap:12px;flex:1}
 .car-body h3{font-size:1rem}
 .car-price{font-size:1.5rem;color:var(--gold);font-weight:800}
@@ -1861,17 +1877,16 @@ function populateLocationAndDepositSelects(dict){
 let CARS = [
   {id:'clio5-auto', cat:'berline', imgSrc:'images/clio5-auto.webp', offer:'30€', price:30, name:'RENAULT CLIO 5 AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', stock:2},
   {id:'clio5-manuel', cat:'berline', imgSrc:'images/clio5-manuel.webp', offer:'30€', price:30, name:'RENAULT CLIO 5 MANUEL', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:2},
-  {id:'opel-corsa', cat:'citadine', imgSrc:'images/opel-corsa.webp', offer:'30€', price:30, name:'OPEL CORSA MANUEL', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:1},
-  {id:'sandero-stepway-auto', cat:'berline', imgSrc:'images/sandero-stepway-auto.webp', offer:'30€', price:30, name:'DACIA SANDERO STEPWAY AUTOMATIC', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', stock:3},
-  /* "Streetway" is a distinct real trim from "Stepway" in this agency's fleet (confirmed
-     with the client, not a typo) — reusing sandero.webp as its representative photo since
-     it shares the same base-hatchback body style and no dedicated photo exists yet. */
-  {id:'sandero-streetway-auto', cat:'citadine', imgSrc:'images/sandero.webp', offer:'30€', price:30, name:'DACIA SANDERO STREETWAY AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', stock:2},
-  {id:'sandero-streetway-manuel', cat:'citadine', imgSrc:'images/sandero.webp', offer:'30€', price:30, name:'DACIA SANDERO STREETWAY MANUELLE', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:4},
+  {id:'opel-corsa', cat:'citadine', imgSrc:'images/opel-corsa.webp', imgSrc2:'images/opel-corsa-2.webp', imgSrc3:'images/opel-corsa-3.webp', offer:'30€', price:30, name:'OPEL CORSA MANUEL', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:1},
+  {id:'sandero-stepway-auto', cat:'berline', imgSrc:'images/sandero-stepway-auto.webp', imgSrc2:'images/sandero-stepway-auto-2.webp', imgSrc3:'images/sandero-stepway-auto-3.webp', offer:'30€', price:30, name:'DACIA SANDERO STEPWAY AUTOMATIC', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', stock:3},
+  /* "Streetway" is a distinct real trim from "Stepway" in this agency's fleet
+     (confirmed with the client, not a typo). */
+  {id:'sandero-streetway-auto', cat:'citadine', imgSrc:'images/sandero.webp', imgSrc2:'images/sandero-2.webp', imgSrc3:'images/sandero-3.webp', offer:'30€', price:30, name:'DACIA SANDERO STREETWAY AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', stock:2},
+  {id:'sandero-streetway-manuel', cat:'citadine', imgSrc:'images/sandero.webp', imgSrc2:'images/sandero-2.webp', imgSrc3:'images/sandero-3.webp', offer:'30€', price:30, name:'DACIA SANDERO STREETWAY MANUELLE', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:4},
   {id:'sandero-stepway-extreme', cat:'citadine', imgSrc:'images/sandero-stepway-extreme.webp', offer:'30€', price:30, name:'DACIA SANDERO STEPWAY MANUAL EXTREME', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:3},
-  {id:'jogger-7p', cat:'familiale', imgSrc:'images/jogger-7p.webp', offer:'40€', price:40, name:'DACIA JOGGER 7 PLACES MANUEL', seats:7, gearKey:'manual', doors:4, fuelKey:'diesel', stock:2},
-  {id:'c3-aircross-hybride', cat:'berline', imgSrc:'images/c3-aircross-hybride.webp', offer:'50€', price:50, name:'CITROËN NEW C3 AIRCROSS AUTOMATIQUE HYBRIDE', seats:5, gearKey:'auto', doors:4, fuelKey:'hybride', body:['suv'], stock:1},
-  {id:'nissan-magnite', cat:'berline', imgSrc:'images/nissan-magnite.webp', offer:'35€', price:35, name:'NISSAN MAGNITE AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', body:['suv'], stock:1},
+  {id:'jogger-7p', cat:'familiale', imgSrc:'images/jogger-7p.webp', imgSrc2:'images/jogger-7p-2.webp', imgSrc3:'images/jogger-7p-3.webp', offer:'40€', price:40, name:'DACIA JOGGER 7 PLACES MANUEL', seats:7, gearKey:'manual', doors:4, fuelKey:'diesel', stock:2},
+  {id:'c3-aircross-hybride', cat:'berline', imgSrc:'images/c3-aircross-hybride.webp', imgSrc2:'images/c3-aircross-hybride-2.webp', imgSrc3:'images/c3-aircross-hybride-3.webp', offer:'50€', price:50, name:'CITROËN NEW C3 AIRCROSS AUTOMATIQUE HYBRIDE', seats:5, gearKey:'auto', doors:4, fuelKey:'hybride', body:['suv'], stock:1},
+  {id:'nissan-magnite', cat:'berline', imgSrc:'images/nissan-magnite.webp', imgSrc2:'images/nissan-magnite-2.webp', imgSrc3:'images/nissan-magnite-3.webp', offer:'35€', price:35, name:'NISSAN MAGNITE AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', body:['suv'], stock:1},
 ];
 
 /* Category matching for the fleet filter bar. Categories are derived from each
@@ -3076,6 +3091,9 @@ function renderFleet(dict, cat){
     const isDelayed = availability.status === 'delayed';
     const remainingForRange = availability.status === 'unknown' ? getRemainingStockForRange(c, qbRange.pickup, qbRange.ret) : availability.remaining;
     const altText = `${c.name} rental car in Tétouan &amp; Tangier — ${c.seats} seats, ${gearLabel}, ${fuelLabel} — Auto Fluchos Coches`;
+    // Up to 3 photos per car (imgSrc/imgSrc2/imgSrc3) — only cars with more
+    // than one actually get the arrow/dot gallery controls below.
+    const photos = [c.imgSrc, c.imgSrc2, c.imgSrc3].filter(Boolean);
     const card = document.createElement('div');
     card.className = 'car-card' + (isBooked ? ' is-unavailable' : '');
     card.innerHTML = `
@@ -3083,7 +3101,12 @@ function renderFleet(dict, cat){
         <span class="car-offer${isBooked ? ' is-unavailable-badge' : ''}">${isBooked ? dict.unavailable_badge : c.offer}</span>
         ${isDelayed ? `<span class="car-stock-badge is-delayed-badge">🕒 ${dict.available_from_badge.replace('{time}', availability.earliestTimeStr)}</span>`
           : (!isBooked ? `<span class="car-stock-badge">🚗 ${remainingForRange} ${dict.stock_available_label}</span>` : '')}
-        <img src="${c.imgSrc}" alt="${altText}" loading="lazy">
+        <img src="${photos[0]}" alt="${altText}" loading="lazy" data-gallery-img>
+        ${photos.length > 1 ? `
+          <button type="button" class="car-gallery-nav car-gallery-prev" data-gallery-prev aria-label="Previous photo">‹</button>
+          <button type="button" class="car-gallery-nav car-gallery-next" data-gallery-next aria-label="Next photo">›</button>
+          <div class="car-gallery-dots">${photos.map((_, i) => `<span class="${i === 0 ? 'active' : ''}"></span>`).join('')}</div>
+        ` : ''}
       </div>
       <div class="car-body">
         <h3>${c.name}</h3>
@@ -3097,6 +3120,18 @@ function renderFleet(dict, cat){
         </div>
         <button type="button" class="btn btn-blue btn-block" data-book-id="${c.id}">${dict.book_now}</button>
       </div>`;
+    if(photos.length > 1){
+      let idx = 0;
+      const imgEl = card.querySelector('[data-gallery-img]');
+      const dots = card.querySelectorAll('.car-gallery-dots span');
+      const showPhoto = i => {
+        idx = (i + photos.length) % photos.length;
+        imgEl.src = photos[idx];
+        dots.forEach((d, di) => d.classList.toggle('active', di === idx));
+      };
+      card.querySelector('[data-gallery-prev]').addEventListener('click', e=>{ e.stopPropagation(); showPhoto(idx - 1); });
+      card.querySelector('[data-gallery-next]').addEventListener('click', e=>{ e.stopPropagation(); showPhoto(idx + 1); });
+    }
     grid.appendChild(card);
   });
 }

@@ -756,6 +756,11 @@ function listCars_() {
       imgSrc: rows[i][10] || '',
       offer: rows[i][11] || (rows[i][2] + '€'),
       sortOrder: rows[i][12] === '' || rows[i][12] == null ? i : Number(rows[i][12]),
+      // Up to 2 additional photos per vehicle (see cfImgSrc2/cfImgSrc3 in
+      // admin.html) - imgSrc stays the primary/thumbnail photo so older
+      // rows without these columns keep working unchanged.
+      imgSrc2: rows[i][13] || '',
+      imgSrc3: rows[i][14] || '',
     });
   }
   cars.sort((a, b) => a.sortOrder - b.sortOrder);
@@ -770,6 +775,7 @@ function upsertCar_(car) {
     Number(car.doors) || 4, car.fuelKey || 'diesel', Array.isArray(car.body) ? car.body.join(',') : (car.body || ''),
     car.cat || 'citadine', Number(car.stock) || 1, car.imgSrc || '', car.offer || ((Number(car.price) || 0) + '€'),
     car.sortOrder == null ? '' : Number(car.sortOrder),
+    car.imgSrc2 || '', car.imgSrc3 || '',
   ];
   for (let i = 1; i < rows.length; i++) {
     if (rows[i][0] === car.id) {
@@ -1039,7 +1045,7 @@ function getCarsSheet_() {
   let sheet = ss.getSheetByName(CARS_SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(CARS_SHEET_NAME);
-    sheet.appendRow(['id', 'name', 'price', 'seats', 'gearKey', 'doors', 'fuelKey', 'body', 'cat', 'stock', 'imgSrc', 'offer', 'sortOrder']);
+    sheet.appendRow(['id', 'name', 'price', 'seats', 'gearKey', 'doors', 'fuelKey', 'body', 'cat', 'stock', 'imgSrc', 'offer', 'sortOrder', 'imgSrc2', 'imgSrc3']);
   }
   return sheet;
 }
