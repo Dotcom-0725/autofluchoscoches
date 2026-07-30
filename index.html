@@ -4180,6 +4180,7 @@ async function generateBookingPdf(dict, data){
     [dict.pdf_pickup, data.pickup],
     [dict.pdf_return, data.ret],
   ];
+  if(data.email) bullets.push([dict.account_email_label, data.email]);
   if(data.nationality) bullets.push([dict.modal_nationality_label, data.nationality]);
   // A url makes the bullet's value a clickable link straight to the uploaded
   // photo (see uploadBookingDocument/attachBookingDocument) — falls back to
@@ -4755,7 +4756,7 @@ async function schedulePdfGeneration(dict, data, ref, choice){
     ]);
     const pdfData = {
       ref, date: new Date().toLocaleDateString(dict.htmlLang, { year: 'numeric', month: 'long', day: 'numeric' }),
-      name: data.name, phone: data.phone, nationality: data.nationality, carName: data.car.name,
+      name: data.name, phone: data.phone, email: data.email, nationality: data.nationality, carName: data.car.name,
       pickup: formatDateTimeForPdf(data.pickup, dict.htmlLang), ret: formatDateTimeForPdf(data.ret, dict.htmlLang),
       quantity: 1, licenseYears: data.licenseYears, pickupLoc: data.pickupLoc, dropoffLoc: data.dropoffLoc,
       deposit: data.deposit, resources: data.resources, total: data.total,
