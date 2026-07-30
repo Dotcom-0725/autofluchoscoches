@@ -1397,6 +1397,8 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
           <select id="bkDropoffLoc" class="loc-select"></select>
         </div>
       </div>
+      <label data-i18n="modal_flight_number_label">Flight Number (optional)</label>
+      <input type="text" id="bkFlightNumber" data-i18n-placeholder="modal_flight_number_placeholder" placeholder="e.g. AT540">
       <label data-i18n="modal_deposit_label">Deposit</label>
       <select id="bkDeposit" class="deposit-select"></select>
       <p class="deposit-methods-note" data-i18n="deposit_methods_note">Accepted deposit payment methods: bank transfer or cash.</p>
@@ -1408,6 +1410,9 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       </div>
 
       <p class="modal-warning" id="bkHoursWarning" data-i18n="hours_warning" hidden>Outside business hours (08:00–20:00): a €10 surcharge has been added per pickup/return outside these hours.</p>
+
+      <label data-i18n="modal_notes_label">Notes (optional)</label>
+      <textarea id="bkNotes" rows="3" data-i18n-placeholder="modal_notes_placeholder" placeholder="Any special requests or information for us…"></textarea>
 
       <div class="modal-total-row">
         <span data-i18n="modal_total_label">Estimated Total</span>
@@ -2116,6 +2121,8 @@ const I18N = {
     modal_services_title:'Services', modal_pickup_location_label:'Pick-up Location', modal_dropoff_location_label:'Drop-off Location',
     loc_agency:'Tétouan Agency', loc_tangier_airport:'Tangier Airport', loc_tangier_city:'Tangier City',
     loc_hotel:'Hotel Delivery', loc_chefchaouen:'Chefchaouen',
+    modal_flight_number_label:'Flight Number (optional)', modal_flight_number_placeholder:'e.g. AT540',
+    modal_notes_label:'Notes (optional)', modal_notes_placeholder:'Any special requests or information for us…',
     modal_deposit_label:'Deposit', modal_washing_label:'Car Washing', washing_no:'Not needed', washing_yes:'Include car washing',
     deposit_methods_note:'Accepted deposit payment methods: bank transfer or cash.',
     cancellation_policy_badge:'🟢 Free cancellation', cancellation_policy_text:'up to 48h before the rental start. After that, the reservation can no longer be cancelled.',
@@ -2284,6 +2291,8 @@ const I18N = {
     modal_services_title:'Services', modal_pickup_location_label:'Lieu de prise en charge', modal_dropoff_location_label:'Lieu de retour',
     loc_agency:'Agence de Tétouan', loc_tangier_airport:'Aéroport de Tanger', loc_tangier_city:'Ville de Tanger',
     loc_hotel:'Livraison à l\'hôtel', loc_chefchaouen:'Chefchaouen',
+    modal_flight_number_label:'Numéro de vol (facultatif)', modal_flight_number_placeholder:'ex. AT540',
+    modal_notes_label:'Remarques (facultatif)', modal_notes_placeholder:'Toute demande particulière ou information à nous transmettre…',
     modal_deposit_label:'Caution', modal_washing_label:'Lavage de la voiture', washing_no:'Non nécessaire', washing_yes:'Inclure le lavage',
     deposit_methods_note:'Moyens de paiement acceptés pour la caution : virement bancaire ou espèces.',
     cancellation_policy_badge:'🟢 Annulation gratuite', cancellation_policy_text:'jusqu\'à 48h avant le début de la location. Passé ce délai, la réservation ne peut plus être annulée.',
@@ -2453,6 +2462,8 @@ const I18N = {
     modal_services_title:'Servicios', modal_pickup_location_label:'Lugar de recogida', modal_dropoff_location_label:'Lugar de devolución',
     loc_agency:'Agencia de Tetuán', loc_tangier_airport:'Aeropuerto de Tánger', loc_tangier_city:'Ciudad de Tánger',
     loc_hotel:'Entrega en el hotel', loc_chefchaouen:'Chefchaouen',
+    modal_flight_number_label:'Número de vuelo (opcional)', modal_flight_number_placeholder:'ej. AT540',
+    modal_notes_label:'Notas (opcional)', modal_notes_placeholder:'Cualquier solicitud especial o información para nosotros…',
     modal_deposit_label:'Depósito', modal_washing_label:'Lavado del coche', washing_no:'No necesario', washing_yes:'Incluir lavado',
     deposit_methods_note:'Métodos de pago aceptados para el depósito: transferencia bancaria o efectivo.',
     cancellation_policy_badge:'🟢 Cancelación gratuita', cancellation_policy_text:'hasta 48h antes del inicio del alquiler. Pasado ese plazo, la reserva ya no se puede cancelar.',
@@ -2622,6 +2633,8 @@ const I18N = {
     modal_services_title:'الخدمات', modal_pickup_location_label:'مكان الاستلام', modal_dropoff_location_label:'مكان الإرجاع',
     loc_agency:'وكالة تطوان', loc_tangier_airport:'مطار طنجة', loc_tangier_city:'مدينة طنجة',
     loc_hotel:'التوصيل للفندق', loc_chefchaouen:'شفشاون',
+    modal_flight_number_label:'رقم الرحلة (اختياري)', modal_flight_number_placeholder:'مثال: AT540',
+    modal_notes_label:'ملاحظات (اختياري)', modal_notes_placeholder:'أي طلب خاص أو معلومة تريد إخبارنا بها…',
     modal_deposit_label:'الضمان', modal_washing_label:'غسل السيارة', washing_no:'غير مطلوب', washing_yes:'شامل غسل السيارة',
     deposit_methods_note:'طرق الدفع المقبولة للضمان: تحويل بنكي أو نقداً.',
     cancellation_policy_badge:'🟢 إلغاء مجاني', cancellation_policy_text:'حتى 48 ساعة قبل بداية الإيجار. بعد ذلك، لا يمكن إلغاء الحجز.',
@@ -4195,9 +4208,11 @@ async function generateBookingPdf(dict, data){
   // printing "undefined".
   if(data.pickupLoc) bullets.push([dict.modal_pickup_location_label, data.pickupLoc]);
   if(data.dropoffLoc) bullets.push([dict.modal_dropoff_location_label, data.dropoffLoc]);
+  if(data.flightNumber) bullets.push([dict.modal_flight_number_label, data.flightNumber]);
   if(data.deposit) bullets.push([dict.modal_deposit_label, data.deposit]);
   if(data.includeWashing !== false) bullets.push([dict.modal_washing_label, dict.pdf_washing_value]);
   if(data.resources) bullets.push([dict.modal_resources_title, data.resources]);
+  if(data.notes) bullets.push([dict.modal_notes_label, data.notes]);
 
   bullets.forEach(([label, value, url])=>{
     pdfText(doc, '• ' + label + ':', productX, py, { bold: true, sizePt: 9.5, color: DARK });
@@ -4306,6 +4321,8 @@ bookingForm.addEventListener('submit', async e=>{
   const deposit = depositOptionLabel(depositData, dict);
   const resources = getResourcesBreakdown('bk').text;
   const total = document.getElementById('bkTotalDisplay').textContent;
+  const flightNumber = document.getElementById('bkFlightNumber').value.trim();
+  const notes = document.getElementById('bkNotes').value.trim();
   const nationalitySelect = document.getElementById('bkNationality');
   const nationality = nationalitySelectValue === 'other'
     ? nationalityCode
@@ -4314,7 +4331,7 @@ bookingForm.addEventListener('submit', async e=>{
   pendingBookingData = {
     car: activeBookingCar, name, phone, email, nationality, pickup, ret,
     licenseYears, pickupLoc, dropoffLoc, deposit, resources, total,
-    createAccount, accountPassword,
+    flightNumber, notes, createAccount, accountPassword,
   };
   openBookingPreview(pendingBookingData);
 });
@@ -4759,6 +4776,7 @@ async function schedulePdfGeneration(dict, data, ref, choice){
       name: data.name, phone: data.phone, email: data.email, nationality: data.nationality, carName: data.car.name,
       pickup: formatDateTimeForPdf(data.pickup, dict.htmlLang), ret: formatDateTimeForPdf(data.ret, dict.htmlLang),
       quantity: 1, licenseYears: data.licenseYears, pickupLoc: data.pickupLoc, dropoffLoc: data.dropoffLoc,
+      flightNumber: data.flightNumber, notes: data.notes,
       deposit: data.deposit, resources: data.resources, total: data.total,
       licenseFileName: licenseFile?.name || '', passportFileName: passportFile?.name || '',
       licenseUrl: licenseUpload?.url || '', passportUrl: passportUpload?.url || '',
@@ -4793,6 +4811,7 @@ async function finalizeBooking(choice){
     // they're unavailable if that notification is ever regenerated later.
     pickupLoc: data.pickupLoc, dropoffLoc: data.dropoffLoc, deposit: data.deposit,
     resources: data.resources, licenseYears: data.licenseYears,
+    flightNumber: data.flightNumber, notes: data.notes,
     paymentChoice: choice === 'pickup' ? dict.payment_method_cash_pickup : dict.preview_pay_now,
   });
   if(!bookingResult.success){
@@ -4875,11 +4894,13 @@ function buildBookingSummaryText(data, paymentMethodLabel){
   lines.push(`${dict.pdf_pickup}: ${data.pickup}`, `${dict.pdf_return}: ${data.ret}`);
   if(data.pickupLoc) lines.push(`${dict.modal_pickup_location_label}: ${data.pickupLoc}`);
   if(data.dropoffLoc) lines.push(`${dict.modal_dropoff_location_label}: ${data.dropoffLoc}`);
+  if(data.flightNumber) lines.push(`${dict.modal_flight_number_label}: ${data.flightNumber}`);
   if(data.licenseYears) lines.push(`${dict.modal_license_years_label}: ${data.licenseYears}`);
   if(data.deposit) lines.push(`${dict.modal_deposit_label}: ${data.deposit}`);
   if(data.resources) lines.push(`${dict.modal_resources_title}: ${data.resources}`);
   lines.push(`${dict.modal_total_label}: ${data.total}`);
   if(paymentMethodLabel) lines.push(`${dict.payment_method_label}: ${paymentMethodLabel}`);
+  if(data.notes) lines.push(`${dict.modal_notes_label}: ${data.notes}`);
   return lines.join('\n');
 }
 function openPaymentModal(data){

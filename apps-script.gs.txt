@@ -1013,11 +1013,13 @@ function sendBookingEmail_(body) {
   lines.push('Return: ' + (body.ret || ''));
   if (body.pickupLoc) lines.push('Pick-up location: ' + body.pickupLoc);
   if (body.dropoffLoc) lines.push('Drop-off location: ' + body.dropoffLoc);
+  if (body.flightNumber) lines.push('Flight number: ' + body.flightNumber);
   if (body.licenseYears) lines.push('Years with license: ' + body.licenseYears);
   if (body.deposit) lines.push('Deposit: ' + body.deposit);
   if (body.resources) lines.push('Extras: ' + body.resources);
   lines.push('Total: ' + (body.total || ''));
   if (body.paymentChoice) lines.push('Payment: ' + body.paymentChoice);
+  if (body.notes) lines.push('Notes: ' + body.notes);
   try {
     MailApp.sendEmail(NOTIFICATION_EMAIL, subject, lines.join('\n'));
   } catch (e) { /* don't fail the booking over an email quota/error */ }
