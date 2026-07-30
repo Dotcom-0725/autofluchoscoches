@@ -1000,11 +1000,24 @@ function sendBookingEmail_(body) {
     'Reference: ' + (body.ref || ''),
     'Customer: ' + (body.customerName || ''),
     'Phone: ' + (body.phone || ''),
-    'Vehicle: ' + (body.carName || body.carId),
-    'Pickup: ' + (body.pickup || ''),
-    'Return: ' + (body.ret || ''),
-    'Total: ' + (body.total || ''),
   ];
+  // Optional fields - only sent by the public website's checkout (never by
+  // the admin dashboard's manual reservation form), and never persisted to
+  // the Bookings sheet, so they only ever appear in THIS instant
+  // notification - matching the same conditional-bullet pattern the PDF
+  // uses (see generateBookingPdf's `bullets` array in index.html).
+  if (body.email) lines.push('Email: ' + body.email);
+  if (body.nationality) lines.push('Nationality: ' + body.nationality);
+  lines.push('Vehicle: ' + (body.carName || body.carId));
+  lines.push('Pickup: ' + (body.pickup || ''));
+  lines.push('Return: ' + (body.ret || ''));
+  if (body.pickupLoc) lines.push('Pick-up location: ' + body.pickupLoc);
+  if (body.dropoffLoc) lines.push('Drop-off location: ' + body.dropoffLoc);
+  if (body.licenseYears) lines.push('Years with license: ' + body.licenseYears);
+  if (body.deposit) lines.push('Deposit: ' + body.deposit);
+  if (body.resources) lines.push('Extras: ' + body.resources);
+  lines.push('Total: ' + (body.total || ''));
+  if (body.paymentChoice) lines.push('Payment: ' + body.paymentChoice);
   try {
     MailApp.sendEmail(NOTIFICATION_EMAIL, subject, lines.join('\n'));
   } catch (e) { /* don't fail the booking over an email quota/error */ }

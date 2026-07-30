@@ -4786,6 +4786,13 @@ async function finalizeBooking(choice){
   const bookingResult = await addBookedCar(data.car.id, {
     ref, carName: data.car.name, customerName: data.name, phone: data.phone, email: data.email,
     nationality: data.nationality, pickup: data.pickup, ret: data.ret, stock: data.car.stock || 1, total: data.total,
+    // Sent only so the instant Telegram/email owner notification (see
+    // sendBookingEmail_ in apps-script.gs.txt) can show the same detail the
+    // PDF shows — these fields are NOT added as Bookings sheet columns, so
+    // they're unavailable if that notification is ever regenerated later.
+    pickupLoc: data.pickupLoc, dropoffLoc: data.dropoffLoc, deposit: data.deposit,
+    resources: data.resources, licenseYears: data.licenseYears,
+    paymentChoice: choice === 'pickup' ? dict.payment_method_cash_pickup : dict.preview_pay_now,
   });
   if(!bookingResult.success){
     previewError.textContent = bookingResult.error === 'sold_out' ? dict.sold_out_error : dict.required_field;
@@ -4826,7 +4833,7 @@ async function finalizeBooking(choice){
     // Paid at pickup: no online payment step needed — confirm the booking right away.
     await setBookingPayment(ref, 'cash_on_pickup', 'pending', 'confirmed');
     const summary = buildBookingSummaryText(
-      { ref, dict, name: data.name, phone: data.phone, carName: data.car.name, pickup: data.pickup, ret: data.ret, total: data.total },
+      { ...data, ref, dict, carName: data.car.name },
       dict.payment_method_cash_pickup
     );
     document.getElementById('confirmWhatsappBtn').href =
@@ -4837,7 +4844,7 @@ async function finalizeBooking(choice){
       '&body=' + encodeURIComponent(summary + '\n\n' + dict.confirm_attach_note);
     confirmOverlay.classList.add('open');
   } else {
-    openPaymentModal({ ref, dict, name: data.name, phone: data.phone, email: data.email, carName: data.car.name, pickup: data.pickup, ret: data.ret, total: data.total });
+    openPaymentModal({ ...data, ref, dict, carName: data.car.name });
   }
   setPreviewButtonsEnabled(true);
 }
@@ -4850,11 +4857,29 @@ async function finalizeBooking(choice){
    payment_status/booking_status on the booking record via setBookingPayment().
 --------------------------------------------------------------- */
 let currentPaymentBooking = null;
+// Builds the customer-facing WhatsApp/email confirmation text — kept in sync
+// field-for-field with both the PDF (generateBookingPdf) and the owner's
+// instant Telegram/email notification (sendBookingEmail_ in apps-script.gs.txt)
+// so all three always show the same booking details.
 function buildBookingSummaryText(data, paymentMethodLabel){
   const dict = data.dict;
-  let text = `${dict.pdf_title} ${data.ref}\n${dict.pdf_car}: ${data.carName}\n${dict.pdf_customer}: ${data.name}\n${dict.pdf_phone}: ${data.phone}\n${dict.pdf_pickup}: ${data.pickup}\n${dict.pdf_return}: ${data.ret}\n${dict.modal_total_label}: ${data.total}`;
-  if(paymentMethodLabel) text += `\n${dict.payment_method_label}: ${paymentMethodLabel}`;
-  return text;
+  const lines = [
+    `${dict.pdf_title} ${data.ref}`,
+    `${dict.pdf_car}: ${data.carName}`,
+    `${dict.pdf_customer}: ${data.name}`,
+    `${dict.pdf_phone}: ${data.phone}`,
+  ];
+  if(data.email) lines.push(`${dict.account_email_label}: ${data.email}`);
+  if(data.nationality) lines.push(`${dict.modal_nationality_label}: ${data.nationality}`);
+  lines.push(`${dict.pdf_pickup}: ${data.pickup}`, `${dict.pdf_return}: ${data.ret}`);
+  if(data.pickupLoc) lines.push(`${dict.modal_pickup_location_label}: ${data.pickupLoc}`);
+  if(data.dropoffLoc) lines.push(`${dict.modal_dropoff_location_label}: ${data.dropoffLoc}`);
+  if(data.licenseYears) lines.push(`${dict.modal_license_years_label}: ${data.licenseYears}`);
+  if(data.deposit) lines.push(`${dict.modal_deposit_label}: ${data.deposit}`);
+  if(data.resources) lines.push(`${dict.modal_resources_title}: ${data.resources}`);
+  lines.push(`${dict.modal_total_label}: ${data.total}`);
+  if(paymentMethodLabel) lines.push(`${dict.payment_method_label}: ${paymentMethodLabel}`);
+  return lines.join('\n');
 }
 function openPaymentModal(data){
   currentPaymentBooking = data;
