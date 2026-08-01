@@ -1484,8 +1484,10 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
           <select id="bkDropoffLoc" class="loc-select"></select>
         </div>
       </div>
-      <label data-i18n="modal_flight_number_label">Flight Number (optional)</label>
-      <input type="text" id="bkFlightNumber" data-i18n-placeholder="modal_flight_number_placeholder" placeholder="e.g. AT540">
+      <div id="bkFlightNumberGroup" hidden>
+        <label data-i18n="modal_flight_number_label">Flight Number (optional)</label>
+        <input type="text" id="bkFlightNumber" data-i18n-placeholder="modal_flight_number_placeholder" placeholder="e.g. AT540">
+      </div>
       <label data-i18n="modal_deposit_label">Deposit</label>
       <select id="bkDeposit" class="deposit-select"></select>
       <p class="deposit-methods-note" data-i18n="deposit_methods_note">Accepted deposit payment methods: bank transfer or cash.</p>
@@ -1776,12 +1778,12 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
 ========================================================= */
 const LOCATIONS = [
   { label: 'Tétouan - Medina', fee: 5 },
-  { label: 'Tétouan - Saniat Airport', fee: 5 },
+  { label: 'Tétouan - Saniat Airport', fee: 5, airport: true },
   { label: 'Agency Office - Auto Fluchos Coches', fee: 0 },
   { label: 'Bab Sebta (Ceuta Border)', fee: 10 },
   { label: 'Port de Ksar Sghir', fee: 25 },
   { label: 'Tangier TGV Train Station', fee: 20 },
-  { label: 'Tangier - Ibn Battouta Airport', fee: 25 },
+  { label: 'Tangier - Ibn Battouta Airport', fee: 25, airport: true },
   { label: 'Tangier City Center', fee: 20 },
   { label: 'Tangier Port Medina', fee: 20 },
   { label: 'Hotel Delivery (Tétouan & surroundings)', fee: 10 },
@@ -3577,6 +3579,7 @@ async function openBookingModal(carId){
   setDefaultBookingDates();
   setDefaultBookingLocations();
   copyQuickBookingIntoBookingForm();
+  updateFlightNumberVisibility();
   // The Quick Booking widget's pickup default is computed once at page load
   // ("now + 2h"). A customer who browses for a while before clicking "Book
   // Now" can carry a now-stale value into this form — one that was valid
@@ -4117,6 +4120,21 @@ function checkSelectedCarAvailability(){
   const el = document.getElementById(id);
   el.addEventListener('input', updateTotal);
   el.addEventListener('change', updateTotal);
+});
+
+/* Flight Number only makes sense when the customer is picking up or
+   dropping off at an airport - hidden (and cleared) otherwise so the
+   booking form only asks for what's relevant. */
+function updateFlightNumberVisibility(){
+  const pickupLoc = LOCATIONS[document.getElementById('bkPickupLoc').value || 0];
+  const dropoffLoc = LOCATIONS[document.getElementById('bkDropoffLoc').value || 0];
+  const group = document.getElementById('bkFlightNumberGroup');
+  const isAirport = !!(pickupLoc && pickupLoc.airport) || !!(dropoffLoc && dropoffLoc.airport);
+  group.hidden = !isAirport;
+  if(!isAirport) document.getElementById('bkFlightNumber').value = '';
+}
+['bkPickupLoc','bkDropoffLoc'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', updateFlightNumberVisibility);
 });
 
 /* Reads a file as a base64 data URL (used to embed license/passport photos in the PDF) */
