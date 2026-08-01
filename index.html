@@ -289,6 +289,49 @@ footer .logo-text{font-size:1.4rem;font-weight:800}
 @media (max-width:1080px){ .account-btn span:last-child{display:none} .account-btn{padding:8px 10px} }
 .burger{display:none;background:none;border:none;color:var(--ink);font-size:1.5rem;cursor:pointer}
 
+/* ---------- Desktop-only header redesign (>1080px) ----------
+   Tablet/mobile (<=1080px) keep the existing header + topbar-strip
+   completely untouched - this block only ever applies above that
+   breakpoint, layered on top of the base rules above. */
+@media (min-width:1081px){
+  header{
+    background:rgba(255,255,255,.86);
+    backdrop-filter:saturate(180%) blur(14px);
+    -webkit-backdrop-filter:saturate(180%) blur(14px);
+    transition:box-shadow .25s ease, background-color .25s ease;
+  }
+  .nav-wrap{max-width:1320px;padding:0 32px;min-height:90px}
+  header .logo{gap:14px}
+  header .logo-badge{
+    width:52px;height:52px;border-radius:12px;padding:2px;
+    box-shadow:0 2px 10px rgba(20,24,43,.08);
+  }
+  header .logo-text{font-size:1.18rem;line-height:1.2;letter-spacing:.005em}
+  header .logo-text small{font-size:.6rem;letter-spacing:.09em;margin-top:3px}
+  .nav-links{gap:38px}
+  .nav-links a{position:relative;font-size:.86rem;padding:8px 0;color:var(--ink-dim)}
+  .nav-links a::after{
+    content:'';position:absolute;inset-inline-start:0;bottom:2px;height:2px;width:100%;
+    background:var(--blue-500);border-radius:2px;
+    transform:scaleX(0);transform-origin:right;transition:transform .25s ease;
+  }
+  html[dir="rtl"] .nav-links a::after{transform-origin:left}
+  .nav-links a:hover{color:var(--ink)}
+  .nav-links a:hover::after,.nav-links a.active::after{transform:scaleX(1);transform-origin:left}
+  html[dir="rtl"] .nav-links a:hover::after,html[dir="rtl"] .nav-links a.active::after{transform-origin:right}
+  .nav-links a.active{color:var(--ink)}
+  .nav-actions{gap:20px}
+  .lang-switch,.currency-switch{padding:3px;gap:2px}
+  .lang-switch button,.currency-switch button{padding:6px 11px;font-size:.72rem}
+  .phone-pill{font-size:.85rem;gap:7px}
+  .account-btn{
+    background:#fff;border:1px solid var(--card-border);padding:9px 16px;
+    box-shadow:0 1px 3px rgba(20,24,43,.05);
+    transition:border-color .2s ease, box-shadow .2s ease, color .2s ease;
+  }
+  .account-btn:hover{box-shadow:0 6px 16px rgba(20,24,43,.09)}
+}
+
 @media (max-width:1080px){
   .nav-links{
     position:absolute;top:100%;left:0;right:0;
@@ -935,10 +978,10 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
     </nav>
     <div class="nav-actions">
       <div class="lang-switch lang-switch-group" id="langSwitch">
-        <button data-lang="ar">🇲🇦 AR</button>
-        <button data-lang="en" class="active">🇬🇧 EN</button>
-        <button data-lang="fr">🇫🇷 FR</button>
-        <button data-lang="es">🇪🇸 ES</button>
+        <button data-lang="ar">AR</button>
+        <button data-lang="en" class="active">EN</button>
+        <button data-lang="fr">FR</button>
+        <button data-lang="es">ES</button>
       </div>
       <div class="currency-switch currency-switch-group" id="currencySwitch">
         <button data-currency="EUR" class="active">EUR</button>
@@ -3260,6 +3303,26 @@ document.querySelectorAll('.lang-switch-group').forEach(group=>{
 document.getElementById('burgerBtn').addEventListener('click', ()=>{
   document.getElementById('navLinks').classList.toggle('open');
 });
+
+/* Scroll-spy: highlights the nav link for whichever section is currently in
+   view (desktop-only blue underline via .active — see the min-width:1081px
+   header block above; harmless no-op visually on tablet/mobile). */
+(function setupNavScrollSpy(){
+  const navLinks = [...document.querySelectorAll('#navLinks a[href^="#"]')];
+  const sections = navLinks
+    .map(a => document.querySelector(a.getAttribute('href')))
+    .filter(Boolean);
+  if(!sections.length) return;
+  const setActive = id => {
+    navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  };
+  setActive('top'); // default to Home until the user scrolls past it
+  const observer = new IntersectionObserver(entries => {
+    const visible = entries.filter(e => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+    if(visible[0]) setActive(visible[0].target.id);
+  }, { rootMargin: '-45% 0px -45% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] });
+  sections.forEach(s => observer.observe(s));
+})();
 
 /* Mobile top bar dropdowns (currency + language): open/close on click,
    close on an outside click, and keep the button label in sync with
