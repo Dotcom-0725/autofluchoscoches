@@ -281,6 +281,36 @@ footer .logo-text{font-size:1.4rem;font-weight:800}
 .phone-pill{
   display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:700;font-size:.88rem;
 }
+/* Compact desktop-header dropdowns for language/currency, plus the
+   icon-only phone button (number shown as a native tooltip on hover) -
+   reuses the same open/close JS as the mobile topbar dropdowns
+   (setupTopbarDropdown), just themed for the light desktop header. */
+.hdr-dropdown{position:relative}
+.hdr-dropdown-btn{
+  display:flex;align-items:center;gap:6px;background:var(--navy-800);border:1px solid var(--card-border);
+  color:var(--ink);font-weight:700;font-size:.78rem;padding:7px 12px;border-radius:999px;cursor:pointer;
+  white-space:nowrap;
+}
+.hdr-dropdown-btn .chevron{font-size:.65rem;transition:transform .15s}
+.hdr-dropdown.open .hdr-dropdown-btn .chevron{transform:rotate(180deg)}
+.hdr-dropdown-menu{
+  display:none;position:absolute;top:100%;inset-inline-start:0;margin-top:8px;
+  background:#fff;color:var(--ink);border-radius:10px;box-shadow:0 14px 34px rgba(20,24,43,.16);
+  min-width:150px;overflow:hidden;z-index:130;padding:4px;
+}
+.hdr-dropdown.open .hdr-dropdown-menu{display:block}
+.hdr-dropdown-menu button{
+  display:block;width:100%;text-align:start;padding:9px 12px;background:none;border:none;
+  border-radius:7px;font-size:.82rem;font-weight:600;color:var(--ink);cursor:pointer;white-space:nowrap;
+}
+.hdr-dropdown-menu button:hover{background:var(--navy-800)}
+.hdr-dropdown-menu button.active{color:var(--blue-500);background:var(--accent-dim,var(--navy-800))}
+.phone-icon-btn{
+  display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:999px;
+  background:var(--navy-800);border:1px solid var(--card-border);font-size:1.05rem;color:var(--ink);
+  text-decoration:none;flex:none;
+}
+.phone-icon-btn:hover{border-color:var(--blue-400)}
 .account-btn{
   display:flex;align-items:center;gap:6px;background:var(--navy-800);border:1px solid var(--card-border);
   color:var(--ink);font-weight:700;font-size:.82rem;padding:8px 14px;border-radius:999px;
@@ -303,7 +333,7 @@ footer .logo-text{font-size:1.4rem;font-weight:800}
   .nav-wrap{max-width:1320px;padding:0 32px;min-height:90px}
   header .logo{gap:14px}
   header .logo-badge{
-    width:52px;height:52px;border-radius:12px;padding:2px;
+    width:60px;height:60px;border-radius:12px;padding:2px;
     box-shadow:0 2px 10px rgba(20,24,43,.08);
   }
   header .logo-text{font-size:1.18rem;line-height:1.2;letter-spacing:.005em}
@@ -320,10 +350,12 @@ footer .logo-text{font-size:1.4rem;font-weight:800}
   .nav-links a:hover::after,.nav-links a.active::after{transform:scaleX(1);transform-origin:left}
   html[dir="rtl"] .nav-links a:hover::after,html[dir="rtl"] .nav-links a.active::after{transform-origin:right}
   .nav-links a.active{color:var(--ink)}
-  .nav-actions{gap:20px}
+  .nav-actions{gap:12px}
   .lang-switch,.currency-switch{padding:3px;gap:2px}
   .lang-switch button,.currency-switch button{padding:6px 11px;font-size:.72rem}
   .phone-pill{font-size:.85rem;gap:7px}
+  .hdr-dropdown-btn{padding:6px 10px;font-size:.72rem}
+  .phone-icon-btn{width:34px;height:34px;font-size:.95rem}
   .account-btn{
     background:#fff;border:1px solid var(--card-border);padding:9px 16px;
     box-shadow:0 1px 3px rgba(20,24,43,.05);
@@ -342,8 +374,10 @@ footer .logo-text{font-size:1.4rem;font-weight:800}
   }
   .nav-links.open{transform:translateY(0);opacity:1;pointer-events:auto}
   .phone-pill{display:none}
+  .phone-icon-btn{display:none}
   .burger{display:block}
   .nav-actions .lang-switch,.nav-actions .currency-switch{display:none}
+  .nav-actions .hdr-dropdown{display:none}
 }
 
 /* ---------- Mobile top bar: contact + language/currency dropdowns ---------- */
@@ -977,18 +1011,28 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       <a href="#contact" data-i18n="nav_contact">Contact</a>
     </nav>
     <div class="nav-actions">
-      <div class="lang-switch lang-switch-group" id="langSwitch">
-        <button data-lang="ar">AR</button>
-        <button data-lang="en" class="active">EN</button>
-        <button data-lang="fr">FR</button>
-        <button data-lang="es">ES</button>
+      <div class="hdr-dropdown" id="langNavDropdown">
+        <button type="button" class="hdr-dropdown-btn" id="langNavBtn">
+          <span id="langNavLabel">EN</span><span class="chevron">▾</span>
+        </button>
+        <div class="hdr-dropdown-menu lang-switch-group" id="langNavMenu">
+          <button data-lang="ar">🇲🇦 العربية</button>
+          <button data-lang="en" class="active">🇬🇧 English</button>
+          <button data-lang="fr">🇫🇷 Français</button>
+          <button data-lang="es">🇪🇸 Español</button>
+        </div>
       </div>
-      <div class="currency-switch currency-switch-group" id="currencySwitch">
-        <button data-currency="EUR" class="active">EUR</button>
-        <button data-currency="MAD">MAD</button>
-        <button data-currency="USD">USD</button>
+      <div class="hdr-dropdown" id="currencyNavDropdown">
+        <button type="button" class="hdr-dropdown-btn" id="currencyNavBtn">
+          <span id="currencyNavLabel">€ EUR</span><span class="chevron">▾</span>
+        </button>
+        <div class="hdr-dropdown-menu currency-switch-group" id="currencyNavMenu">
+          <button data-currency="EUR" class="active">€ Euro</button>
+          <button data-currency="MAD">DH Dirham</button>
+          <button data-currency="USD">$ Dollar</button>
+        </div>
       </div>
-      <a href="tel:+212661304574" class="phone-pill">📞 <bdi dir="ltr">+212 661-304574</bdi></a>
+      <a href="tel:+212661304574" class="phone-icon-btn" title="+212 661-304574" aria-label="Call us">📞</a>
       <button type="button" class="account-btn" id="accountNavBtn"><span>👤</span> <span id="accountNavLabel" data-i18n="account_nav_guest">My Account</span></button>
       <button class="burger" id="burgerBtn" aria-label="Menu">☰</button>
     </div>
@@ -3360,6 +3404,33 @@ setupTopbarDropdown('currencyTopbarDropdown', 'currencyTopbarBtn', 'currencyTopb
 setupTopbarDropdown('langTopbarDropdown', 'langTopbarBtn', 'langTopbarMenu', 'langTopbarLabel');
 document.addEventListener('click', ()=>{
   document.querySelectorAll('.topbar-dropdown.open').forEach(d => d.classList.remove('open'));
+});
+
+/* Desktop header language/currency dropdowns - same open/close/click-outside
+   behavior as the mobile topbar ones, just using the .hdr-dropdown class
+   instead of .topbar-dropdown so the two never fight over the same CSS. */
+function setupHdrDropdown(dropdownId, btnId, menuId, labelId){
+  const dropdown = document.getElementById(dropdownId);
+  const btn = document.getElementById(btnId);
+  const menu = document.getElementById(menuId);
+  const label = document.getElementById(labelId);
+  if(!dropdown || !btn || !menu || !label) return;
+  btn.addEventListener('click', e=>{
+    e.stopPropagation();
+    document.querySelectorAll('.hdr-dropdown.open').forEach(d=>{ if(d !== dropdown) d.classList.remove('open'); });
+    dropdown.classList.toggle('open');
+  });
+  menu.addEventListener('click', e=>{
+    const optionBtn = e.target.closest('button');
+    if(!optionBtn) return;
+    label.textContent = optionBtn.textContent;
+    dropdown.classList.remove('open');
+  });
+}
+setupHdrDropdown('currencyNavDropdown', 'currencyNavBtn', 'currencyNavMenu', 'currencyNavLabel');
+setupHdrDropdown('langNavDropdown', 'langNavBtn', 'langNavMenu', 'langNavLabel');
+document.addEventListener('click', ()=>{
+  document.querySelectorAll('.hdr-dropdown.open').forEach(d => d.classList.remove('open'));
 });
 document.querySelectorAll('#navLinks a').forEach(a=>{
   a.addEventListener('click', ()=> document.getElementById('navLinks').classList.remove('open'));
