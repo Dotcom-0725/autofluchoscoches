@@ -2166,6 +2166,8 @@ const I18N = {
     loc_hotel:'Hotel Delivery', loc_chefchaouen:'Chefchaouen',
     modal_flight_number_label:'Flight Number (optional)', modal_flight_number_placeholder:'e.g. AT540',
     modal_notes_label:'Notes (optional)', modal_notes_placeholder:'Any special requests or information for us…',
+    pdf_breakdown_base:'Base Price', pdf_breakdown_season:'Seasonal Adjustment', pdf_breakdown_pickup_fee:'Pick-up Location Fee',
+    pdf_breakdown_dropoff_fee:'Drop-off Location Fee', pdf_breakdown_deposit_surcharge:'No-Deposit Surcharge', pdf_breakdown_outside_hours:'Outside-Hours Surcharge',
     modal_deposit_label:'Deposit', modal_washing_label:'Car Washing', washing_no:'Not needed', washing_yes:'Include car washing',
     deposit_methods_note:'Accepted deposit payment methods: bank transfer or cash.',
     cancellation_policy_badge:'🟢 Free cancellation', cancellation_policy_text:'up to 48h before the rental start. After that, the reservation can no longer be cancelled.',
@@ -2336,6 +2338,8 @@ const I18N = {
     loc_hotel:'Livraison à l\'hôtel', loc_chefchaouen:'Chefchaouen',
     modal_flight_number_label:'Numéro de vol (facultatif)', modal_flight_number_placeholder:'ex. AT540',
     modal_notes_label:'Remarques (facultatif)', modal_notes_placeholder:'Toute demande particulière ou information à nous transmettre…',
+    pdf_breakdown_base:'Prix de base', pdf_breakdown_season:'Ajustement saisonnier', pdf_breakdown_pickup_fee:'Frais lieu de prise en charge',
+    pdf_breakdown_dropoff_fee:'Frais lieu de retour', pdf_breakdown_deposit_surcharge:'Supplément sans caution', pdf_breakdown_outside_hours:'Supplément hors horaires',
     modal_deposit_label:'Caution', modal_washing_label:'Lavage de la voiture', washing_no:'Non nécessaire', washing_yes:'Inclure le lavage',
     deposit_methods_note:'Moyens de paiement acceptés pour la caution : virement bancaire ou espèces.',
     cancellation_policy_badge:'🟢 Annulation gratuite', cancellation_policy_text:'jusqu\'à 48h avant le début de la location. Passé ce délai, la réservation ne peut plus être annulée.',
@@ -2507,6 +2511,8 @@ const I18N = {
     loc_hotel:'Entrega en el hotel', loc_chefchaouen:'Chefchaouen',
     modal_flight_number_label:'Número de vuelo (opcional)', modal_flight_number_placeholder:'ej. AT540',
     modal_notes_label:'Notas (opcional)', modal_notes_placeholder:'Cualquier solicitud especial o información para nosotros…',
+    pdf_breakdown_base:'Precio base', pdf_breakdown_season:'Ajuste estacional', pdf_breakdown_pickup_fee:'Cargo por lugar de recogida',
+    pdf_breakdown_dropoff_fee:'Cargo por lugar de devolución', pdf_breakdown_deposit_surcharge:'Recargo sin depósito', pdf_breakdown_outside_hours:'Recargo fuera de horario',
     modal_deposit_label:'Depósito', modal_washing_label:'Lavado del coche', washing_no:'No necesario', washing_yes:'Incluir lavado',
     deposit_methods_note:'Métodos de pago aceptados para el depósito: transferencia bancaria o efectivo.',
     cancellation_policy_badge:'🟢 Cancelación gratuita', cancellation_policy_text:'hasta 48h antes del inicio del alquiler. Pasado ese plazo, la reserva ya no se puede cancelar.',
@@ -2678,6 +2684,8 @@ const I18N = {
     loc_hotel:'التوصيل للفندق', loc_chefchaouen:'شفشاون',
     modal_flight_number_label:'رقم الرحلة (اختياري)', modal_flight_number_placeholder:'مثال: AT540',
     modal_notes_label:'ملاحظات (اختياري)', modal_notes_placeholder:'أي طلب خاص أو معلومة تريد إخبارنا بها…',
+    pdf_breakdown_base:'السعر الأساسي', pdf_breakdown_season:'تعديل موسمي', pdf_breakdown_pickup_fee:'رسوم مكان الاستلام',
+    pdf_breakdown_dropoff_fee:'رسوم مكان الإرجاع', pdf_breakdown_deposit_surcharge:'رسم عدم الضمان', pdf_breakdown_outside_hours:'رسم خارج أوقات العمل',
     modal_deposit_label:'الضمان', modal_washing_label:'غسل السيارة', washing_no:'غير مطلوب', washing_yes:'شامل غسل السيارة',
     deposit_methods_note:'طرق الدفع المقبولة للضمان: تحويل بنكي أو نقداً.',
     cancellation_policy_badge:'🟢 إلغاء مجاني', cancellation_policy_text:'حتى 48 ساعة قبل بداية الإيجار. بعد ذلك، لا يمكن إلغاء الحجز.',
@@ -3940,6 +3948,26 @@ function getResourcesBreakdown(prefix){
   });
   return { text: list.join(', '), fee };
 }
+/* Builds the itemized [label, value] rows behind a booking's total — used so
+   the PDF/WhatsApp/Telegram notification can show WHY the total is what it
+   is (base price × days, seasonal adjustment, location fees, no-deposit
+   surcharge, outside-hours surcharge) instead of just a lump sum. Every
+   optional row is only included when it actually applies, mirroring the
+   conditional-bullet pattern used everywhere else in the PDF. */
+function buildPriceBreakdownLines(dict, { basePrice, seasonalRate, days, pickupFee, dropoffFee, depositSurcharge, outsideHoursFee }){
+  const lines = [];
+  lines.push([dict.pdf_breakdown_base, `${basePrice.toFixed(2)} € × ${days} = ${(basePrice * days).toFixed(2)} €`]);
+  if(seasonalRate !== basePrice){
+    const diff = seasonalRate - basePrice;
+    const sign = diff > 0 ? '+' : '';
+    lines.push([dict.pdf_breakdown_season, `${sign}${diff.toFixed(2)} € × ${days} = ${sign}${(diff * days).toFixed(2)} €`]);
+  }
+  if(pickupFee) lines.push([dict.pdf_breakdown_pickup_fee, `+${pickupFee.toFixed(2)} €`]);
+  if(dropoffFee) lines.push([dict.pdf_breakdown_dropoff_fee, `+${dropoffFee.toFixed(2)} €`]);
+  if(depositSurcharge) lines.push([dict.pdf_breakdown_deposit_surcharge, `+${depositSurcharge.toFixed(2)} € × ${days} = +${(depositSurcharge * days).toFixed(2)} €`]);
+  if(outsideHoursFee) lines.push([dict.pdf_breakdown_outside_hours, `+${outsideHoursFee.toFixed(2)} €`]);
+  return lines;
+}
 function updateTotal(){
   if(!activeBookingCar) return;
   const totalEl = document.getElementById('bkTotalDisplay');
@@ -4275,6 +4303,11 @@ async function generateBookingPdf(dict, data){
   if(data.deposit) bullets.push([dict.modal_deposit_label, data.deposit]);
   if(data.includeWashing !== false) bullets.push([dict.modal_washing_label, dict.pdf_washing_value]);
   if(data.resources) bullets.push([dict.modal_resources_title, data.resources]);
+  // Itemized price breakdown (base × days, seasonal adjustment, location
+  // fees, no-deposit surcharge, outside-hours surcharge) — see
+  // buildPriceBreakdownLines. Also only known at live-checkout time, same
+  // caveat as pickupLoc/dropoffLoc/deposit above.
+  if(Array.isArray(data.priceBreakdown)) data.priceBreakdown.forEach(row => bullets.push(row));
   if(data.notes) bullets.push([dict.modal_notes_label, data.notes]);
 
   bullets.forEach(([label, value, url])=>{
@@ -4382,7 +4415,10 @@ bookingForm.addEventListener('submit', async e=>{
   const pickupLoc = locationOptionLabel(pickupLocData, dict);
   const dropoffLoc = locationOptionLabel(dropoffLocData, dict);
   const deposit = depositOptionLabel(depositData, dict);
-  const resources = getResourcesBreakdown('bk').text;
+  const resourcesBreakdown = getResourcesBreakdown('bk');
+  const resources = resourcesBreakdown.fee
+    ? `${resourcesBreakdown.text} (+${resourcesBreakdown.fee.toFixed(2)} €)`
+    : resourcesBreakdown.text;
   const total = document.getElementById('bkTotalDisplay').textContent;
   const flightNumber = document.getElementById('bkFlightNumber').value.trim();
   const notes = document.getElementById('bkNotes').value.trim();
@@ -4391,9 +4427,19 @@ bookingForm.addEventListener('submit', async e=>{
     ? nationalityCode
     : (nationalitySelect.options[nationalitySelect.selectedIndex]?.textContent || nationalityCode);
 
+  // Itemized breakdown behind `total` above — see buildPriceBreakdownLines.
+  const priceBreakdown = buildPriceBreakdownLines(dict, {
+    basePrice: activeBookingCar.price,
+    seasonalRate: getSeasonalDailyRate(activeBookingCar.price, pickup),
+    days: computeDays('bkPickup', 'bkReturn'),
+    pickupFee: pickupLocData.fee, dropoffFee: dropoffLocData.fee,
+    depositSurcharge: depositData.surcharge,
+    outsideHoursFee: getOutsideHoursFee('bkPickup', 'bkReturn'),
+  });
+
   pendingBookingData = {
     car: activeBookingCar, name, phone, email, nationality, pickup, ret,
-    licenseYears, pickupLoc, dropoffLoc, deposit, resources, total,
+    licenseYears, pickupLoc, dropoffLoc, deposit, resources, total, priceBreakdown,
     flightNumber, notes, createAccount, accountPassword,
   };
   openBookingPreview(pendingBookingData);
@@ -4839,7 +4885,7 @@ async function schedulePdfGeneration(dict, data, ref, choice){
       name: data.name, phone: data.phone, email: data.email, nationality: data.nationality, carName: data.car.name,
       pickup: formatDateTimeForPdf(data.pickup, dict.htmlLang), ret: formatDateTimeForPdf(data.ret, dict.htmlLang),
       quantity: 1, licenseYears: data.licenseYears, pickupLoc: data.pickupLoc, dropoffLoc: data.dropoffLoc,
-      flightNumber: data.flightNumber, notes: data.notes,
+      flightNumber: data.flightNumber, notes: data.notes, priceBreakdown: data.priceBreakdown,
       deposit: data.deposit, resources: data.resources, total: data.total,
       licenseFileName: licenseFile?.name || '', passportFileName: passportFile?.name || '',
       licenseUrl: licenseUpload?.url || '', passportUrl: passportUpload?.url || '',
@@ -4875,6 +4921,7 @@ async function finalizeBooking(choice){
     pickupLoc: data.pickupLoc, dropoffLoc: data.dropoffLoc, deposit: data.deposit,
     resources: data.resources, licenseYears: data.licenseYears,
     flightNumber: data.flightNumber, notes: data.notes,
+    priceBreakdown: Array.isArray(data.priceBreakdown) ? data.priceBreakdown.map(([l, v]) => `${l}: ${v}`).join(' | ') : '',
     paymentChoice: choice === 'pickup' ? dict.payment_method_cash_pickup : dict.preview_pay_now,
   });
   if(!bookingResult.success){
@@ -4961,6 +5008,7 @@ function buildBookingSummaryText(data, paymentMethodLabel){
   if(data.licenseYears) lines.push(`${dict.modal_license_years_label}: ${data.licenseYears}`);
   if(data.deposit) lines.push(`${dict.modal_deposit_label}: ${data.deposit}`);
   if(data.resources) lines.push(`${dict.modal_resources_title}: ${data.resources}`);
+  if(Array.isArray(data.priceBreakdown)) data.priceBreakdown.forEach(([l, v]) => lines.push(`${l}: ${v}`));
   lines.push(`${dict.modal_total_label}: ${data.total}`);
   if(paymentMethodLabel) lines.push(`${dict.payment_method_label}: ${paymentMethodLabel}`);
   if(data.notes) lines.push(`${dict.modal_notes_label}: ${data.notes}`);

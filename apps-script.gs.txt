@@ -1017,6 +1017,12 @@ function sendBookingEmail_(body) {
   if (body.licenseYears) lines.push('Years with license: ' + body.licenseYears);
   if (body.deposit) lines.push('Deposit: ' + body.deposit);
   if (body.resources) lines.push('Extras: ' + body.resources);
+  // Itemized price breakdown sent as "Label: value | Label: value" (see
+  // buildPriceBreakdownLines/priceBreakdown in index.html) - split back into
+  // one line each so it reads the same as every other field above.
+  if (body.priceBreakdown) {
+    String(body.priceBreakdown).split(' | ').forEach(function (row) { lines.push(row); });
+  }
   lines.push('Total: ' + (body.total || ''));
   if (body.paymentChoice) lines.push('Payment: ' + body.paymentChoice);
   if (body.notes) lines.push('Notes: ' + body.notes);
