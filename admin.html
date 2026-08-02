@@ -1109,23 +1109,37 @@ function openFleetUnitModal(unit){
 // chosen sort order (pickup or return date, asc/desc) doesn't reset itself.
 let reservationsSortField = 'pickup'; // 'pickup' | 'ret'
 let reservationsSortDir = 'asc'; // 'asc' | 'desc'
-// Same persistence idea for the vehicle filter — 'all' or a carId.
+// Same persistence idea for the vehicle/unit filters — 'all', a carId, or a unitId.
 let reservationsCarFilter = 'all';
+let reservationsUnitFilter = 'all';
 function reservationsSortArrow(field){
   if(reservationsSortField !== field) return '';
   return reservationsSortDir === 'asc' ? ' ▲' : ' ▼';
 }
 function renderReservations(){
   const root = document.getElementById('viewRoot');
+  // The unit dropdown only ever lists units belonging to the currently
+  // selected vehicle (or all units when no vehicle is chosen) — a stale
+  // unit selection left over from a different vehicle is dropped here.
+  const unitsForFilter = state.fleetUnits.filter(u => reservationsCarFilter === 'all' || u.carId === reservationsCarFilter);
+  if(reservationsUnitFilter !== 'all' && !unitsForFilter.some(u => u.unitId === reservationsUnitFilter)){
+    reservationsUnitFilter = 'all';
+  }
   root.innerHTML = `
     <div class="toolbar-row">
-      <div class="field" style="margin:0"><select id="reservationsCarFilter">
-        <option value="all">Tous les véhicules</option>
-        ${state.cars.map(c => `<option value="${c.id}" ${c.id === reservationsCarFilter ? 'selected' : ''}>${c.name}</option>`).join('')}
-      </select></div>
+      <div class="tag-row">
+        <select id="reservationsCarFilter">
+          <option value="all">Tous les véhicules</option>
+          ${state.cars.map(c => `<option value="${c.id}" ${c.id === reservationsCarFilter ? 'selected' : ''}>${c.name}</option>`).join('')}
+        </select>
+        <select id="reservationsUnitFilter">
+          <option value="all">Toutes les unités</option>
+          ${unitsForFilter.map(u => `<option value="${u.unitId}" ${u.unitId === reservationsUnitFilter ? 'selected' : ''}>${(u.plate || u.nickname || u.unitId)}${u.nickname && u.plate ? ' — ' + u.nickname : ''}</option>`).join('')}
+        </select>
+      </div>
       <button class="btn btn-primary" id="newBookingBtn">+ Réservation manuelle</button>
     </div>
-    <div class="section-note">Les réservations manuelles (téléphone, agence, sans rendez-vous) utilisent le même moteur de réservation que le site web — l'inventaire se met à jour automatiquement et la surréservation est empêchée. Cliquez sur "Prise en charge" ou "Retour" dans l'en-tête du tableau pour trier par cette date, ou filtrez par véhicule ci-dessus.</div>
+    <div class="section-note">Les réservations manuelles (téléphone, agence, sans rendez-vous) utilisent le même moteur de réservation que le site web — l'inventaire se met à jour automatiquement et la surréservation est empêchée. Cliquez sur "Prise en charge" ou "Retour" dans l'en-tête du tableau pour trier par cette date, ou filtrez par véhicule/unité ci-dessus.</div>
     <div class="card"><div class="table-wrap">
       <table>
         <thead><tr><th>Réf</th><th>Client</th><th>Nationalité</th><th>Téléphone</th><th>Véhicule</th><th>Unité / Plaque</th><th class="sortable-th" data-sort-field="pickup" title="Trier par date de prise en charge">Prise en charge${reservationsSortArrow('pickup')}</th><th class="sortable-th" data-sort-field="ret" title="Trier par date de retour">Retour${reservationsSortArrow('ret')}</th><th>Total</th><th>Source</th><th>Statut</th><th>Paiement</th><th>Actions</th></tr></thead>
@@ -1137,6 +1151,11 @@ function renderReservations(){
   document.getElementById('newBookingBtn').addEventListener('click', openManualBookingModal);
   document.getElementById('reservationsCarFilter').addEventListener('change', e=>{
     reservationsCarFilter = e.target.value;
+    reservationsUnitFilter = 'all'; // switching vehicle invalidates any unit choice
+    renderReservations();
+  });
+  document.getElementById('reservationsUnitFilter').addEventListener('change', e=>{
+    reservationsUnitFilter = e.target.value;
     renderReservationsRows();
   });
   root.querySelectorAll('.sortable-th').forEach(th => th.addEventListener('click', ()=>{
@@ -1495,7 +1514,9 @@ function renderReservationsRows(){
   const tbody = document.getElementById('reservationsBody');
   const sortKey = reservationsSortField === 'ret' ? 'ret' : 'pickup';
   const dirMul = reservationsSortDir === 'desc' ? -1 : 1;
-  const filtered = reservationsCarFilter === 'all' ? state.bookings : state.bookings.filter(b => b.carId === reservationsCarFilter);
+  const filtered = state.bookings
+    .filter(b => reservationsCarFilter === 'all' || b.carId === reservationsCarFilter)
+    .filter(b => reservationsUnitFilter === 'all' || b.unitId === reservationsUnitFilter);
   const sorted = [...filtered].sort((a,b)=> (new Date(a[sortKey]) - new Date(b[sortKey])) * dirMul);
   tbody.innerHTML = sorted.map(b=>{
     const st = bookingStatus(b);
@@ -1518,7 +1539,11 @@ function renderReservationsRows(){
         <button class="btn btn-danger btn-sm" data-cancel="${b.row}">Annuler</button>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="13" class="empty-state">${reservationsCarFilter === 'all' ? 'Aucune réservation pour le moment.' : 'Aucune réservation pour ce véhicule.'}</td></tr>`;
+  }).join('') || `<tr><td colspan="13" class="empty-state">${
+    reservationsUnitFilter !== 'all' ? 'Aucune réservation pour cette unité.'
+    : reservationsCarFilter !== 'all' ? 'Aucune réservation pour ce véhicule.'
+    : 'Aucune réservation pour le moment.'
+  }</td></tr>`;
   tbody.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', ()=>{
     const booking = state.bookings.find(b => String(b.row) === btn.dataset.edit);
     if(booking) openBookingEditModal(booking);
