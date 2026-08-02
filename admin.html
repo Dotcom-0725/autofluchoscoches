@@ -91,6 +91,8 @@ tr:last-child td{border-bottom:none}
    auto too in that case, which breaks position:sticky silently. */
 .table-wrap{overflow:auto;max-height:70vh}
 .table-wrap thead th{position:sticky;top:0;background:var(--card);z-index:5}
+.sortable-th{cursor:pointer;user-select:none;white-space:nowrap}
+.sortable-th:hover{color:var(--accent)}
 
 .btn{border:none;border-radius:8px;padding:9px 16px;font-weight:700;font-size:.8rem;display:inline-flex;align-items:center;gap:6px}
 .btn-primary{background:var(--accent);color:#fff}
@@ -1103,6 +1105,14 @@ function openFleetUnitModal(unit){
 }
 
 /* ================= RESERVATIONS ================= */
+// Persists across re-renders (e.g. after edit/cancel refresh) so the admin's
+// chosen sort order (pickup or return date, asc/desc) doesn't reset itself.
+let reservationsSortField = 'pickup'; // 'pickup' | 'ret'
+let reservationsSortDir = 'asc'; // 'asc' | 'desc'
+function reservationsSortArrow(field){
+  if(reservationsSortField !== field) return '';
+  return reservationsSortDir === 'asc' ? ' ▲' : ' ▼';
+}
 function renderReservations(){
   const root = document.getElementById('viewRoot');
   root.innerHTML = `
@@ -1110,16 +1120,22 @@ function renderReservations(){
       <div></div>
       <button class="btn btn-primary" id="newBookingBtn">+ Réservation manuelle</button>
     </div>
-    <div class="section-note">Les réservations manuelles (téléphone, agence, sans rendez-vous) utilisent le même moteur de réservation que le site web — l'inventaire se met à jour automatiquement et la surréservation est empêchée.</div>
+    <div class="section-note">Les réservations manuelles (téléphone, agence, sans rendez-vous) utilisent le même moteur de réservation que le site web — l'inventaire se met à jour automatiquement et la surréservation est empêchée. Cliquez sur "Prise en charge" ou "Retour" dans l'en-tête du tableau pour trier par cette date.</div>
     <div class="card"><div class="table-wrap">
       <table>
-        <thead><tr><th>Réf</th><th>Client</th><th>Nationalité</th><th>Téléphone</th><th>Véhicule</th><th>Unité / Plaque</th><th>Prise en charge</th><th>Retour</th><th>Total</th><th>Source</th><th>Statut</th><th>Paiement</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Réf</th><th>Client</th><th>Nationalité</th><th>Téléphone</th><th>Véhicule</th><th>Unité / Plaque</th><th class="sortable-th" data-sort-field="pickup" title="Trier par date de prise en charge">Prise en charge${reservationsSortArrow('pickup')}</th><th class="sortable-th" data-sort-field="ret" title="Trier par date de retour">Retour${reservationsSortArrow('ret')}</th><th>Total</th><th>Source</th><th>Statut</th><th>Paiement</th><th>Actions</th></tr></thead>
         <tbody id="reservationsBody"></tbody>
       </table>
     </div></div>
   `;
   renderReservationsRows();
   document.getElementById('newBookingBtn').addEventListener('click', openManualBookingModal);
+  root.querySelectorAll('.sortable-th').forEach(th => th.addEventListener('click', ()=>{
+    const field = th.dataset.sortField;
+    if(reservationsSortField === field) reservationsSortDir = reservationsSortDir === 'asc' ? 'desc' : 'asc';
+    else { reservationsSortField = field; reservationsSortDir = 'asc'; }
+    renderReservations();
+  }));
 }
 const PAYMENT_STATUS_OPTIONS = [
   { value: 'pending', label: 'En attente' },
@@ -1431,7 +1447,9 @@ function unitLabelForBooking(b){
 }
 function renderReservationsRows(){
   const tbody = document.getElementById('reservationsBody');
-  const sorted = [...state.bookings].sort((a,b)=> new Date(a.pickup) - new Date(b.pickup));
+  const sortKey = reservationsSortField === 'ret' ? 'ret' : 'pickup';
+  const dirMul = reservationsSortDir === 'desc' ? -1 : 1;
+  const sorted = [...state.bookings].sort((a,b)=> (new Date(a[sortKey]) - new Date(b[sortKey])) * dirMul);
   tbody.innerHTML = sorted.map(b=>{
     const st = bookingStatus(b);
     const paymentStatus = b.paymentStatus || 'pending';
