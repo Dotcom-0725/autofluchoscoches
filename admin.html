@@ -1109,6 +1109,8 @@ function openFleetUnitModal(unit){
 // chosen sort order (pickup or return date, asc/desc) doesn't reset itself.
 let reservationsSortField = 'pickup'; // 'pickup' | 'ret'
 let reservationsSortDir = 'asc'; // 'asc' | 'desc'
+// Same persistence idea for the vehicle filter — 'all' or a carId.
+let reservationsCarFilter = 'all';
 function reservationsSortArrow(field){
   if(reservationsSortField !== field) return '';
   return reservationsSortDir === 'asc' ? ' ▲' : ' ▼';
@@ -1117,10 +1119,13 @@ function renderReservations(){
   const root = document.getElementById('viewRoot');
   root.innerHTML = `
     <div class="toolbar-row">
-      <div></div>
+      <div class="field" style="margin:0"><select id="reservationsCarFilter">
+        <option value="all">Tous les véhicules</option>
+        ${state.cars.map(c => `<option value="${c.id}" ${c.id === reservationsCarFilter ? 'selected' : ''}>${c.name}</option>`).join('')}
+      </select></div>
       <button class="btn btn-primary" id="newBookingBtn">+ Réservation manuelle</button>
     </div>
-    <div class="section-note">Les réservations manuelles (téléphone, agence, sans rendez-vous) utilisent le même moteur de réservation que le site web — l'inventaire se met à jour automatiquement et la surréservation est empêchée. Cliquez sur "Prise en charge" ou "Retour" dans l'en-tête du tableau pour trier par cette date.</div>
+    <div class="section-note">Les réservations manuelles (téléphone, agence, sans rendez-vous) utilisent le même moteur de réservation que le site web — l'inventaire se met à jour automatiquement et la surréservation est empêchée. Cliquez sur "Prise en charge" ou "Retour" dans l'en-tête du tableau pour trier par cette date, ou filtrez par véhicule ci-dessus.</div>
     <div class="card"><div class="table-wrap">
       <table>
         <thead><tr><th>Réf</th><th>Client</th><th>Nationalité</th><th>Téléphone</th><th>Véhicule</th><th>Unité / Plaque</th><th class="sortable-th" data-sort-field="pickup" title="Trier par date de prise en charge">Prise en charge${reservationsSortArrow('pickup')}</th><th class="sortable-th" data-sort-field="ret" title="Trier par date de retour">Retour${reservationsSortArrow('ret')}</th><th>Total</th><th>Source</th><th>Statut</th><th>Paiement</th><th>Actions</th></tr></thead>
@@ -1130,6 +1135,10 @@ function renderReservations(){
   `;
   renderReservationsRows();
   document.getElementById('newBookingBtn').addEventListener('click', openManualBookingModal);
+  document.getElementById('reservationsCarFilter').addEventListener('change', e=>{
+    reservationsCarFilter = e.target.value;
+    renderReservationsRows();
+  });
   root.querySelectorAll('.sortable-th').forEach(th => th.addEventListener('click', ()=>{
     const field = th.dataset.sortField;
     if(reservationsSortField === field) reservationsSortDir = reservationsSortDir === 'asc' ? 'desc' : 'asc';
@@ -1486,7 +1495,8 @@ function renderReservationsRows(){
   const tbody = document.getElementById('reservationsBody');
   const sortKey = reservationsSortField === 'ret' ? 'ret' : 'pickup';
   const dirMul = reservationsSortDir === 'desc' ? -1 : 1;
-  const sorted = [...state.bookings].sort((a,b)=> (new Date(a[sortKey]) - new Date(b[sortKey])) * dirMul);
+  const filtered = reservationsCarFilter === 'all' ? state.bookings : state.bookings.filter(b => b.carId === reservationsCarFilter);
+  const sorted = [...filtered].sort((a,b)=> (new Date(a[sortKey]) - new Date(b[sortKey])) * dirMul);
   tbody.innerHTML = sorted.map(b=>{
     const st = bookingStatus(b);
     const paymentStatus = b.paymentStatus || 'pending';
@@ -1508,7 +1518,7 @@ function renderReservationsRows(){
         <button class="btn btn-danger btn-sm" data-cancel="${b.row}">Annuler</button>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="13" class="empty-state">Aucune réservation pour le moment.</td></tr>`;
+  }).join('') || `<tr><td colspan="13" class="empty-state">${reservationsCarFilter === 'all' ? 'Aucune réservation pour le moment.' : 'Aucune réservation pour ce véhicule.'}</td></tr>`;
   tbody.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', ()=>{
     const booking = state.bookings.find(b => String(b.row) === btn.dataset.edit);
     if(booking) openBookingEditModal(booking);
