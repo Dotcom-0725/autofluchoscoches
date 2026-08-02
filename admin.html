@@ -1148,6 +1148,37 @@ function paymentMethodLabel(method){
   return { bank_transfer: 'Virement bancaire', wise: 'Wise', cash_on_pickup: 'Espèces à la prise en charge', none: '—' }[method] || method || '—';
 }
 
+// Mirrors the LOCATIONS list in index.html (kept in sync manually) so a
+// booking created or edited from the admin dashboard records the exact same
+// pickup/drop-off location options customers pick from on the public site.
+const ADMIN_LOCATIONS = [
+  { label: 'Tétouan - Medina', fee: 5 },
+  { label: 'Tétouan - Saniat Airport', fee: 5 },
+  { label: 'Agency Office - Auto Fluchos Coches', fee: 0 },
+  { label: 'Bab Sebta (Ceuta Border)', fee: 10 },
+  { label: 'Port de Ksar Sghir', fee: 25 },
+  { label: 'Tangier TGV Train Station', fee: 20 },
+  { label: 'Tangier - Ibn Battouta Airport', fee: 25 },
+  { label: 'Tangier City Center', fee: 20 },
+  { label: 'Tangier Port Medina', fee: 20 },
+  { label: 'Hotel Delivery (Tétouan & surroundings)', fee: 10 },
+  { label: 'Chefchaouen', fee: 20 },
+];
+function adminLocationLabel(loc){
+  return loc.fee > 0 ? `${loc.label} (+€${loc.fee})` : `${loc.label} (€0)`;
+}
+// Builds <option> tags whose value IS the full label string (matching what
+// the public site stores on a booking) — selectedLabel pre-selects a
+// booking's existing value when editing, and defaults to the agency office.
+function adminLocationOptions(selectedLabel){
+  const officeIndex = ADMIN_LOCATIONS.findIndex(l => l.label.includes('Agency Office'));
+  return ADMIN_LOCATIONS.map((loc, i)=>{
+    const full = adminLocationLabel(loc);
+    const isSelected = selectedLabel ? full === selectedLabel : i === officeIndex;
+    return `<option value="${full.replace(/"/g,'&quot;')}" ${isSelected ? 'selected' : ''}>${full}</option>`;
+  }).join('');
+}
+
 /* ================= RESERVATION PDF (download / print) =================
    Lets the admin generate the exact same reservation document customers get
    from the public website checkout, for ANY booking — website or manual —
@@ -1299,12 +1330,15 @@ const PDF_FR = {
   payment_cash: 'Paiement à la livraison',
   pickup: 'Date de prise en charge', ret: 'Date de retour', nationality: 'Nationalité',
   license: 'Permis de conduire', passport: 'Passeport',
+  pickup_loc: 'Lieu de prise en charge', dropoff_loc: 'Lieu de retour',
 };
 /* Reservation PDF — identical visual layout to index.html's generateBookingPdf.
-   `data` fields that the Bookings sheet never persisted (pickup/drop-off
-   location, deposit choice, resources, license years) are simply omitted
-   from the bullet list when absent, which happens the same way regardless of
-   whether the booking came from the website or a manual reservation. */
+   Pickup/drop-off location is now persisted on the Bookings sheet (see
+   ADMIN_LOCATIONS / adminLocationOptions above) and shown here when present.
+   Other `data` fields the sheet still doesn't store (deposit choice,
+   resources, license years) are simply omitted from the bullet list when
+   absent, the same way regardless of whether the booking came from the
+   website or a manual reservation. */
 async function generateReservationPdfAdmin(data){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -1368,6 +1402,8 @@ async function generateReservationPdfAdmin(data){
     [PDF_FR.ret, data.ret],
   ];
   if(data.nationality) bullets.push([PDF_FR.nationality, data.nationality]);
+  if(data.pickupLoc) bullets.push([PDF_FR.pickup_loc, data.pickupLoc]);
+  if(data.dropoffLoc) bullets.push([PDF_FR.dropoff_loc, data.dropoffLoc]);
   if(data.licenseUrl) bullets.push([PDF_FR.license, 'Voir le document', data.licenseUrl]);
   if(data.passportUrl) bullets.push([PDF_FR.passport, 'Voir le document', data.passportUrl]);
 
@@ -1427,6 +1463,7 @@ async function downloadReservationPdf(booking){
     name: booking.customerName || '—', phone: booking.phone || '—', nationality: booking.nationality || '',
     carName: booking.carName || (car ? car.name : '—'),
     pickup: formatDateTimeForPdfAdmin(booking.pickup), ret: formatDateTimeForPdfAdmin(booking.ret),
+    pickupLoc: booking.pickupLoc || '', dropoffLoc: booking.dropoffLoc || '',
     quantity: 1, total: booking.total || '—',
     licenseUrl: booking.licenseUrl || '', passportUrl: booking.passportUrl || '',
     carImg, logoImg,
@@ -1519,6 +1556,8 @@ function openManualBookingModal(){
       <div class="field"><label>Téléphone</label><input id="mbPhone" required></div>
       <div class="field"><label>Prise en charge</label><input type="text" id="mbPickup" data-custom-picker readonly required placeholder="Sélectionner date et heure"></div>
       <div class="field"><label>Retour</label><input type="text" id="mbReturn" data-custom-picker readonly required placeholder="Sélectionner date et heure"></div>
+      <div class="field"><label>Lieu de prise en charge</label><select id="mbPickupLoc">${adminLocationOptions()}</select></div>
+      <div class="field"><label>Lieu de retour</label><select id="mbDropoffLoc">${adminLocationOptions()}</select></div>
     </div>
     <div class="section-note" id="mbAvailNote" style="display:none"></div>
     <div class="field" id="mbUnitField" style="display:none"><label>Unité à assigner</label><select id="mbUnit"></select></div>
@@ -1622,6 +1661,8 @@ function openManualBookingModal(){
       carId, carName: car.name, customerName: name, phone, pickup, ret, ref, unitId,
       stock: car.stock, total: document.getElementById('mbTotal').value || '',
       source: document.getElementById('mbSource').value, adminPassword: state.password,
+      pickupLoc: document.getElementById('mbPickupLoc').value,
+      dropoffLoc: document.getElementById('mbDropoffLoc').value,
     });
     if(r.success){
       toast(r.unitPlate ? `Réservation créée — unité assignée : ${r.unitPlate}` : 'Réservation créée');
@@ -1661,6 +1702,8 @@ function openBookingEditModal(booking){
       <div class="field"><label>E-mail</label><input id="ebEmail" value="${(booking.email || '').replace(/"/g,'&quot;')}"></div>
       <div class="field"><label>Prise en charge</label><input type="text" id="ebPickup" data-custom-picker readonly value="${toDatetimeLocalInputValue(booking.pickup)}"></div>
       <div class="field"><label>Retour</label><input type="text" id="ebReturn" data-custom-picker readonly value="${toDatetimeLocalInputValue(booking.ret)}"></div>
+      <div class="field"><label>Lieu de prise en charge</label><select id="ebPickupLoc">${adminLocationOptions(booking.pickupLoc)}</select></div>
+      <div class="field"><label>Lieu de retour</label><select id="ebDropoffLoc">${adminLocationOptions(booking.dropoffLoc)}</select></div>
       <div class="field"><label>Total (€)</label><input id="ebTotal" type="number" value="${booking.total || ''}"></div>
     </div>
     <div class="section-note" id="ebAvailNote"></div>
@@ -1754,6 +1797,8 @@ function openBookingEditModal(booking){
       pickup, ret, unitId,
       total: document.getElementById('ebTotal').value || '',
       stock: car.stock,
+      pickupLoc: document.getElementById('ebPickupLoc').value,
+      dropoffLoc: document.getElementById('ebDropoffLoc').value,
     });
     if(r.success){
       toast(r.unitPlate ? `Réservation mise à jour — unité assignée : ${r.unitPlate}` : 'Réservation mise à jour');

@@ -235,7 +235,7 @@ function doPost(e) {
     if (!body.row) return jsonResponse_({ success: false, error: 'Missing row' });
     const sheet = getBookingsSheet_();
     const rowNum = Number(body.row);
-    const existing = sheet.getRange(rowNum, 1, 1, 19).getValues()[0];
+    const existing = sheet.getRange(rowNum, 1, 1, 21).getValues()[0];
     if (!existing[0]) return jsonResponse_({ success: false, error: 'Booking not found' });
     const carId = body.carId || existing[0];
     const stock = Number(body.stock) || Number(existing[8]) || 1;
@@ -250,7 +250,7 @@ function doPost(e) {
       return jsonResponse_({ success: false, error: 'sold_out' });
     }
     const phone = body.phone != null ? body.phone : existing[3];
-    sheet.getRange(rowNum, 1, 1, 19).setValues([[
+    sheet.getRange(rowNum, 1, 1, 21).setValues([[
       carId,
       body.carName || existing[1],
       body.customerName != null ? body.customerName : existing[2],
@@ -266,6 +266,8 @@ function doPost(e) {
       existing[12], existing[13], existing[14], existing[15], existing[16], // payment/document fields untouched
       body.nationality != null ? body.nationality : existing[17],
       assignment.unitId || '',
+      body.pickupLoc != null ? body.pickupLoc : existing[19],
+      body.dropoffLoc != null ? body.dropoffLoc : existing[20],
     ]]);
     sheet.getRange(rowNum, 4).setNumberFormat('@').setValue(phone);
     logActivity_(role, 'edit_booking', 'Row ' + rowNum + ' — ' + (body.carName || existing[1]));
@@ -591,6 +593,8 @@ function doPost(e) {
       '',
       body.nationality || '',
       assignment.unitId || '',
+      body.pickupLoc || '',
+      body.dropoffLoc || '',
     ]);
     // Phone numbers start with "+" (country code, e.g. "+212 6..."), which
     // Google Sheets auto-parses as the start of a formula/number and shows
@@ -726,6 +730,8 @@ function listActiveBookings_() {
       passportUrl: rows[i][16] || '',
       nationality: rows[i][17] || '',
       unitId: rows[i][18] || '',
+      pickupLoc: rows[i][19] || '',
+      dropoffLoc: rows[i][20] || '',
     });
   }
   return bookings;
