@@ -1944,15 +1944,15 @@ function populateLocationAndDepositSelects(dict){
    (admin.html) and lives in the "Cars" sheet tab — loadCarsFromBackend()
    below replaces the contents of this array with that live data on page load. */
 let CARS = [
-  {id:'clio5-auto', cat:'berline', imgSrc:'images/clio5-auto.webp', offer:'30€', price:30, name:'RENAULT CLIO 5 AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', stock:2},
-  {id:'clio5-manuel', cat:'berline', imgSrc:'images/clio5-manuel.webp', offer:'30€', price:30, name:'RENAULT CLIO 5 MANUEL', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:2},
+  {id:'clio5-auto', cat:'berline', offer:'30€', price:30, name:'RENAULT CLIO 5 AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', stock:2},
+  {id:'clio5-manuel', cat:'berline', offer:'30€', price:30, name:'RENAULT CLIO 5 MANUEL', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:2},
   {id:'opel-corsa', cat:'citadine', imgSrc:'images/opel-corsa.webp', imgSrc2:'images/opel-corsa-2.webp', imgSrc3:'images/opel-corsa-3.webp', offer:'30€', price:30, name:'OPEL CORSA MANUEL', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:1},
   {id:'sandero-stepway-auto', cat:'berline', imgSrc:'images/sandero-stepway-auto.webp', imgSrc2:'images/sandero-stepway-auto-2.webp', imgSrc3:'images/sandero-stepway-auto-3.webp', offer:'30€', price:30, name:'DACIA SANDERO STEPWAY AUTOMATIC', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', stock:3},
   /* "Streetway" is a distinct real trim from "Stepway" in this agency's fleet
      (confirmed with the client, not a typo). */
   {id:'sandero-streetway-auto', cat:'citadine', imgSrc:'images/sandero.webp', imgSrc2:'images/sandero-2.webp', imgSrc3:'images/sandero-3.webp', offer:'30€', price:30, name:'DACIA SANDERO STREETWAY AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', stock:2},
   {id:'sandero-streetway-manuel', cat:'citadine', imgSrc:'images/sandero.webp', imgSrc2:'images/sandero-2.webp', imgSrc3:'images/sandero-3.webp', offer:'30€', price:30, name:'DACIA SANDERO STREETWAY MANUELLE', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:4},
-  {id:'sandero-stepway-extreme', cat:'citadine', imgSrc:'images/sandero-stepway-extreme.webp', offer:'30€', price:30, name:'DACIA SANDERO STEPWAY MANUAL EXTREME', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:3},
+  {id:'sandero-stepway-extreme', cat:'citadine', offer:'30€', price:30, name:'DACIA SANDERO STEPWAY MANUAL EXTREME', seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', stock:3},
   {id:'jogger-7p', cat:'familiale', imgSrc:'images/jogger-7p.webp', imgSrc2:'images/jogger-7p-2.webp', imgSrc3:'images/jogger-7p-3.webp', offer:'40€', price:40, name:'DACIA JOGGER 7 PLACES MANUEL', seats:7, gearKey:'manual', doors:4, fuelKey:'diesel', stock:2},
   {id:'c3-aircross-hybride', cat:'berline', imgSrc:'images/c3-aircross-hybride.webp', imgSrc2:'images/c3-aircross-hybride-2.webp', imgSrc3:'images/c3-aircross-hybride-3.webp', offer:'50€', price:50, name:'CITROËN NEW C3 AIRCROSS AUTOMATIQUE HYBRIDE', seats:5, gearKey:'auto', doors:4, fuelKey:'hybride', body:['suv'], stock:1},
   {id:'nissan-magnite', cat:'berline', imgSrc:'images/nissan-magnite.webp', imgSrc2:'images/nissan-magnite-2.webp', imgSrc3:'images/nissan-magnite-3.webp', offer:'35€', price:35, name:'NISSAN MAGNITE AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', body:['suv'], stock:1},

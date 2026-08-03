@@ -937,13 +937,13 @@ function getFleetUnitsSheet_() {
 function seedCarsFromLaunchData() {
   const existing = listCars_().map(c => c.id);
   const seed = [
-    {id:'clio5-auto', name:'RENAULT CLIO 5 AUTOMATIQUE', price:30, seats:5, gearKey:'auto', doors:4, fuelKey:'essence', body:'', cat:'berline', stock:2, imgSrc:'images/clio5-auto.webp', offer:'30€', sortOrder:1},
-    {id:'clio5-manuel', name:'RENAULT CLIO 5 MANUEL', price:30, seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', body:'', cat:'berline', stock:2, imgSrc:'images/clio5-manuel.webp', offer:'30€', sortOrder:2},
+    {id:'clio5-auto', name:'RENAULT CLIO 5 AUTOMATIQUE', price:30, seats:5, gearKey:'auto', doors:4, fuelKey:'essence', body:'', cat:'berline', stock:2, imgSrc:'', offer:'30€', sortOrder:1},
+    {id:'clio5-manuel', name:'RENAULT CLIO 5 MANUEL', price:30, seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', body:'', cat:'berline', stock:2, imgSrc:'', offer:'30€', sortOrder:2},
     {id:'opel-corsa', name:'OPEL CORSA MANUEL', price:30, seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', body:'', cat:'citadine', stock:1, imgSrc:'images/opel-corsa.webp', offer:'30€', sortOrder:3},
     {id:'sandero-stepway-auto', name:'DACIA SANDERO STEPWAY AUTOMATIC', price:30, seats:5, gearKey:'auto', doors:4, fuelKey:'essence', body:'', cat:'berline', stock:3, imgSrc:'images/sandero-stepway-auto.webp', offer:'30€', sortOrder:4},
     {id:'sandero-streetway-auto', name:'DACIA SANDERO STREETWAY AUTOMATIQUE', price:30, seats:5, gearKey:'auto', doors:4, fuelKey:'essence', body:'', cat:'citadine', stock:2, imgSrc:'images/sandero.webp', offer:'30€', sortOrder:5},
     {id:'sandero-streetway-manuel', name:'DACIA SANDERO STREETWAY MANUELLE', price:30, seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', body:'', cat:'citadine', stock:4, imgSrc:'images/sandero.webp', offer:'30€', sortOrder:6},
-    {id:'sandero-stepway-extreme', name:'DACIA SANDERO STEPWAY MANUAL EXTREME', price:30, seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', body:'', cat:'citadine', stock:3, imgSrc:'images/sandero-stepway-extreme.webp', offer:'30€', sortOrder:7},
+    {id:'sandero-stepway-extreme', name:'DACIA SANDERO STEPWAY MANUAL EXTREME', price:30, seats:5, gearKey:'manual', doors:4, fuelKey:'diesel', body:'', cat:'citadine', stock:3, imgSrc:'', offer:'30€', sortOrder:7},
     {id:'jogger-7p', name:'DACIA JOGGER 7 PLACES MANUEL', price:40, seats:7, gearKey:'manual', doors:4, fuelKey:'diesel', body:'', cat:'familiale', stock:2, imgSrc:'images/jogger-7p.webp', offer:'40€', sortOrder:8},
     {id:'c3-aircross-hybride', name:'CITROËN NEW C3 AIRCROSS AUTOMATIQUE HYBRIDE', price:50, seats:5, gearKey:'auto', doors:4, fuelKey:'hybride', body:'suv', cat:'berline', stock:1, imgSrc:'images/c3-aircross-hybride.webp', offer:'50€', sortOrder:9},
     {id:'nissan-magnite', name:'NISSAN MAGNITE AUTOMATIQUE', price:35, seats:5, gearKey:'auto', doors:4, fuelKey:'essence', body:'suv', cat:'berline', stock:1, imgSrc:'images/nissan-magnite.webp', offer:'35€', sortOrder:10},
