@@ -614,12 +614,19 @@ html[dir="rtl"] .custom-datepicker{font-family:var(--font-ar)}
 .custom-datepicker-grid button.cdp-booked:hover{background:rgba(230,57,80,.12)}
 .custom-datepicker-grid button.cdp-booked.cdp-other-month{opacity:.35}
 .custom-datepicker-time{
-  display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--card-border);
+  display:flex;align-items:stretch;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--card-border);
 }
-.custom-datepicker-time input{
-  flex:1;min-width:0;padding:8px 10px;border-radius:9px;border:1px solid var(--card-border);
-  background:var(--navy-800);color:var(--ink);font-size:.82rem;
+.cdp-time-col{
+  flex:1;min-width:0;max-height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;
+  scrollbar-width:thin;
 }
+.cdp-time-col button{
+  background:none;border:none;padding:6px 0;border-radius:8px;cursor:pointer;color:var(--ink);
+  font-size:.8rem;text-align:center;flex:none;
+}
+.cdp-time-col button:hover{background:var(--navy-700)}
+.cdp-time-col button.cdp-selected{background:var(--blue-500);color:#fff;font-weight:700}
+.cdp-time-sep{align-self:center;font-weight:800;color:var(--ink-dim)}
 .custom-datepicker-done{
   width:100%;margin-top:12px;padding:8px;border-radius:9px;border:none;
   background:var(--blue-500);color:#fff;font-weight:700;font-size:.8rem;cursor:pointer;
@@ -5518,17 +5525,62 @@ function openCustomDatePicker(input){
     popup.appendChild(grid);
 
     if(isDateTime){
+      // A native <input type="time"> here would trigger the device/browser's
+      // own time wheel — on iOS that wheel's "Done"/"Reset" toolbar is drawn
+      // by the OS in the PHONE's system language, completely ignoring the
+      // site's own language switch (this is exactly the bug the calendar
+      // grid above was already built to avoid for dates). Building the hour
+      // and minute columns from plain buttons, like the day grid, keeps the
+      // entire picker under our own i18n/rendering — nothing but digits, so
+      // there's nothing left to mistranslate.
       const timeRow = document.createElement('div');
       timeRow.className = 'custom-datepicker-time';
-      const timeInput = document.createElement('input');
-      timeInput.type = 'time';
-      timeInput.value = currentTime || '10:00';
-      timeInput.addEventListener('change', ()=>{
-        currentTime = timeInput.value;
+      const [curH, curM] = (currentTime || '10:00').split(':').map(Number);
+
+      function timeCol(count, current, onPick){
+        const col = document.createElement('div');
+        col.className = 'cdp-time-col';
+        for(let i = 0; i < count; i++){
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = String(i).padStart(2, '0');
+          if(i === current) btn.classList.add('cdp-selected');
+          btn.addEventListener('click', e=>{
+            e.stopPropagation();
+            onPick(i);
+          });
+          col.appendChild(btn);
+        }
+        return col;
+      }
+
+      const hourCol = timeCol(24, curH, h=>{
+        currentTime = `${String(h).padStart(2,'0')}:${String(curM).padStart(2,'0')}`;
         writeDateValue(input, selected, currentTime);
+        render();
       });
-      timeRow.appendChild(timeInput);
+      const sep = document.createElement('span');
+      sep.className = 'cdp-time-sep';
+      sep.textContent = ':';
+      const minuteCol = timeCol(60, curM, m=>{
+        currentTime = `${String(curH).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+        writeDateValue(input, selected, currentTime);
+        render();
+      });
+      timeRow.appendChild(hourCol);
+      timeRow.appendChild(sep);
+      timeRow.appendChild(minuteCol);
       popup.appendChild(timeRow);
+
+      // Re-render replaces these columns and resets their scroll position —
+      // keep whichever hour/minute is selected in view instead of always
+      // snapping back to 00 at the top.
+      requestAnimationFrame(()=>{
+        const selH = hourCol.querySelector('.cdp-selected');
+        const selM = minuteCol.querySelector('.cdp-selected');
+        if(selH) selH.scrollIntoView({ block: 'center' });
+        if(selM) selM.scrollIntoView({ block: 'center' });
+      });
     }
 
     const doneBtn = document.createElement('button');
