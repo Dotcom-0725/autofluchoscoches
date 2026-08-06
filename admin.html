@@ -482,25 +482,6 @@ function rangesOverlapAdmin(startA, endA, startB, endB){
 function getOverlapCountAdmin(carId, pickupVal, retVal){
   return state.bookings.filter(b => b.carId === carId && rangesOverlapAdmin(pickupVal, retVal, b.pickup, b.ret)).length;
 }
-/* Which registered fleet units of `carId` are actually free for [pickupVal,
-   retVal) — used by the manual reservation and edit-reservation modals to let
-   the admin pick exactly which physical unit to assign, instead of always
-   silently auto-assigning one. Mirrors findAvailableUnitForBooking_ in
-   apps-script.gs.txt exactly (same overlap test, same legacy-booking
-   handling) so the choices shown here always match what the backend will
-   actually accept. Returns null if this car has no units registered yet
-   (falls back to the old count-vs-stock behavior with no unit picker). */
-function availableUnitsForRangeAdmin(carId, pickupVal, retVal, excludeRow){
-  const units = state.fleetUnits.filter(u => u.carId === carId);
-  if(!units.length) return null;
-  if(!pickupVal || !retVal) return units;
-  const bookingsPool = excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings;
-  const overlapping = bookingsPool.filter(b => b.carId === carId && rangesOverlapAdmin(pickupVal, retVal, b.pickup, b.ret));
-  const assignedOverlapUnitIds = overlapping.filter(b => b.unitId).map(b => b.unitId);
-  const legacyOverlapCount = overlapping.filter(b => !b.unitId).length;
-  const freeUnits = units.filter(u => assignedOverlapUnitIds.indexOf(u.unitId) === -1);
-  return freeUnits.slice(legacyOverlapCount);
-}
 /* True if this car has NO valid moment left to pick on this calendar day —
    i.e. every unit is still busy (accounting for the turnaround buffer) even
    in the very last minute of the day. Checking only that last instant
@@ -589,6 +570,106 @@ function getEarliestAvailableTimeOnDayAdmin(carId, cellDate, excludeRow){
     if(activeCount < stock) return new Date(t);
   }
   return dayStart;
+}
+/* Same "earliest free moment that day" scan as getEarliestAvailableTimeOnDayAdmin,
+   but scoped to ONE specific physical unit instead of the whole car model —
+   only the admin dashboard lets the agency pick a specific unit at all, so
+   this is the unit-level equivalent needed to reuse that exact algorithm for
+   it. A legacy booking with no unitId on the same car is conservatively
+   treated as possibly occupying this very unit, so this never wrongly
+   reports a unit free earlier than it might actually be. */
+function getEarliestAvailableTimeForUnitAdmin(unitId, carId, cellDate, excludeRow){
+  const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+  const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+  const bookingsPool = (excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings)
+    .filter(b => b.carId === carId && (b.unitId === unitId || !b.unitId));
+  const events = bookingsPool
+    .map(b => ({ start: new Date(b.pickup).getTime(), end: new Date(b.ret).getTime() + CAR_TURNAROUND_BUFFER_MS_ADMIN }))
+    .filter(iv => iv.end > dayStart.getTime() && iv.start < dayEnd.getTime());
+  const candidates = [dayStart.getTime(), ...events.map(iv => iv.end).filter(t => t > dayStart.getTime() && t < dayEnd.getTime())];
+  candidates.sort((a, b) => a - b);
+  for(const t of candidates){
+    const stillBusy = events.some(iv => iv.start <= t && t < iv.end);
+    if(!stillBusy) return new Date(t);
+  }
+  return dayStart;
+}
+/* Mirrors index.html's getDelayedAvailability exactly (available / delayed /
+   unavailable three-state check), just scoped to one specific unit instead
+   of the whole car's aggregate stock. "delayed" is purely informational,
+   same as on the public site — the Save button stays enabled, and the
+   backend's own findAvailableUnitForBooking_ re-validates the exact chosen
+   unit at submit time regardless, so a genuine conflict is only ever
+   actually blocked there, never here. */
+function getDelayedAvailabilityForUnitAdmin(unitId, carId, pickupVal, retVal, excludeRow){
+  if(!pickupVal || !retVal) return { status: 'unknown' };
+  const bookingsPool = (excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings)
+    .filter(b => b.carId === carId && (b.unitId === unitId || !b.unitId));
+  const conflict = bookingsPool.some(b => rangesOverlapAdmin(pickupVal, retVal, b.pickup, b.ret));
+  if(!conflict) return { status: 'available' };
+  const [pickupDateStr, pickupTimeStr] = pickupVal.split('T');
+  const [y, m, d] = pickupDateStr.split('-').map(Number);
+  if(!y || !m || !d) return { status: 'unavailable' };
+  const earliest = getEarliestAvailableTimeForUnitAdmin(unitId, carId, new Date(y, m - 1, d), excludeRow);
+  const pad = n => String(n).padStart(2, '0');
+  const earliestTimeStr = `${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
+  if(earliestTimeStr <= pickupTimeStr) return { status: 'unavailable' }; // no later rescue slot that day
+  const delayedPickup = `${pickupDateStr}T${earliestTimeStr}`;
+  const stillConflict = bookingsPool.some(b => rangesOverlapAdmin(delayedPickup, retVal, b.pickup, b.ret));
+  if(!stillConflict) return { status: 'delayed', earliestTimeStr, pickupDateStr };
+  return { status: 'unavailable' };
+}
+/* Shared by the manual-reservation and edit-reservation modals: always lists
+   EVERY registered unit for the car (never narrowed to only currently-free
+   ones, and never silently swapped out from under the admin), and shows a
+   "this unit will be available from HH:MM" note for whichever unit is
+   actually selected — same delayed-availability UX as the public site's
+   booking form, just per-unit. The admin has full control over the unit
+   choice at all times; only the informational note and Save/Create button's
+   disabled state react to availability. */
+function renderUnitAvailabilityAdmin({ carId, pickup, ret, excludeRow, unitSelect, note, saveBtn, defaultUnitId }){
+  const car = carById(carId);
+  const unitField = unitSelect.closest('.field');
+  if(!car){
+    if(unitField) unitField.style.display = 'none';
+    note.textContent = '';
+    if(saveBtn) saveBtn.disabled = false;
+    return;
+  }
+  const allUnits = state.fleetUnits.filter(u => u.carId === car.id);
+  if(!allUnits.length){
+    if(unitField) unitField.style.display = 'none';
+    note.textContent = `${car.name} a ${car.stock || 1} unité(s) au total (aucune plaque enregistrée dans Unités de flotte — la disponibilité est estimée par le nombre).`;
+    if(saveBtn) saveBtn.disabled = false;
+    return;
+  }
+  if(unitField) unitField.style.display = '';
+  const previousSelection = unitSelect.value || defaultUnitId || allUnits[0].unitId;
+  unitSelect.innerHTML = allUnits.map(u=>{
+    const sel = u.unitId === previousSelection ? 'selected' : '';
+    return `<option value="${u.unitId}" ${sel}>${u.plate || u.nickname || u.unitId}${u.nickname && u.plate ? ' — ' + u.nickname : ''}</option>`;
+  }).join('');
+  const chosenUnitId = unitSelect.value;
+  const chosenUnit = allUnits.find(u => u.unitId === chosenUnitId);
+  const label = chosenUnit ? (chosenUnit.plate || chosenUnit.nickname || chosenUnit.unitId) : chosenUnitId;
+  const hasDates = !!(pickup && ret);
+  if(!hasDates){
+    note.textContent = `${car.name} a ${allUnits.length} unité(s) enregistrée(s) — choisissez celle à assigner, puis la prise en charge et le retour.`;
+    if(saveBtn) saveBtn.disabled = false;
+    return;
+  }
+  const availability = getDelayedAvailabilityForUnitAdmin(chosenUnitId, car.id, pickup, ret, excludeRow);
+  if(availability.status === 'available'){
+    note.textContent = `Unité ${label} disponible pour ces dates.`;
+    if(saveBtn) saveBtn.disabled = false;
+  } else if(availability.status === 'delayed'){
+    const [y, m, d] = availability.pickupDateStr.split('-');
+    note.textContent = `Cette unité (${label}) sera disponible à partir de ${availability.earliestTimeStr} le ${d}/${m}/${y}. Ajustez l'heure de prise en charge ci-dessus, ou continuez et nous la confirmerons à cette heure.`;
+    if(saveBtn) saveBtn.disabled = false;
+  } else {
+    note.textContent = `Cette unité (${label}) n'est pas disponible pour ces dates.`;
+    if(saveBtn) saveBtn.disabled = true;
+  }
 }
 function openAdminDatePicker(input, carId, excludeRow){
   closeAdminDatePicker();
@@ -1594,7 +1675,7 @@ function openManualBookingModal(){
       <div class="field"><label>Lieu de prise en charge</label><select id="mbPickupLoc">${adminLocationOptions()}</select></div>
       <div class="field"><label>Lieu de retour</label><select id="mbDropoffLoc">${adminLocationOptions()}</select></div>
     </div>
-    <div class="section-note" id="mbAvailNote" style="display:none"></div>
+    <div class="section-note" id="mbAvailNote"></div>
     <div class="field" id="mbUnitField" style="display:none"><label>Unité à assigner</label><select id="mbUnit"></select></div>
     <div class="field"><label>Total (€, optionnel)</label><input id="mbTotal" type="number"></div>
     <div class="modal-actions">
@@ -1610,57 +1691,24 @@ function openManualBookingModal(){
     el.addEventListener('click', ()=> openAdminDatePicker(el, document.getElementById('mbCar').value));
     el.addEventListener('change', refreshUnitPicker);
   });
-  /* Shows the free-unit picker only when the admin actually has a real choice
-     to make: hidden when the car has no fleet units registered (legacy
-     count-based cars), hidden when dates aren't picked yet, auto-selects
-     silently when exactly one unit is free, and only then surfaces the
-     dropdown — so the agency can deliberately choose which physical car to
-     assign instead of it always being picked for them. */
+  /* Always lists EVERY registered unit and lets the admin pick any of them —
+     never auto-narrowed to only currently-free ones, never silently swapped.
+     Shows the same "this unit will be available from HH:MM" delayed-
+     availability note as the public site's booking form for whichever unit
+     is actually selected. See renderUnitAvailabilityAdmin above. */
+  const mbSaveBtn = document.getElementById('mbSave');
   function refreshUnitPicker(){
-    const car = carById(document.getElementById('mbCar').value);
-    const pickup = document.getElementById('mbPickup').value;
-    const ret = document.getElementById('mbReturn').value;
-    const note = document.getElementById('mbAvailNote');
-    const unitField = document.getElementById('mbUnitField');
-    const unitSelect = document.getElementById('mbUnit');
-    // Remember whatever the admin already picked BEFORE wiping the <select>
-    // below — this function reruns on every pickup/return/car change (e.g.
-    // the admin tweaking the time after already choosing a unit), and without
-    // this, rebuilding the options with fresh innerHTML silently resets the
-    // selection back to the first option, so the admin's actual choice would
-    // get quietly discarded and a different vehicle assigned on save.
-    const previousSelection = unitSelect.value;
-    unitField.style.display = 'none';
-    unitSelect.innerHTML = '';
-    if(!car){ note.style.display = 'none'; return; }
-    note.style.display = '';
-    const allUnits = state.fleetUnits.filter(u => u.carId === car.id);
-    if(!allUnits.length){
-      note.textContent = `${car.name} a ${car.stock || 1} unité(s) au total (aucune plaque encore enregistrée dans Unités de flotte — la disponibilité est estimée par le nombre). Cliquez sur Prise en charge/Retour ci-dessous pour voir les jours libres.`;
-      return;
-    }
-    // Show the picker as soon as the vehicle is chosen (listing every
-    // registered unit), even before dates are picked — otherwise the admin
-    // sees only a note asking for dates and it looks like the picker is
-    // missing. Once both dates are set, the list narrows to only the units
-    // actually free for that range.
-    const hasDates = !!(pickup && ret);
-    const free = hasDates ? availableUnitsForRangeAdmin(car.id, pickup, ret, null) : allUnits;
-    if(hasDates && free.length === 0){ note.textContent = `Aucune unité de ${car.name} n'est libre pour ces dates.`; return; }
-    if(hasDates && free.length === 1){
-      unitSelect.innerHTML = `<option value="${free[0].unitId}">${free[0].plate||free[0].nickname||free[0].unitId}</option>`;
-      note.textContent = `Une seule unité de ${car.name} est libre pour ces dates (${free[0].plate||free[0].nickname||free[0].unitId}) — elle sera assignée automatiquement.`;
-      return;
-    }
-    note.textContent = hasDates
-      ? `${free.length} unités de ${car.name} sont libres pour ces dates — choisissez laquelle assigner à cette réservation.`
-      : `${car.name} a ${free.length} unité(s) enregistrée(s) — choisissez-en une, ou sélectionnez la prise en charge et le retour pour ne voir que celles qui sont libres.`;
-    unitField.style.display = '';
-    unitSelect.innerHTML = free.map(u=>{
-      const selected = u.unitId === previousSelection ? 'selected' : '';
-      return `<option value="${u.unitId}" ${selected}>${u.plate || u.nickname || u.unitId}${u.nickname && u.plate ? ' — ' + u.nickname : ''}</option>`;
-    }).join('');
+    renderUnitAvailabilityAdmin({
+      carId: document.getElementById('mbCar').value,
+      pickup: document.getElementById('mbPickup').value,
+      ret: document.getElementById('mbReturn').value,
+      excludeRow: null,
+      unitSelect: document.getElementById('mbUnit'),
+      note: document.getElementById('mbAvailNote'),
+      saveBtn: mbSaveBtn,
+    });
   }
+  document.getElementById('mbUnit').addEventListener('change', refreshUnitPicker);
   document.getElementById('mbCar').addEventListener('change', refreshUnitPicker);
   refreshUnitPicker();
   document.getElementById('mbCancel').addEventListener('click', closeModal);
@@ -1675,20 +1723,17 @@ function openManualBookingModal(){
     const allUnits = state.fleetUnits.filter(u => u.carId === carId);
     let unitId = '';
     if(allUnits.length){
-      // Re-check availability against the FINAL dates at save time — the
-      // admin may have picked a unit before finishing the date pickers, so
-      // whatever they chose must still be validated as actually free now.
-      const free = availableUnitsForRangeAdmin(carId, pickup, ret, null);
-      if(free.length === 0){ toast('Aucune unité disponible pour ces dates'); return; }
-      if(free.length === 1){ unitId = free[0].unitId; }
-      else {
-        const chosen = document.getElementById('mbUnit').value;
-        if(!chosen || !free.some(u => u.unitId === chosen)){
-          toast('Veuillez choisir une unité libre pour ces dates');
-          refreshUnitPicker();
-          return;
-        }
-        unitId = chosen;
+      // The admin's exact chosen unit is respected as-is — re-check it against
+      // the FINAL dates at save time (only a genuinely 'unavailable' verdict
+      // blocks; 'delayed' is informational, same as the public site, and the
+      // backend's own findAvailableUnitForBooking_ re-validates regardless).
+      unitId = document.getElementById('mbUnit').value;
+      if(!unitId){ toast('Veuillez choisir une unité'); return; }
+      const availability = getDelayedAvailabilityForUnitAdmin(unitId, carId, pickup, ret, null);
+      if(availability.status === 'unavailable'){
+        toast('Cette unité n\'est pas disponible pour ces dates');
+        refreshUnitPicker();
+        return;
       }
     }
     const ref = 'AFC-M-' + Date.now().toString().slice(-8);
@@ -1748,50 +1793,27 @@ function openBookingEditModal(booking){
       <button class="btn btn-primary" id="ebSave">Enregistrer les modifications</button>
     </div>
   `);
-  /* Same manual unit-choice picker as the manual reservation modal — a
-     booking's own current unit/dates are excluded from the free-list check
-     (booking.row is passed as excludeRow) so editing a booking without
-     changing its dates never makes its own already-assigned unit look busy. */
+  /* Same unit-choice picker as the manual reservation modal — always lists
+     EVERY registered unit and never auto-narrows/swaps the admin's choice,
+     showing the public site's "available from HH:MM" delayed-availability
+     note for whichever unit is selected. The booking's own current unit/
+     dates are excluded from the conflict check (booking.row as excludeRow)
+     so editing a booking without changing its dates never makes its own
+     already-assigned unit look busy. See renderUnitAvailabilityAdmin above. */
+  const ebSaveBtn = document.getElementById('ebSave');
   function refreshUnitPicker(){
-    const car = carById(document.getElementById('ebCar').value);
-    const pickup = document.getElementById('ebPickup').value;
-    const ret = document.getElementById('ebReturn').value;
-    const note = document.getElementById('ebAvailNote');
-    const unitField = document.getElementById('ebUnitField');
-    const unitSelect = document.getElementById('ebUnit');
-    // Remember whatever is currently selected BEFORE wiping the <select>
-    // below (the admin's own manual re-pick if they already changed it away
-    // from the booking's original unit, otherwise still booking.unitId from
-    // the very first render) — this function reruns on every pickup/return/
-    // car change, and without this, rebuilding the options would silently
-    // reset the selection back to booking.unitId, discarding a manual
-    // re-assignment the admin already made before tweaking the dates further.
-    const previousSelection = unitSelect.value || booking.unitId;
-    unitField.style.display = 'none';
-    unitSelect.innerHTML = '';
-    if(!car){ note.textContent = ''; return; }
-    const allUnits = state.fleetUnits.filter(u => u.carId === car.id);
-    if(!allUnits.length){
-      note.textContent = `${car.name} a ${car.stock || 1} unité(s) au total (aucune plaque enregistrée dans Unités de flotte).`;
-      return;
-    }
-    const hasDates = !!(pickup && ret);
-    const free = hasDates ? availableUnitsForRangeAdmin(car.id, pickup, ret, booking.row) : allUnits;
-    if(hasDates && free.length === 0){ note.textContent = `Aucune unité de ${car.name} n'est libre pour ces dates.`; return; }
-    if(hasDates && free.length === 1){
-      unitSelect.innerHTML = `<option value="${free[0].unitId}">${free[0].plate||free[0].nickname||free[0].unitId}</option>`;
-      note.textContent = `Une seule unité de ${car.name} est libre pour ces dates (${free[0].plate||free[0].nickname||free[0].unitId}) — elle sera assignée automatiquement.`;
-      return;
-    }
-    note.textContent = hasDates
-      ? `${free.length} unités de ${car.name} sont libres pour ces dates — choisissez laquelle assigner à cette réservation.`
-      : `${car.name} a ${free.length} unité(s) enregistrée(s) — choisissez les dates pour ne voir que celles qui sont libres.`;
-    unitField.style.display = '';
-    unitSelect.innerHTML = free.map(u=>{
-      const selected = u.unitId === previousSelection ? 'selected' : '';
-      return `<option value="${u.unitId}" ${selected}>${u.plate || u.nickname || u.unitId}${u.nickname && u.plate ? ' — ' + u.nickname : ''}</option>`;
-    }).join('');
+    renderUnitAvailabilityAdmin({
+      carId: document.getElementById('ebCar').value,
+      pickup: document.getElementById('ebPickup').value,
+      ret: document.getElementById('ebReturn').value,
+      excludeRow: booking.row,
+      unitSelect: document.getElementById('ebUnit'),
+      note: document.getElementById('ebAvailNote'),
+      saveBtn: ebSaveBtn,
+      defaultUnitId: booking.unitId,
+    });
   }
+  document.getElementById('ebUnit').addEventListener('change', refreshUnitPicker);
   ['ebPickup', 'ebReturn'].forEach(id=>{
     const el = document.getElementById(id);
     el.addEventListener('click', ()=> openAdminDatePicker(el, document.getElementById('ebCar').value, booking.row));
@@ -1809,17 +1831,16 @@ function openBookingEditModal(booking){
     const allUnits = state.fleetUnits.filter(u => u.carId === carId);
     let unitId = '';
     if(allUnits.length){
-      const free = availableUnitsForRangeAdmin(carId, pickup, ret, booking.row);
-      if(free.length === 0){ toast('Aucune unité disponible pour ces dates'); return; }
-      if(free.length === 1){ unitId = free[0].unitId; }
-      else {
-        const chosen = document.getElementById('ebUnit').value;
-        if(!chosen || !free.some(u => u.unitId === chosen)){
-          toast('Veuillez choisir une unité libre pour ces dates');
-          refreshUnitPicker();
-          return;
-        }
-        unitId = chosen;
+      // The admin's exact chosen unit is respected as-is — only a genuinely
+      // 'unavailable' verdict blocks; 'delayed' is informational, same as
+      // the public site, and the backend re-validates regardless.
+      unitId = document.getElementById('ebUnit').value;
+      if(!unitId){ toast('Veuillez choisir une unité'); return; }
+      const availability = getDelayedAvailabilityForUnitAdmin(unitId, carId, pickup, ret, booking.row);
+      if(availability.status === 'unavailable'){
+        toast('Cette unité n\'est pas disponible pour ces dates');
+        refreshUnitPicker();
+        return;
       }
     }
     const r = await apiPost({
