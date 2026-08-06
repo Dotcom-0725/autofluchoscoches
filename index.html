@@ -59,7 +59,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <!-- JSON-LD: local business (Local SEO). Fix address/phone here if they ever change. -->
-<script type="application/ld+json">
+<script type="application/ld+json" id="localBusinessJsonLd">
 {
   "@context": "https://schema.org",
   "@type": "AutoRental",
@@ -970,8 +970,8 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
 <div class="topbar-strip">
   <div class="topbar-strip-inner">
     <div class="topbar-contact">
-      <a href="mailto:Auto.fluchos@gmail.com" aria-label="Email us">✉️</a>
-      <a href="tel:+212661304574" aria-label="Call us">📞</a>
+      <a href="mailto:Auto.fluchos@gmail.com" aria-label="Email us" data-contact-link="email">✉️</a>
+      <a href="tel:+212661304574" aria-label="Call us" data-contact-link="phone">📞</a>
     </div>
     <div class="topbar-selectors">
       <div class="topbar-dropdown" id="currencyTopbarDropdown">
@@ -1039,7 +1039,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
           <button data-currency="USD">$ Dollar</button>
         </div>
       </div>
-      <a href="tel:+212661304574" class="phone-icon-btn" title="+212 661-304574" aria-label="Call us">📞</a>
+      <a href="tel:+212661304574" class="phone-icon-btn" title="+212 661-304574" aria-label="Call us" data-contact-link="phone" data-contact-title="phone_display">📞</a>
       <button type="button" class="account-btn" id="accountNavBtn"><span>👤</span> <span id="accountNavLabel" data-i18n="account_nav_guest">My Account</span></button>
       <button class="burger" id="burgerBtn" aria-label="Menu">☰</button>
     </div>
@@ -1291,21 +1291,21 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       <div class="contact-card">
         <div class="contact-line">
           <div class="ic">📍</div>
-          <div><b data-i18n="contact_address_label">Address</b>N°30, Av. Bejaia, Tétouan 93000, Morocco</div>
+          <div><b data-i18n="contact_address_label">Address</b><span data-contact-text="address">N°30, Av. Bejaia, Tétouan 93000, Morocco</span></div>
         </div>
         <div class="contact-line">
           <div class="ic">📞</div>
-          <div><b data-i18n="contact_phone_label">Phone</b><a href="tel:+212661304574"><bdi dir="ltr">+212 661-304574</bdi></a></div>
+          <div><b data-i18n="contact_phone_label">Phone</b><a href="tel:+212661304574" data-contact-link="phone"><bdi dir="ltr" data-contact-text="phone_display">+212 661-304574</bdi></a></div>
         </div>
         <div class="contact-line">
           <div class="ic">✉️</div>
-          <div><b data-i18n="contact_email_label">Email</b><a href="mailto:Auto.fluchos@gmail.com">Auto.fluchos@gmail.com</a></div>
+          <div><b data-i18n="contact_email_label">Email</b><a href="mailto:Auto.fluchos@gmail.com" data-contact-link="email" data-contact-text="email">Auto.fluchos@gmail.com</a></div>
         </div>
         <div class="contact-line">
           <div class="ic">🕐</div>
           <div><b data-i18n="contact_hours_label">Hours</b><span data-i18n="contact_hours_value">Open 24/7</span></div>
         </div>
-        <a class="btn btn-primary btn-block" target="_blank" rel="noopener" href="https://wa.me/212661304574?text=Hello%2C%20I%20would%20like%20to%20book%20a%20car.">
+        <a class="btn btn-primary btn-block" target="_blank" rel="noopener" href="https://wa.me/212661304574?text=Hello%2C%20I%20would%20like%20to%20book%20a%20car." data-contact-link="whatsapp">
           <svg class="ico-wa" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.31.65 4.47 1.78 6.31L4 29l7.86-1.74A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Zm0 21.72c-1.94 0-3.75-.55-5.28-1.5l-.38-.23-4.66 1.03 1.05-4.55-.25-.4A9.63 9.63 0 0 1 5.32 15c0-5.34 4.35-9.68 9.684-9.68S24.688 9.66 24.688 15 21.34 24.72 16.004 24.72Zm5.37-7.26c-.29-.15-1.73-.86-2-.95-.27-.1-.46-.15-.66.15-.2.29-.76.95-.93 1.14-.17.2-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.44-.86-.77-1.44-1.72-1.61-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.48.1-.2.05-.37-.02-.51-.07-.15-.66-1.6-.91-2.19-.24-.58-.48-.5-.66-.51-.17-.01-.37-.01-.56-.01s-.51.07-.78.37c-.27.29-1.02 1-1.02 2.43 0 1.44 1.05 2.83 1.2 3.02.15.2 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.61.7.22 1.34.19 1.84.11.56-.08 1.73-.7 1.98-1.38.24-.68.24-1.26.17-1.38-.07-.13-.26-.2-.55-.35Z"/></svg>
           <span data-i18n="cta_whatsapp2">Chat on WhatsApp</span>
         </a>
@@ -1362,9 +1362,9 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       <div>
         <h4 data-i18n="nav_contact">Contact</h4>
         <ul>
-          <li>📍 N°30, Av. Bejaia, Tétouan 93000</li>
-          <li>📞 <bdi dir="ltr">+212 661-304574</bdi></li>
-          <li>✉️ Auto.fluchos@gmail.com</li>
+          <li>📍 <span data-contact-text="address">N°30, Av. Bejaia, Tétouan 93000</span></li>
+          <li>📞 <bdi dir="ltr" data-contact-text="phone_display">+212 661-304574</bdi></li>
+          <li>✉️ <span data-contact-text="email">Auto.fluchos@gmail.com</span></li>
         </ul>
       </div>
     </div>
@@ -1375,7 +1375,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
   </div>
 </footer>
 
-<a class="float-whatsapp" target="_blank" rel="noopener" aria-label="WhatsApp us" href="https://wa.me/212661304574?text=Hello%2C%20I%20would%20like%20to%20book%20a%20car.">
+<a class="float-whatsapp" target="_blank" rel="noopener" aria-label="WhatsApp us" href="https://wa.me/212661304574?text=Hello%2C%20I%20would%20like%20to%20book%20a%20car." data-contact-link="whatsapp">
   <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.31.65 4.47 1.78 6.31L4 29l7.86-1.74A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Zm0 21.72c-1.94 0-3.75-.55-5.28-1.5l-.38-.23-4.66 1.03 1.05-4.55-.25-.4A9.63 9.63 0 0 1 5.32 15c0-5.34 4.35-9.68 9.684-9.68S24.688 9.66 24.688 15 21.34 24.72 16.004 24.72Zm5.37-7.26c-.29-.15-1.73-.86-2-.95-.27-.1-.46-.15-.66.15-.2.29-.76.95-.93 1.14-.17.2-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.44-.86-.77-1.44-1.72-1.61-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.48.1-.2.05-.37-.02-.51-.07-.15-.66-1.6-.91-2.19-.24-.58-.48-.5-.66-.51-.17-.01-.37-.01-.56-.01s-.51.07-.78.37c-.27.29-1.02 1-1.02 2.43 0 1.44 1.05 2.83 1.2 3.02.15.2 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.61.7.22 1.34.19 1.84.11.56-.08 1.73-.7 1.98-1.38.24-.68.24-1.26.17-1.38-.07-.13-.26-.2-.55-.35Z"/>
   </svg>
@@ -2001,9 +2001,57 @@ async function loadCarsFromBackend(){
   } catch(e) { /* offline or backend unreachable — the fallback array above still works */ }
 }
 
-/* SEO meta overrides set from admin.html's Settings > SEO screen. Only applies
-   fields that are actually set — an empty Settings sheet changes nothing, so
-   the meta tags already in <head> stay as the real defaults. */
+/* Applies admin-configured contact info (Settings > Contact in admin.html)
+   to every tagged element on the page: data-contact-link updates an anchor's
+   href (tel:/mailto:/wa.me — wa.me links keep whatever ?text= query they
+   already had), data-contact-text updates visible text, data-contact-title
+   updates a hover tooltip. Also updates the local-business JSON-LD block's
+   phone number so structured data stays consistent with what's shown.
+   Missing/empty settings leave the page's built-in defaults (SITE_PHONE_DIGITS,
+   SITE_PHONE_DISPLAY, SITE_EMAIL, SITE_ADDRESS above) untouched. */
+function applyContactInfo(settings){
+  if(settings.contact_phone){
+    SITE_PHONE_DIGITS = String(settings.contact_phone).replace(/[^\d]/g, '');
+    SITE_PHONE_DISPLAY = settings.contact_phone;
+  }
+  if(settings.contact_email) SITE_EMAIL = settings.contact_email;
+  if(settings.contact_address) SITE_ADDRESS = settings.contact_address;
+
+  document.querySelectorAll('[data-contact-link]').forEach(el=>{
+    const kind = el.dataset.contactLink;
+    if(kind === 'phone') el.setAttribute('href', 'tel:+' + SITE_PHONE_DIGITS);
+    else if(kind === 'email') el.setAttribute('href', 'mailto:' + SITE_EMAIL);
+    else if(kind === 'whatsapp'){
+      const current = el.getAttribute('href') || '';
+      const queryIndex = current.indexOf('?');
+      const query = queryIndex !== -1 ? current.slice(queryIndex) : '';
+      el.setAttribute('href', `https://wa.me/${SITE_PHONE_DIGITS}${query}`);
+    }
+  });
+  document.querySelectorAll('[data-contact-text]').forEach(el=>{
+    const kind = el.dataset.contactText;
+    if(kind === 'phone_display') el.textContent = SITE_PHONE_DISPLAY;
+    else if(kind === 'email') el.textContent = SITE_EMAIL;
+    else if(kind === 'address') el.textContent = SITE_ADDRESS;
+  });
+  document.querySelectorAll('[data-contact-title="phone_display"]').forEach(el=>{
+    el.setAttribute('title', SITE_PHONE_DISPLAY);
+  });
+
+  const jsonLd = document.getElementById('localBusinessJsonLd');
+  if(jsonLd){
+    try {
+      const parsed = JSON.parse(jsonLd.textContent);
+      parsed.telephone = '+' + SITE_PHONE_DIGITS;
+      jsonLd.textContent = JSON.stringify(parsed, null, 2);
+    } catch(e) { /* malformed JSON-LD would already be broken before this ran */ }
+  }
+}
+
+/* SEO meta + contact info overrides set from admin.html's Settings screen.
+   Only applies fields that are actually set — an empty Settings sheet
+   changes nothing, so the defaults already in the page (meta tags, contact
+   details) stay exactly as they were. */
 async function loadSeoSettings(){
   try {
     const res = await fetch(APPS_SCRIPT_URL + '?action=settings');
@@ -2020,7 +2068,8 @@ async function loadSeoSettings(){
       const ogDesc = document.querySelector('meta[property="og:description"]');
       if(ogDesc) ogDesc.setAttribute('content', settings.meta_description);
     }
-  } catch(e) { /* offline or backend unreachable — the static meta tags in <head> still apply */ }
+    applyContactInfo(settings);
+  } catch(e) { /* offline or backend unreachable — the static meta tags/contact info already in the page still apply */ }
 }
 
 /* =========================================================
@@ -2935,6 +2984,18 @@ fetchCurrencyRates();
    the site still works, it just won't be shared between visitors yet.
 ========================================================= */
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxKZk3f58C67EZArO4uLRSu7chg3soBBgIBQYNOq3-NXUkoZ0--82S5NgS7ccWbiuOi/exec';
+
+/* Contact info shown across the site (header icons, Contact section, footer,
+   WhatsApp buttons, JSON-LD, booking-confirmation share links, PDF footer).
+   These defaults match the hardcoded HTML already in the page — applyContactInfo()
+   below overwrites both these variables AND every tagged data-contact-* element
+   as soon as the admin's Settings > Contact values load, so nothing needs a
+   page reload to stay in sync. SITE_PHONE_DIGITS has no "+"/spaces (used for
+   tel:/wa.me links); SITE_PHONE_DISPLAY is the human-readable formatted form. */
+let SITE_PHONE_DIGITS = '212661304574';
+let SITE_PHONE_DISPLAY = '+212 661-304574';
+let SITE_EMAIL = 'Auto.fluchos@gmail.com';
+let SITE_ADDRESS = 'N°30, Av. Bejaia, Tétouan 93000, Morocco';
 
 /* Availability is now stock-aware: the backend returns how many units of each
    car_id are currently active-booked (bookedCounts), compared against that
@@ -4332,7 +4393,7 @@ async function generateBookingPdf(dict, data){
   }
   pdfText(doc, 'autofluchoscoches.com', marginX, 40, { bold: true, sizePt: 11, color: DARK });
   pdfText(doc, 'Phone: +212 661-304574', marginX, 46, { sizePt: 9, color: GRAY });
-  pdfText(doc, 'Auto.fluchos@gmail.com', marginX, 51, { sizePt: 9, color: GRAY });
+  pdfText(doc, SITE_EMAIL, marginX, 51, { sizePt: 9, color: GRAY });
   pdfText(doc, 'https://autofluchoscoches.com', marginX, 56, { sizePt: 9, color: GRAY });
 
   pdfText(doc, dict.pdf_doc_title, pageW / 2, 26, { align: 'center', bold: true, sizePt: 22, color: DARK });
@@ -5063,9 +5124,9 @@ async function finalizeBooking(choice){
       dict.payment_method_cash_pickup
     );
     document.getElementById('confirmWhatsappBtn').href =
-      'https://wa.me/212661304574?text=' + encodeURIComponent(summary);
+      `https://wa.me/${SITE_PHONE_DIGITS}?text=` + encodeURIComponent(summary);
     document.getElementById('confirmEmailBtn').href =
-      'mailto:Auto.fluchos@gmail.com?subject=' +
+      `mailto:${SITE_EMAIL}?subject=` +
       encodeURIComponent(`${dict.payment_confirmation_subject} #${ref}`) +
       '&body=' + encodeURIComponent(summary + '\n\n' + dict.confirm_attach_note);
     confirmOverlay.classList.add('open');
@@ -5155,9 +5216,9 @@ document.getElementById('bankTransferDoneBtn').addEventListener('click', async (
 
   const summary = buildBookingSummaryText(data, dict.payment_method_bank_transfer);
   document.getElementById('confirmWhatsappBtn').href =
-    'https://wa.me/212661304574?text=' + encodeURIComponent(summary);
+    `https://wa.me/${SITE_PHONE_DIGITS}?text=` + encodeURIComponent(summary);
   document.getElementById('confirmEmailBtn').href =
-    'mailto:Auto.fluchos@gmail.com?subject=' +
+    `mailto:${SITE_EMAIL}?subject=` +
     encodeURIComponent(`${dict.payment_confirmation_subject} #${data.ref}`) +
     '&body=' + encodeURIComponent(summary + '\n\n' + dict.confirm_attach_note);
 

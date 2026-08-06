@@ -2134,6 +2134,7 @@ function renderSettings(){
   root.innerHTML = `
     <div class="tabs">
       <button data-stab="seo" class="active">SEO</button>
+      <button data-stab="contact">Coordonnées</button>
       <button data-stab="roles">Rôles admin</button>
       <button data-stab="log">Journal d'activité</button>
       <button data-stab="backup">Sauvegardes</button>
@@ -2169,18 +2170,71 @@ function renderSettingsTab(tab){
         await refreshAdminData();
       });
     }
+  } else if(tab === 'contact'){
+    el.innerHTML = `
+      <div class="section-note">Ceci remplace le téléphone, l'e-mail et l'adresse affichés partout sur le site (en-tête, section Contact, pied de page, boutons WhatsApp, PDF de réservation) — appliqué en temps réel, aucune modification du code nécessaire.</div>
+      <div class="card card-pad">
+        <div class="field"><label>Téléphone (avec indicatif pays, ex. +212 661-304574)</label><input id="contactPhone" value="${esc(state.settings.contact_phone)||''}" placeholder="Laissez vide pour garder le téléphone par défaut du site"></div>
+        <div class="field"><label>E-mail</label><input id="contactEmail" type="email" value="${esc(state.settings.contact_email)||''}" placeholder="Laissez vide pour garder l'e-mail par défaut du site"></div>
+        <div class="field"><label>Adresse</label><input id="contactAddress" value="${esc(state.settings.contact_address)||''}" placeholder="Laissez vide pour garder l'adresse par défaut du site"></div>
+        ${isEditor() ? `<button class="btn btn-primary" id="contactSave">Enregistrer les coordonnées</button>` : ''}
+      </div>
+    `;
+    if(isEditor()){
+      document.getElementById('contactSave').addEventListener('click', async ()=>{
+        await apiPost({ action:'saveSetting', key:'contact_phone', value: document.getElementById('contactPhone').value.trim() });
+        await apiPost({ action:'saveSetting', key:'contact_email', value: document.getElementById('contactEmail').value.trim() });
+        await apiPost({ action:'saveSetting', key:'contact_address', value: document.getElementById('contactAddress').value.trim() });
+        toast('Coordonnées enregistrées');
+        await refreshAdminData();
+      });
+    }
   } else if(tab === 'roles'){
     el.innerHTML = `
-      <div class="section-note warn">Les mots de passe sont définis dans le code Apps Script (ADMIN_ROLES), non modifiables ici — changez-les dans le backend si nécessaire, puis redéployez.</div>
       <div class="card"><div class="table-wrap"><table>
         <thead><tr><th>Rôle</th><th>Peut faire</th></tr></thead>
         <tbody>
           <tr><td><span class="pill pill-blue">Super Admin</span></td><td>Accès complet à tous les modules. Actuellement le seul rôle utilisé — un mot de passe partagé pour toute l'équipe.</td></tr>
         </tbody>
       </table></div>
-      <div class="card-pad" style="color:var(--ink-dim);font-size:.8rem">Le code du tableau de bord permet encore de séparer ceci en rôles distincts Gérant/Employé avec un accès restreint plus tard — ajoutez simplement d'autres entrées à ADMIN_ROLES dans le backend si besoin.</div>
+      <div class="card-pad" style="color:var(--ink-dim);font-size:.8rem">Le code du tableau de bord permet encore de séparer ceci en rôles distincts Gérant/Employé avec un accès restreint plus tard — ajoutez simplement d'autres entrées à ADMIN_ROLES_JSON (Script Properties) dans le backend si besoin.</div>
+      </div>
+      <div class="card card-pad" style="margin-top:20px">
+        <h3 style="margin-top:0">Changer le mot de passe</h3>
+        <div class="section-note">Le nouveau mot de passe prend effet immédiatement, sans redéploiement du backend — mais toute autre personne de l'équipe utilisant l'ancien mot de passe devra recevoir le nouveau.</div>
+        <div class="field"><label>Mot de passe actuel</label><input type="password" id="pwCurrent" autocomplete="current-password"></div>
+        <div class="field"><label>Nouveau mot de passe (8 caractères minimum)</label><input type="password" id="pwNew" autocomplete="new-password"></div>
+        <div class="field"><label>Confirmer le nouveau mot de passe</label><input type="password" id="pwConfirm" autocomplete="new-password"></div>
+        <button class="btn btn-primary" id="pwSave">Changer le mot de passe</button>
       </div>
     `;
+    document.getElementById('pwSave').addEventListener('click', async ()=>{
+      const current = document.getElementById('pwCurrent').value;
+      const next = document.getElementById('pwNew').value;
+      const confirm = document.getElementById('pwConfirm').value;
+      if(!current || !next){ toast('Veuillez remplir tous les champs'); return; }
+      if(next.length < 8){ toast('Le nouveau mot de passe doit contenir au moins 8 caractères'); return; }
+      if(next !== confirm){ toast('Les deux mots de passe ne correspondent pas'); return; }
+      const btn = document.getElementById('pwSave');
+      btn.disabled = true;
+      // apiPost() already sends state.password as the request's "password"
+      // field — but that's the SESSION password, which the admin may be
+      // deliberately changing away from right now, so send the "current
+      // password" field the admin just typed explicitly instead, in case
+      // it differs (e.g. they mistyped, or session/state briefly drifted).
+      const r = await apiPost({ action: 'changePassword', password: current, newPassword: next });
+      btn.disabled = false;
+      if(r.success){
+        state.password = next;
+        try { sessionStorage.setItem('afc_admin_pw', next); } catch(e){}
+        document.getElementById('pwCurrent').value = '';
+        document.getElementById('pwNew').value = '';
+        document.getElementById('pwConfirm').value = '';
+        toast('Mot de passe changé avec succès');
+      } else {
+        toast(r.error === 'Wrong password' ? 'Mot de passe actuel incorrect' : (r.error || 'Échec'));
+      }
+    });
   } else if(tab === 'log'){
     el.innerHTML = `
       <div class="card"><div class="table-wrap"><table>

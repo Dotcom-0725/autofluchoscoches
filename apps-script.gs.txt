@@ -367,6 +367,25 @@ function doPost(e) {
     return jsonResponse_({ success: true });
   }
 
+  // Admin dashboard's "Change password" screen — requires the CURRENT
+  // password to authenticate (proves the caller already has access, same as
+  // every other admin action) and swaps it for the new one inside the
+  // ADMIN_ROLES_JSON Script Property, keeping the same role. Never touches
+  // source code, so no redeploy is needed for a password change to take
+  // effect immediately.
+  if (body.action === 'changePassword') {
+    const role = roleForPassword_(body.password);
+    if (!role) return jsonResponse_({ success: false, error: 'Wrong password' });
+    const newPassword = String(body.newPassword || '').trim();
+    if (newPassword.length < 8) return jsonResponse_({ success: false, error: 'Password too short (minimum 8 characters)' });
+    const roles = getAdminRoles_();
+    delete roles[body.password];
+    roles[newPassword] = role;
+    PropertiesService.getScriptProperties().setProperty('ADMIN_ROLES_JSON', JSON.stringify(roles));
+    logActivity_(role, 'change_password', 'Admin password updated');
+    return jsonResponse_({ success: true });
+  }
+
   // Customer-initiated: called right after they pick a payment method in the
   // payment step (Bank Transfer "I've paid" click, or Wise "Pay with Wise"
   // click). No password — the customer isn't authenticated at this point.
