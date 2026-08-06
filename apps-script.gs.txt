@@ -31,7 +31,9 @@
    1. Open the "Auto Fluchos Coches - Bookings" spreadsheet.
    2. Extensions > Apps Script.
    3. Replace Code.gs with the ENTIRE contents of this file.
-   4. Change the passwords in ADMIN_ROLES below if you want different ones.
+   4. Set the admin password(s): Project Settings (gear icon) > Script Properties >
+      Add property "ADMIN_ROLES_JSON" with a value like {"your-password":"super_admin"}.
+      Never hardcode passwords in this file — it is public on GitHub.
    5. Save (Ctrl+S).
    6. Deploy > Manage deployments > edit (pencil) > Version: "New version" > Deploy.
       The Web App URL stays the same — no change needed in index.html/admin.html.
@@ -54,12 +56,19 @@ const AVAILABILITY_SHEET_NAME = 'AvailabilityRequests';
 const FLEET_UNITS_SHEET_NAME = 'FleetUnits';
 const CUSTOMERS_SHEET_NAME = 'Customers';
 
-// Single shared admin password — full access (super_admin role), no separate
-// Manager/Employee tiers. Change it here any time; redeploy afterwards.
-const ADMIN_ROLES = {
-  'Nadir2026': 'super_admin',
-};
+// Admin passwords live in Script Properties (Project Settings > Script
+// Properties), NEVER hardcoded here — this file is public on GitHub, so a
+// password written directly in the code would be visible to anyone who
+// opens the repo. Set the "ADMIN_ROLES_JSON" property to a JSON object
+// mapping password -> role, e.g. {"your-password":"super_admin"}. Change it
+// any time from that same screen — no redeploy needed, Script Properties
+// take effect immediately.
 const EDITOR_ROLES = ['super_admin', 'manager']; // allowed to edit fleet/pricing/settings
+function getAdminRoles_() {
+  const raw = PropertiesService.getScriptProperties().getProperty('ADMIN_ROLES_JSON');
+  if (!raw) return {};
+  try { return JSON.parse(raw); } catch (e) { return {}; }
+}
 
 const NOTIFICATION_EMAIL = 'Contact@autofluchoscoches.com';
 const SITE_URL = 'https://autofluchoscoches.com/';
@@ -86,7 +95,7 @@ function sendTelegramMessage_(text) {
 }
 
 function roleForPassword_(password) {
-  return ADMIN_ROLES[password] || null;
+  return getAdminRoles_()[password] || null;
 }
 
 function doGet(e) {

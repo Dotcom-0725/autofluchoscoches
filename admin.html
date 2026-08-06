@@ -273,6 +273,18 @@ function toast(msg){
   setTimeout(()=>t.remove(), 2600);
 }
 function isEditor(){ return EDITOR_ROLES.includes(state.role); }
+/* Every table/list render below builds its HTML with template-literal string
+   concatenation + innerHTML — convenient, but any customer-supplied field
+   dropped in raw (name, phone, nationality... anything typed into the public
+   booking form) becomes a stored-XSS hole: a booking named
+   <img src=x onerror=...> would execute in the admin's own logged-in session
+   the moment this dashboard renders it. Wrap every such field in esc()
+   before interpolating it. */
+function esc(v){
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 function fmtDate(v){
   if(!v) return '—';
   const d = new Date(v);
@@ -805,7 +817,7 @@ function renderDashboard(){
           <tbody>
             ${upcoming.length ? upcoming.map(b=>{
               const st = bookingStatus(b);
-              return `<tr><td>${b.customerName||'—'}</td><td>${b.carName||'—'}</td><td>${fmtDate(b.pickup)}</td><td>${fmtDate(b.ret)}</td><td><span class="pill ${st.cls}">${st.label}</span></td><td><span class="pill pill-gray">${b.source||'website'}</span></td></tr>`;
+              return `<tr><td>${esc(b.customerName)||'—'}</td><td>${esc(b.carName)||'—'}</td><td>${fmtDate(b.pickup)}</td><td>${fmtDate(b.ret)}</td><td><span class="pill ${st.cls}">${st.label}</span></td><td><span class="pill pill-gray">${esc(b.source)||'website'}</span></td></tr>`;
             }).join('') : `<tr><td colspan="6" class="empty-state">Aucune réservation pour le moment.</td></tr>`}
           </tbody>
         </table>
@@ -1603,14 +1615,14 @@ function renderReservationsRows(){
     const st = bookingStatus(b);
     const paymentStatus = b.paymentStatus || 'pending';
     return `<tr>
-      <td>${b.ref||'—'}</td><td>${b.customerName||'—'}</td><td>${b.nationality||'—'}</td><td>${b.phone||'—'}</td><td>${b.carName||'—'}</td>
+      <td>${esc(b.ref)||'—'}</td><td>${esc(b.customerName)||'—'}</td><td>${esc(b.nationality)||'—'}</td><td>${esc(b.phone)||'—'}</td><td>${esc(b.carName)||'—'}</td>
       <td>${unitLabelForBooking(b)}</td>
-      <td>${fmtDate(b.pickup)}</td><td>${fmtDate(b.ret)}</td><td>${b.total||'—'}</td>
-      <td><span class="pill pill-gray">${b.source||'website'}</span></td>
+      <td>${fmtDate(b.pickup)}</td><td>${fmtDate(b.ret)}</td><td>${esc(b.total)||'—'}</td>
+      <td><span class="pill pill-gray">${esc(b.source)||'website'}</span></td>
       <td><span class="pill ${st.cls}">${st.label}</span></td>
       <td>
-        <div style="font-size:.7rem;color:var(--ink-dim);margin-bottom:3px">${paymentMethodLabel(b.paymentMethod)}</div>
-        <select class="payment-status-select" data-ref="${b.ref}" ${b.ref ? '' : 'disabled'}>
+        <div style="font-size:.7rem;color:var(--ink-dim);margin-bottom:3px">${esc(paymentMethodLabel(b.paymentMethod))}</div>
+        <select class="payment-status-select" data-ref="${esc(b.ref)}" ${b.ref ? '' : 'disabled'}>
           ${PAYMENT_STATUS_OPTIONS.map(o=> `<option value="${o.value}" ${o.value===paymentStatus?'selected':''}>${o.label}</option>`).join('')}
         </select>
       </td>
@@ -1910,7 +1922,7 @@ function dayCellHtml(day){
     <div style="font-size:.72rem;font-weight:700;color:var(--ink-dim);margin-bottom:4px">${day.getDate()}</div>
     ${items.slice(0,3).map(b=>{
       const st = bookingStatus(b);
-      return `<div class="pill ${st.cls}" style="display:block;margin-bottom:3px;font-size:.66rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.customerName||'—'} · ${b.carName||''}</div>`;
+      return `<div class="pill ${st.cls}" style="display:block;margin-bottom:3px;font-size:.66rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.customerName)||'—'} · ${esc(b.carName)||''}</div>`;
     }).join('')}
     ${items.length>3 ? `<div style="font-size:.68rem;color:var(--ink-dim)">+${items.length-3} de plus</div>` : ''}
   </div>`;
@@ -1937,7 +1949,7 @@ function renderCalendarBody(){
     el.innerHTML = `<h4 style="margin-top:0">${calDate.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</h4>
       ${items.length ? items.map(b=>{
         const st = bookingStatus(b);
-        return `<div class="card-pad" style="border:1px solid var(--card-border);border-radius:8px;margin-bottom:8px"><b>${b.customerName}</b> — ${b.carName} <span class="pill ${st.cls}">${st.label}</span><br><span style="color:var(--ink-dim);font-size:.78rem">${fmtDate(b.pickup)} → ${fmtDate(b.ret)}</span></div>`;
+        return `<div class="card-pad" style="border:1px solid var(--card-border);border-radius:8px;margin-bottom:8px"><b>${esc(b.customerName)}</b> — ${esc(b.carName)} <span class="pill ${st.cls}">${st.label}</span><br><span style="color:var(--ink-dim);font-size:.78rem">${fmtDate(b.pickup)} → ${fmtDate(b.ret)}</span></div>`;
       }).join('') : `<div class="empty-state">Aucune réservation ce jour.</div>`}`;
   }
 }
@@ -1958,7 +1970,7 @@ function renderCustomers(){
       <table>
         <thead><tr><th>Nom</th><th>Téléphone</th><th>Nb réservations</th><th>Dernière réservation</th></tr></thead>
         <tbody>
-          ${customers.map(c => `<tr><td>${c.name||'—'}</td><td>${c.phone||'—'}</td><td>${c.bookings}</td><td>${fmtDate(c.lastDate)}</td></tr>`).join('')
+          ${customers.map(c => `<tr><td>${esc(c.name)||'—'}</td><td>${esc(c.phone)||'—'}</td><td>${c.bookings}</td><td>${fmtDate(c.lastDate)}</td></tr>`).join('')
             || `<tr><td colspan="4" class="empty-state">Aucun client pour le moment.</td></tr>`}
         </tbody>
       </table>
@@ -2173,7 +2185,7 @@ function renderSettingsTab(tab){
     el.innerHTML = `
       <div class="card"><div class="table-wrap"><table>
         <thead><tr><th>Quand</th><th>Rôle</th><th>Action</th><th>Détails</th></tr></thead>
-        <tbody>${state.activityLog.map(l=>`<tr><td>${fmtDate(l.timestamp)}</td><td><span class="pill pill-gray">${l.role}</span></td><td>${l.action}</td><td>${l.details||''}</td></tr>`).join('')
+        <tbody>${state.activityLog.map(l=>`<tr><td>${fmtDate(l.timestamp)}</td><td><span class="pill pill-gray">${esc(l.role)}</span></td><td>${esc(l.action)}</td><td>${esc(l.details)||''}</td></tr>`).join('')
           || `<tr><td colspan="4" class="empty-state">Aucune activité enregistrée pour le moment.</td></tr>`}</tbody>
       </table></div></div>
     `;
