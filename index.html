@@ -916,6 +916,18 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
   color:#a16207 !important;font-size:.82rem;background:rgba(245,165,36,.12);
   border:1px solid rgba(245,165,36,.35);border-radius:10px;padding:10px 12px;margin:14px 0 0;
 }
+/* Calm informational banner (not an error/warning state) — used for the
+   "24/7 online booking, after-hours pickup/drop-off by prior arrangement"
+   notice repeated on the home hero, booking modal and Contact section.
+   Solid white background (not a translucent tint) so it stays legible
+   wherever it lands — the hero's dark photo, the dark Contact section,
+   or the white modal — instead of blending into whatever's behind it. */
+.hours-availability-note{
+  color:var(--ink);font-size:.82rem;line-height:1.5;background:#fff;
+  border:1px solid var(--card-border);border-inline-start:4px solid var(--blue-500);
+  border-radius:10px;padding:10px 12px;margin:14px 0 0;box-shadow:0 4px 14px rgba(20,24,43,.12);
+}
+html[dir="rtl"] .hours-availability-note{font-family:var(--font-ar)}
 .deposit-methods-note{color:var(--ink-dim);font-size:.78rem;margin:6px 0 0}
 .cancellation-policy-note{color:var(--ink-dim);font-size:.78rem;margin:6px 0 0}
 .cancellation-policy-note [data-i18n="cancellation_policy_badge"]{color:#0a8a3f;font-weight:700}
@@ -1104,6 +1116,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
       <p class="qb-error" id="qbAvailError" data-i18n="qb_no_cars_available_error">No vehicles are available for these dates. Please choose different dates or a different category.</p>
       <button type="submit" class="btn btn-blue qb-submit" data-i18n="qb_search_btn">Search</button>
     </form>
+    <p class="hours-availability-note" data-i18n="hours_availability_notice">Booking through our website is available 24/7. Pickup and drop-off outside official business hours are arranged by prior reservation and additional fees may apply.</p>
   </div>
 </section>
 
@@ -1305,6 +1318,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
           <div class="ic">🕐</div>
           <div><b data-i18n="contact_hours_label">Hours</b><span data-i18n="contact_hours_value">Open 24/7</span></div>
         </div>
+        <p class="hours-availability-note" data-i18n="hours_availability_notice">Booking through our website is available 24/7. Pickup and drop-off outside official business hours are arranged by prior reservation and additional fees may apply.</p>
         <a class="btn btn-primary btn-block" target="_blank" rel="noopener" href="https://wa.me/212661304574?text=Hello%2C%20I%20would%20like%20to%20book%20a%20car." data-contact-link="whatsapp">
           <svg class="ico-wa" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.31.65 4.47 1.78 6.31L4 29l7.86-1.74A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Zm0 21.72c-1.94 0-3.75-.55-5.28-1.5l-.38-.23-4.66 1.03 1.05-4.55-.25-.4A9.63 9.63 0 0 1 5.32 15c0-5.34 4.35-9.68 9.684-9.68S24.688 9.66 24.688 15 21.34 24.72 16.004 24.72Zm5.37-7.26c-.29-.15-1.73-.86-2-.95-.27-.1-.46-.15-.66.15-.2.29-.76.95-.93 1.14-.17.2-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.44-.86-.77-1.44-1.72-1.61-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.48.1-.2.05-.37-.02-.51-.07-.15-.66-1.6-.91-2.19-.24-.58-.48-.5-.66-.51-.17-.01-.37-.01-.56-.01s-.51.07-.78.37c-.27.29-1.02 1-1.02 2.43 0 1.44 1.05 2.83 1.2 3.02.15.2 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.61.7.22 1.34.19 1.84.11.56-.08 1.73-.7 1.98-1.38.24-.68.24-1.26.17-1.38-.07-.13-.26-.2-.55-.35Z"/></svg>
           <span data-i18n="cta_whatsapp2">Chat on WhatsApp</span>
@@ -1387,6 +1401,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
     <button class="modal-close" id="bookingClose" aria-label="Close">✕</button>
     <label class="modal-car-select-label" data-i18n="modal_car_select_label">Selected vehicle (change anytime)</label>
     <select id="modalCarSelect" class="modal-car-select"></select>
+    <p class="hours-availability-note" data-i18n="hours_availability_notice">Booking through our website is available 24/7. Pickup and drop-off outside official business hours are arranged by prior reservation and additional fees may apply.</p>
 
     <!-- ---- Booking Form (fields verified against the live original site's product page) ---- -->
     <form id="bookingForm" class="modal-panel active" data-panel="booking">
@@ -2276,6 +2291,7 @@ const I18N = {
     washing_mandatory:'mandatory', deposit_refundable:'deposit (refundable)', deposit_per_day:'/day',
     deposit_no_deposit:'No deposit', deposit_non_refundable:'non-refundable',
     hours_warning:'Outside business hours (08:00–20:00): a €10 surcharge has been added per pickup/return outside these hours.',
+    hours_availability_notice:'Booking through our website is available 24/7. Pickup and drop-off outside official business hours are arranged by prior reservation and additional fees may apply.',
     pickup_delay_error:'For a booking today, the earliest pickup time is 2 hours from now.',
     min_rental_error:'The minimum car rental period is 3 days.',
     qb_no_cars_available_error:'No vehicles are available for these dates. Please choose different dates or a different category.',
@@ -2448,6 +2464,7 @@ const I18N = {
     washing_mandatory:'obligatoire', deposit_refundable:'de caution (remboursable)', deposit_per_day:'/jour',
     deposit_no_deposit:'Sans caution', deposit_non_refundable:'non remboursable',
     hours_warning:'En dehors des heures d\'ouverture (08h00–20h00) : un supplément de 10€ a été ajouté par prise en charge/retour hors de ces heures.',
+    hours_availability_notice:'La réservation via notre site est disponible 24h/24 et 7j/7. La prise en charge et le retour des véhicules en dehors des heures d\'ouverture officielles se font sur réservation préalable et des frais supplémentaires peuvent s\'appliquer.',
     pickup_delay_error:'Pour une réservation aujourd\'hui, l\'heure de prise en charge la plus proche est dans 2 heures.',
     min_rental_error:'La durée minimale de location est de 3 jours.',
     qb_no_cars_available_error:'Aucun véhicule n\'est disponible pour ces dates. Merci de choisir d\'autres dates ou une autre catégorie.',
@@ -2621,6 +2638,7 @@ const I18N = {
     washing_mandatory:'obligatorio', deposit_refundable:'de depósito (reembolsable)', deposit_per_day:'/día',
     deposit_no_deposit:'Sin depósito', deposit_non_refundable:'no reembolsable',
     hours_warning:'Fuera del horario comercial (08:00–20:00): se ha añadido un recargo de 10€ por cada recogida/devolución fuera de este horario.',
+    hours_availability_notice:'La reserva a través de nuestro sitio web está disponible las 24 horas, los 7 días de la semana. La recogida y devolución de vehículos fuera del horario oficial de atención se realiza previa reserva y pueden aplicarse cargos adicionales.',
     pickup_delay_error:'Para una reserva de hoy, la hora de recogida más próxima es dentro de 2 horas.',
     min_rental_error:'La duración mínima del alquiler es de 3 días.',
     qb_no_cars_available_error:'No hay vehículos disponibles para estas fechas. Elija otras fechas u otra categoría.',
@@ -2794,6 +2812,7 @@ const I18N = {
     washing_mandatory:'إجباري', deposit_refundable:'ضمان (قابل للاسترجاع)', deposit_per_day:'/اليوم',
     deposit_no_deposit:'بدون ضمان', deposit_non_refundable:'غير قابل للاسترجاع',
     hours_warning:'خارج ساعات العمل (08:00–20:00): تمت إضافة 10€ لكل عملية استلام/إرجاع خارج هذه الساعات.',
+    hours_availability_notice:'الحجز عبر موقعنا الإلكتروني متاح على مدار 24 ساعة طوال أيام الأسبوع. أما استلام وتسليم السيارات خارج أوقات العمل الرسمية، فيتم حسب الحجز المسبق وقد تُطبق رسوم إضافية.',
     pickup_delay_error:'بالنسبة لحجز اليوم، أقرب وقت للاستلام هو بعد ساعتين من الآن.',
     min_rental_error:'الحد الأدنى لمدة كراء السيارة هو 3 أيام.',
     qb_no_cars_available_error:'لا توجد سيارات متاحة لهذه التواريخ. يرجى اختيار تواريخ أخرى أو فئة أخرى.',
