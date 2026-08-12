@@ -226,8 +226,23 @@ function doPost(e) {
     const role = roleForPassword_(body.password);
     if (!role) return jsonResponse_({ success: false, error: 'Wrong password' });
     if (!body.row) return jsonResponse_({ success: false, error: 'Missing row' });
-    getBookingsSheet_().deleteRow(Number(body.row));
+    const cancelSheet = getBookingsSheet_();
+    const cancelRowNum = Number(body.row);
+    // Read the booking's own data before deleting the row — the Telegram
+    // notification below needs it, and there's nothing left to read once
+    // deleteRow() runs.
+    const cancelledBooking = cancelSheet.getRange(cancelRowNum, 1, 1, 21).getValues()[0];
+    cancelSheet.deleteRow(cancelRowNum);
     logActivity_(role, 'cancel_booking', 'Row ' + body.row);
+    if (cancelledBooking[0]) {
+      sendTelegramMessage_(
+        '❌ Booking cancelled: ' + (cancelledBooking[6] || '') +
+        '\nCustomer: ' + (cancelledBooking[2] || '') +
+        '\nVehicle: ' + (cancelledBooking[1] || '') +
+        '\nPickup: ' + formatDateTimeForTelegram_(cancelledBooking[4]) +
+        '\nReturn: ' + formatDateTimeForTelegram_(cancelledBooking[5])
+      );
+    }
     return jsonResponse_({ success: true });
   }
 
@@ -280,6 +295,43 @@ function doPost(e) {
     ]]);
     sheet.getRange(rowNum, 4).setNumberFormat('@').setValue(phone);
     logActivity_(role, 'edit_booking', 'Row ' + rowNum + ' — ' + (body.carName || existing[1]));
+    // Telegram "Old → New" diff — only for the fields the admin dashboard's
+    // Edit Reservation modal actually exposes, and only the ones that
+    // genuinely changed (comparing dates by timestamp, not raw string, since
+    // the sheet returns pickup/ret as Date objects while `pickup`/`ret` above
+    // may be plain ISO strings — a naive string compare would false-positive
+    // on every edit even when nothing changed).
+    const newCarName = body.carName || existing[1];
+    const editChanges = [];
+    if (new Date(existing[4]).getTime() !== new Date(pickup).getTime()) {
+      editChanges.push('Pickup: ' + formatDateTimeForTelegram_(existing[4]) + ' → ' + formatDateTimeForTelegram_(pickup));
+    }
+    if (new Date(existing[5]).getTime() !== new Date(ret).getTime()) {
+      editChanges.push('Return: ' + formatDateTimeForTelegram_(existing[5]) + ' → ' + formatDateTimeForTelegram_(ret));
+    }
+    if (String(existing[1] || '') !== String(newCarName || '')) {
+      editChanges.push('Vehicle: ' + (existing[1] || '—') + ' → ' + (newCarName || '—'));
+    }
+    const newPickupLoc = body.pickupLoc != null ? body.pickupLoc : existing[19];
+    if (String(existing[19] || '') !== String(newPickupLoc || '')) {
+      editChanges.push('Pick-up location: ' + (existing[19] || '—') + ' → ' + (newPickupLoc || '—'));
+    }
+    const newDropoffLoc = body.dropoffLoc != null ? body.dropoffLoc : existing[20];
+    if (String(existing[20] || '') !== String(newDropoffLoc || '')) {
+      editChanges.push('Drop-off location: ' + (existing[20] || '—') + ' → ' + (newDropoffLoc || '—'));
+    }
+    const newTotal = body.total != null ? body.total : existing[9];
+    if (String(existing[9] || '') !== String(newTotal || '')) {
+      editChanges.push('Price: ' + (existing[9] || '—') + ' → ' + (newTotal || '—'));
+    }
+    if (editChanges.length) {
+      const editCustomerName = body.customerName != null ? body.customerName : existing[2];
+      sendTelegramMessage_(
+        '✏️ Booking modified: ' + (existing[6] || '') +
+        '\nCustomer: ' + (editCustomerName || '') +
+        '\n' + editChanges.join('\n')
+      );
+    }
     return jsonResponse_({ success: true, unitId: assignment.unitId || '', unitPlate: assignment.plate || '' });
   }
 
@@ -1024,6 +1076,16 @@ function formatDateOnly_(value) {
     return Utilities.formatDate(value, Session.getScriptTimeZone(), 'yyyy-MM-dd');
   }
   return String(value).slice(0, 10);
+}
+
+// dd/MM/yyyy HH:mm, used only for the modification/cancellation Telegram
+// notifications below — accepts either a Date (as read back from the sheet)
+// or an ISO datetime-local string (as sent by the booking modals).
+function formatDateTimeForTelegram_(value) {
+  if (!value) return '';
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return String(value);
+  return Utilities.formatDate(d, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm');
 }
 
 function sendBookingEmail_(body) {
