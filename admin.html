@@ -291,6 +291,19 @@ function fmtDate(v){
   if(isNaN(d)) return String(v).slice(0,16).replace('T',' ');
   return d.toLocaleString('fr-FR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
 }
+/* WhatsApp has no API for sending an automatic message to a number just
+   because it was entered at checkout — that's a WhatsApp Business API
+   (Meta Cloud API / Twilio) restriction, not something this app can work
+   around. The only notification-free option is a wa.me deep link that opens
+   a pre-filled chat for a human (the admin) to review and send — so this is
+   a one-click convenience, not an automatic notification like the Telegram/
+   email ones above. */
+function openWhatsAppLink(b){
+  const phone = String(b.phone || '').replace(/[^\d+]/g, '').replace(/^\+/, '');
+  if(!phone){ toast('Aucun numéro de téléphone pour ce client'); return; }
+  const text = `Bonjour ${b.customerName || ''}, concernant votre réservation ${b.ref || ''} (${b.carName || ''}) : prise en charge le ${fmtDate(b.pickup)}, retour le ${fmtDate(b.ret)}.`;
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
+}
 function csvDownload(filename, rows){
   if(!rows.length){ toast('Rien à exporter'); return; }
   const cols = Object.keys(rows[0]);
@@ -1629,6 +1642,7 @@ function renderReservationsRows(){
       <td class="tag-row">
         <button class="btn btn-outline btn-sm" data-edit="${b.row}">Modifier</button>
         <button class="btn btn-outline btn-sm" data-pdf="${b.row}">🖨️ PDF</button>
+        <button class="btn btn-outline btn-sm" data-whatsapp="${b.row}">💬 WhatsApp</button>
         <button class="btn btn-danger btn-sm" data-cancel="${b.row}">Annuler</button>
       </td>
     </tr>`;
@@ -1650,6 +1664,10 @@ function renderReservationsRows(){
     try { await downloadReservationPdf(booking); }
     catch(e){ toast('Échec de la génération du PDF'); }
     finally { btn.disabled = false; btn.textContent = originalText; }
+  }));
+  tbody.querySelectorAll('[data-whatsapp]').forEach(btn => btn.addEventListener('click', ()=>{
+    const booking = state.bookings.find(b => String(b.row) === btn.dataset.whatsapp);
+    if(booking) openWhatsAppLink(booking);
   }));
   tbody.querySelectorAll('[data-cancel]').forEach(btn => btn.addEventListener('click', async ()=>{
     if(!confirm('Annuler cette réservation et libérer le véhicule ?')) return;

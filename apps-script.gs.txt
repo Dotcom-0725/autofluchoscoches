@@ -242,6 +242,7 @@ function doPost(e) {
         '\nPickup: ' + formatDateTimeForTelegram_(cancelledBooking[4]) +
         '\nReturn: ' + formatDateTimeForTelegram_(cancelledBooking[5])
       );
+      sendCustomerCancellationEmail_(cancelledBooking);
     }
     return jsonResponse_({ success: true });
   }
@@ -331,6 +332,8 @@ function doPost(e) {
         '\nCustomer: ' + (editCustomerName || '') +
         '\n' + editChanges.join('\n')
       );
+      const newEmail = body.email != null ? body.email : existing[11];
+      sendCustomerModificationEmail_(newEmail, existing[6], editChanges);
     }
     return jsonResponse_({ success: true, unitId: assignment.unitId || '', unitPlate: assignment.plate || '' });
   }
@@ -682,6 +685,7 @@ function doPost(e) {
     // displays exactly as entered.
     bookingsSheet.getRange(bookingsSheet.getLastRow(), 4).setNumberFormat('@').setValue(body.phone || '');
     sendBookingEmail_(body);
+    sendCustomerBookingConfirmationEmail_(body);
     if (manualRole) logActivity_(manualRole, 'manual_booking', (body.source || 'manual') + ' — ' + body.carName);
     return jsonResponse_({ success: true, unitId: assignment.unitId || '', unitPlate: assignment.plate || '' });
   } finally {
@@ -1126,6 +1130,74 @@ function sendBookingEmail_(body) {
     MailApp.sendEmail(NOTIFICATION_EMAIL, subject, lines.join('\n'));
   } catch (e) { /* don't fail the booking over an email quota/error */ }
   sendTelegramMessage_('🚗 ' + subject + '\n\n' + lines.slice(1).join('\n'));
+}
+
+/* Sent to the CUSTOMER right after their booking is recorded (website
+   checkout or manual dashboard entry alike), mirroring the agency's own
+   sendBookingEmail_ above but addressed to them — so they get their own
+   confirmation immediately, independent of the PDF download. Silently does
+   nothing without a customer email (it's optional at checkout). */
+function sendCustomerBookingConfirmationEmail_(body) {
+  const email = body.email;
+  if (!email) return;
+  try {
+    const subject = 'Booking Confirmation — ' + (body.carName || body.carId) + ' — ' + (body.ref || '');
+    const lines = [
+      'Thank you for booking with Auto Fluchos Coches!',
+      '',
+      'Reference: ' + (body.ref || ''),
+      'Vehicle: ' + (body.carName || body.carId),
+      'Pickup: ' + (body.pickup || ''),
+      'Return: ' + (body.ret || ''),
+    ];
+    if (body.pickupLoc) lines.push('Pick-up location: ' + body.pickupLoc);
+    if (body.dropoffLoc) lines.push('Drop-off location: ' + body.dropoffLoc);
+    lines.push('Total: ' + (body.total || ''));
+    lines.push('', 'We look forward to seeing you!');
+    MailApp.sendEmail(email, subject, lines.join('\n'));
+  } catch (e) { /* don't fail the booking over an email quota/error */ }
+}
+
+/* Sent to the CUSTOMER when an admin edits their reservation, with the exact
+   same Old → New change lines as the Telegram notification in doPost's
+   editBooking branch — only called when editChanges is non-empty there, so
+   this never fires for a no-op edit. Silently does nothing without a
+   customer email on file. */
+function sendCustomerModificationEmail_(email, ref, changes) {
+  if (!email) return;
+  try {
+    const subject = 'Booking Updated — ' + (ref || '');
+    const lines = [
+      'Your reservation has been updated:',
+      '',
+      'Reference: ' + (ref || ''),
+      '',
+    ].concat(changes);
+    MailApp.sendEmail(email, subject, lines.join('\n'));
+  } catch (e) { /* don't fail the edit over an email quota/error */ }
+}
+
+/* Sent to the CUSTOMER when their reservation is cancelled from the admin
+   dashboard — `row` is the full booking row read before deleteRow() ran (see
+   the cancel branch in doPost). Silently does nothing without a customer
+   email on file. */
+function sendCustomerCancellationEmail_(row) {
+  const email = row[11];
+  if (!email) return;
+  try {
+    const subject = 'Booking Cancelled — ' + (row[6] || '');
+    const lines = [
+      'Your reservation has been cancelled.',
+      '',
+      'Reference: ' + (row[6] || ''),
+      'Vehicle: ' + (row[1] || ''),
+      'Pickup: ' + formatDateTimeForTelegram_(row[4]),
+      'Return: ' + formatDateTimeForTelegram_(row[5]),
+      '',
+      "If this wasn't expected, please contact us.",
+    ];
+    MailApp.sendEmail(email, subject, lines.join('\n'));
+  } catch (e) { /* don't fail the cancellation over an email quota/error */ }
 }
 
 /* Sent to the CUSTOMER (not the agency) once an admin marks a booking's
