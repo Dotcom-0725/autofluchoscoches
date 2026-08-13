@@ -5463,19 +5463,39 @@ function isDayUnavailableForInput(input, cellDate){
 function isDayFullyBooked(carId, cellDate){
   const car = CARS.find(c => c.id === carId);
   if(!car) return false;
-  const dayEnd = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate() + 1);
-  const lastInstantStart = new Date(dayEnd.getTime() - 60000); // last minute of the day
+  const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+  const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+  // Each existing booking blocks [pickup - buffer, return + buffer) — buffer
+  // applies on BOTH sides (mirrors rangesOverlap's bidirectional check for a
+  // zero-length candidate instant), not just after the return. Previously
+  // this only inspected the day's LAST minute to decide whether the whole
+  // day should be disabled, which correctly widened a day that starts
+  // booked and frees up later, but wrongly blacked out an entire day when a
+  // booking only starts partway through it (e.g. pickup at 18:00 left the
+  // 00:00–16:00 morning showing as unavailable). The fix scans every moment
+  // where the busy count can hit a new low — the start of the day, and each
+  // interval's end+buffer — since those are the only points a previously
+  // fully-busy day can become free again.
   const unitIds = remoteCarUnitIds[carId];
   if(unitIds && unitIds.length){
-    const intervals = remoteBookedIntervals[carId] || [];
-    const dayOverlap = intervals.filter(iv => rangesOverlap(lastInstantStart.toISOString(), dayEnd.toISOString(), iv.pickup, iv.ret));
-    const assignedUnitIds = dayOverlap.filter(iv => iv.unitId).map(iv => iv.unitId);
-    const legacyCount = dayOverlap.filter(iv => !iv.unitId).length;
-    const freeUnits = unitIds.filter(id => assignedUnitIds.indexOf(id) === -1);
-    return freeUnits.length <= legacyCount;
+    const intervals = (remoteBookedIntervals[carId] || [])
+      .map(iv => ({ start: new Date(iv.pickup).getTime() - CAR_TURNAROUND_BUFFER_MS, end: new Date(iv.ret).getTime() + CAR_TURNAROUND_BUFFER_MS, unitId: iv.unitId }))
+      .filter(iv => iv.end > dayStart.getTime() && iv.start < dayEnd.getTime());
+    const candidates = [dayStart.getTime(), ...intervals.map(iv => iv.end).filter(t => t > dayStart.getTime() && t < dayEnd.getTime())];
+    return !candidates.some(t => {
+      const active = intervals.filter(iv => iv.start <= t && t < iv.end);
+      const assignedUnitIds = active.filter(iv => iv.unitId).map(iv => iv.unitId);
+      const legacyCount = active.filter(iv => !iv.unitId).length;
+      const freeUnits = unitIds.filter(id => assignedUnitIds.indexOf(id) === -1);
+      return freeUnits.length > legacyCount;
+    });
   }
-  const overlap = getOverlapCount(carId, lastInstantStart.toISOString(), dayEnd.toISOString());
-  return overlap >= effectiveStock(car);
+  const stock = effectiveStock(car);
+  const intervals = (remoteBookedIntervals[carId] || [])
+    .map(iv => ({ start: new Date(iv.pickup).getTime() - CAR_TURNAROUND_BUFFER_MS, end: new Date(iv.ret).getTime() + CAR_TURNAROUND_BUFFER_MS }))
+    .filter(iv => iv.end > dayStart.getTime() && iv.start < dayEnd.getTime());
+  const candidates = [dayStart.getTime(), ...intervals.map(iv => iv.end).filter(t => t > dayStart.getTime() && t < dayEnd.getTime())];
+  return !candidates.some(t => intervals.filter(iv => iv.start <= t && t < iv.end).length < stock);
 }
 /* The earliest bookable time on `cellDate` for `carId`, accounting for the
    mandatory CAR_TURNAROUND_BUFFER_MS after any booking's return — e.g. a car
@@ -5492,8 +5512,12 @@ function getEarliestAvailableTimeOnDay(carId, cellDate){
   if(!car) return dayStart;
   const stock = effectiveStock(car);
   const intervals = remoteBookedIntervals[carId] || [];
+  // Buffer applies on BOTH sides of each existing booking (see
+  // isDayFullyBooked above) — a candidate pickup time must also leave room
+  // for the mandatory turnaround before any UPCOMING booking, not just
+  // clear of a past one's return.
   const events = intervals
-    .map(iv => ({ start: new Date(iv.pickup).getTime(), end: new Date(iv.ret).getTime() + CAR_TURNAROUND_BUFFER_MS }))
+    .map(iv => ({ start: new Date(iv.pickup).getTime() - CAR_TURNAROUND_BUFFER_MS, end: new Date(iv.ret).getTime() + CAR_TURNAROUND_BUFFER_MS }))
     .filter(iv => iv.end > dayStart.getTime() && iv.start < dayEnd.getTime());
   const candidates = [dayStart.getTime(), ...events.map(iv => iv.end).filter(t => t > dayStart.getTime() && t < dayEnd.getTime())];
   candidates.sort((a, b) => a - b);
