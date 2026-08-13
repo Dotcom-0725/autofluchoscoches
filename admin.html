@@ -504,8 +504,34 @@ function rangesOverlapAdmin(startA, endA, startB, endB){
   return new Date(startB).getTime() < new Date(endA).getTime() + CAR_TURNAROUND_BUFFER_MS_ADMIN &&
          new Date(startA).getTime() < new Date(endB).getTime() + CAR_TURNAROUND_BUFFER_MS_ADMIN;
 }
-function getOverlapCountAdmin(carId, pickupVal, retVal){
-  return state.bookings.filter(b => b.carId === carId && rangesOverlapAdmin(pickupVal, retVal, b.pickup, b.ret)).length;
+function getOverlapCountAdmin(carId, pickupVal, retVal, excludeRow){
+  const bookingsPool = excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings;
+  return bookingsPool.filter(b => b.carId === carId && rangesOverlapAdmin(pickupVal, retVal, b.pickup, b.ret)).length;
+}
+/* Mirrors index.html's getDelayedAvailability exactly (available / delayed /
+   unavailable three-state check) for the aggregate stock-count model — used
+   for cars that have NO fleet units registered yet (see
+   renderUnitAvailabilityAdmin below), so the manual/edit reservation modals
+   give the exact same "available now" / "available from HH:MM" / "sold out"
+   feedback the public site already gives for such cars, instead of the
+   admin only finding out a conflict exists after Save fails against the
+   backend's own check with no explanation. */
+function getDelayedAvailabilityAdmin(car, pickupVal, retVal, excludeRow){
+  if(!pickupVal || !retVal) return { status: 'unknown' };
+  const stock = Number(car.stock) || 1;
+  const overlap = getOverlapCountAdmin(car.id, pickupVal, retVal, excludeRow);
+  if(overlap < stock) return { status: 'available', remaining: stock - overlap };
+  const [pickupDateStr, pickupTimeStr] = pickupVal.split('T');
+  const [y, m, d] = pickupDateStr.split('-').map(Number);
+  if(!y || !m || !d) return { status: 'unavailable' };
+  const earliest = getEarliestAvailableTimeOnDayAdmin(car.id, new Date(y, m - 1, d), excludeRow);
+  const pad = n => String(n).padStart(2, '0');
+  const earliestTimeStr = `${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
+  if(earliestTimeStr <= pickupTimeStr) return { status: 'unavailable' }; // no later rescue slot that day
+  const delayedPickup = `${pickupDateStr}T${earliestTimeStr}`;
+  const delayedOverlap = getOverlapCountAdmin(car.id, delayedPickup, retVal, excludeRow);
+  if(delayedOverlap < stock) return { status: 'delayed', remaining: stock - delayedOverlap, earliestTimeStr, pickupDateStr };
+  return { status: 'unavailable' };
 }
 /* True if this car has NO valid moment left to pick on this calendar day —
    i.e. every unit is still busy (accounting for the turnaround buffer) even
@@ -690,8 +716,24 @@ function renderUnitAvailabilityAdmin({ carId, pickup, ret, excludeRow, unitSelec
   const allUnits = state.fleetUnits.filter(u => u.carId === car.id);
   if(!allUnits.length){
     if(unitField) unitField.style.display = 'none';
-    note.textContent = `${car.name} a ${car.stock || 1} unité(s) au total (aucune plaque enregistrée dans Unités de flotte — la disponibilité est estimée par le nombre).`;
-    if(saveBtn) saveBtn.disabled = false;
+    const hasDates = !!(pickup && ret);
+    if(!hasDates){
+      note.textContent = `${car.name} a ${car.stock || 1} unité(s) au total (aucune plaque enregistrée dans Unités de flotte — la disponibilité est estimée par le nombre) — choisissez la prise en charge et le retour.`;
+      if(saveBtn) saveBtn.disabled = false;
+      return;
+    }
+    const availability = getDelayedAvailabilityAdmin(car, pickup, ret, excludeRow);
+    if(availability.status === 'available'){
+      note.textContent = `${car.name} disponible pour ces dates (${availability.remaining} unité(s) restante(s)).`;
+      if(saveBtn) saveBtn.disabled = false;
+    } else if(availability.status === 'delayed'){
+      const [y, m, d] = availability.pickupDateStr.split('-');
+      note.textContent = `${car.name} sera disponible à partir de ${availability.earliestTimeStr} le ${d}/${m}/${y}. Ajustez l'heure de prise en charge ci-dessus, ou continuez et nous la confirmerons à cette heure.`;
+      if(saveBtn) saveBtn.disabled = false;
+    } else {
+      note.textContent = `${car.name} n'est pas disponible pour ces dates.`;
+      if(saveBtn) saveBtn.disabled = true;
+    }
     return;
   }
   if(unitField) unitField.style.display = '';
