@@ -508,6 +508,29 @@ function getOverlapCountAdmin(carId, pickupVal, retVal, excludeRow){
   const bookingsPool = excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings;
   return bookingsPool.filter(b => b.carId === carId && rangesOverlapAdmin(pickupVal, retVal, b.pickup, b.ret)).length;
 }
+/* The earliest moment AT OR AFTER `afterMs` (on the SAME calendar day) that
+   `carId` has fewer than `stock` units busy — deliberately NOT the same
+   question getEarliestAvailableTimeOnDayAdmin answers (that one finds the
+   day's globally earliest free moment, for the date-picker's click-to-select
+   auto-suggest, where there's no "requested time" yet to respect). This one
+   only considers candidates from `afterMs` onward, so an unrelated free gap
+   EARLIER in the day never gets offered as a "later" rescue for a request
+   that's already past it. Returns null if no such moment exists that day. */
+function getEarliestAvailableTimeAfterAdmin_(carId, afterMs, stock, excludeRow){
+  const dayStart = new Date(new Date(afterMs).getFullYear(), new Date(afterMs).getMonth(), new Date(afterMs).getDate());
+  const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+  const bookingsPool = (excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings)
+    .filter(b => b.carId === carId);
+  const intervals = bookingsPool
+    .map(b => ({ start: new Date(b.pickup).getTime() - CAR_TURNAROUND_BUFFER_MS_ADMIN, end: new Date(b.ret).getTime() + CAR_TURNAROUND_BUFFER_MS_ADMIN }))
+    .filter(iv => iv.end > dayStart.getTime() && iv.start < dayEnd.getTime());
+  const candidates = intervals.map(iv => iv.end).filter(t => t >= afterMs && t < dayEnd.getTime());
+  candidates.sort((a, b) => a - b);
+  for(const t of candidates){
+    if(intervals.filter(iv => iv.start <= t && t < iv.end).length < stock) return new Date(t);
+  }
+  return null;
+}
 /* Mirrors index.html's getDelayedAvailability exactly (available / delayed /
    unavailable three-state check) for the aggregate stock-count model — used
    for cars that have NO fleet units registered yet (see
@@ -521,31 +544,24 @@ function getDelayedAvailabilityAdmin(car, pickupVal, retVal, excludeRow){
   const stock = Number(car.stock) || 1;
   const overlap = getOverlapCountAdmin(car.id, pickupVal, retVal, excludeRow);
   if(overlap < stock) return { status: 'available', remaining: stock - overlap };
-  const [pickupDateStr, pickupTimeStr] = pickupVal.split('T');
-  const [y, m, d] = pickupDateStr.split('-').map(Number);
-  if(!y || !m || !d) return { status: 'unavailable' };
-  const earliest = getEarliestAvailableTimeOnDayAdmin(car.id, new Date(y, m - 1, d), excludeRow);
+  const [pickupDateStr] = pickupVal.split('T');
+  const earliest = getEarliestAvailableTimeAfterAdmin_(car.id, new Date(pickupVal).getTime(), stock, excludeRow);
+  if(!earliest) return { status: 'unavailable' }; // no later rescue slot that day
   const pad = n => String(n).padStart(2, '0');
   const earliestTimeStr = `${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
-  if(earliestTimeStr <= pickupTimeStr) return { status: 'unavailable' }; // no later rescue slot that day
   const delayedPickup = `${pickupDateStr}T${earliestTimeStr}`;
   const delayedOverlap = getOverlapCountAdmin(car.id, delayedPickup, retVal, excludeRow);
   if(delayedOverlap < stock) return { status: 'delayed', remaining: stock - delayedOverlap, earliestTimeStr, pickupDateStr };
   return { status: 'unavailable' };
 }
-/* True if this car has NO valid moment left to pick on this calendar day —
-   i.e. every unit is still busy (accounting for the turnaround buffer) even
-   in the very last minute of the day. Checking only that last instant
-   (instead of the whole day) matters: a car whose only booking returns at
-   10:00 becomes free again at 12:00 (after the 2h buffer), so the customer
-   must still be able to pick THIS day with a later time — the day itself
-   must not be disabled just because part of it was booked.
+/* True if this car has NO valid moment left to pick on this calendar day.
    When this car has real units registered (plate/fleet ID, entered in the
    Inventory > Fleet Units screen), the admin already has full visibility into
    which unit each booking is assigned to (state.bookings[].unitId) — so
    shading here can be EXACT: the day is only fully booked once every
-   registered unit is still busy at that last instant, not just a bare count.
-   Cars with no units registered yet fall back to the old count-vs-stock check. */
+   registered unit is still busy at every candidate moment, not just a bare
+   count. Cars with no units registered yet fall back to the count-vs-stock
+   check. */
 function isDayFullyBookedAdmin(carId, cellDate, excludeRow){
   const car = carById(carId);
   if(!car) return false;
@@ -684,13 +700,26 @@ function getDelayedAvailabilityForUnitAdmin(unitId, carId, pickupVal, retVal, ex
     .filter(b => b.carId === carId && (b.unitId === unitId || !b.unitId));
   const conflict = bookingsPool.some(b => rangesOverlapAdmin(pickupVal, retVal, b.pickup, b.ret));
   if(!conflict) return { status: 'available' };
-  const [pickupDateStr, pickupTimeStr] = pickupVal.split('T');
-  const [y, m, d] = pickupDateStr.split('-').map(Number);
-  if(!y || !m || !d) return { status: 'unavailable' };
-  const earliest = getEarliestAvailableTimeForUnitAdmin(unitId, carId, new Date(y, m - 1, d), excludeRow);
+  const [pickupDateStr] = pickupVal.split('T');
+  const dayStart = new Date(new Date(pickupVal).getFullYear(), new Date(pickupVal).getMonth(), new Date(pickupVal).getDate());
+  const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+  const afterMs = new Date(pickupVal).getTime();
+  // Same "only candidates AT OR AFTER the requested time" fix as
+  // getEarliestAvailableTimeAfterAdmin_ above — an unrelated free gap
+  // EARLIER in the day must never be offered as a "later" rescue.
+  const events = bookingsPool
+    .map(b => ({ start: new Date(b.pickup).getTime() - CAR_TURNAROUND_BUFFER_MS_ADMIN, end: new Date(b.ret).getTime() + CAR_TURNAROUND_BUFFER_MS_ADMIN }))
+    .filter(iv => iv.end > dayStart.getTime() && iv.start < dayEnd.getTime());
+  const candidates = events.map(iv => iv.end).filter(t => t >= afterMs && t < dayEnd.getTime());
+  candidates.sort((a, b) => a - b);
+  let earliestMs = null;
+  for(const t of candidates){
+    if(!events.some(iv => iv.start <= t && t < iv.end)){ earliestMs = t; break; }
+  }
+  if(earliestMs == null) return { status: 'unavailable' }; // no later rescue slot that day
   const pad = n => String(n).padStart(2, '0');
+  const earliest = new Date(earliestMs);
   const earliestTimeStr = `${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
-  if(earliestTimeStr <= pickupTimeStr) return { status: 'unavailable' }; // no later rescue slot that day
   const delayedPickup = `${pickupDateStr}T${earliestTimeStr}`;
   const stillConflict = bookingsPool.some(b => rangesOverlapAdmin(delayedPickup, retVal, b.pickup, b.ret));
   if(!stillConflict) return { status: 'delayed', earliestTimeStr, pickupDateStr };
@@ -763,6 +792,25 @@ function renderUnitAvailabilityAdmin({ carId, pickup, ret, excludeRow, unitSelec
     note.textContent = `Cette unité (${label}) n'est pas disponible pour ces dates.`;
     if(saveBtn) saveBtn.disabled = true;
   }
+}
+/* Builds the same "not available — available from HH:MM on DD/MM/YYYY"
+   explanation the inline preview note already shows (see
+   renderUnitAvailabilityAdmin above), for use wherever a booking gets
+   REJECTED — a sold_out response from the backend at Save time, or the
+   pre-save unit check — instead of a bare "no stock" message that leaves
+   the admin to guess when the car frees up. Reuses whichever check applies:
+   per-unit when the car has registered fleet units, aggregate stock
+   otherwise — same rule renderUnitAvailabilityAdmin uses. */
+function buildUnavailableMessageAdmin(car, unitId, pickup, ret, excludeRow){
+  const allUnits = state.fleetUnits.filter(u => u.carId === car.id);
+  const availability = (allUnits.length && unitId)
+    ? getDelayedAvailabilityForUnitAdmin(unitId, car.id, pickup, ret, excludeRow)
+    : getDelayedAvailabilityAdmin(car, pickup, ret, excludeRow);
+  if(availability.status === 'delayed'){
+    const [y, m, d] = availability.pickupDateStr.split('-');
+    return `${car.name} n'est pas disponible pour cet horaire — disponible à partir de ${availability.earliestTimeStr} le ${d}/${m}/${y}.`;
+  }
+  return `${car.name} n'est pas disponible pour ces dates — consultez le calendrier (jours grisés) pour une date libre.`;
 }
 function openAdminDatePicker(input, carId, excludeRow){
   closeAdminDatePicker();
@@ -1827,9 +1875,8 @@ function openManualBookingModal(){
       // backend's own findAvailableUnitForBooking_ re-validates regardless).
       unitId = document.getElementById('mbUnit').value;
       if(!unitId){ toast('Veuillez choisir une unité'); return; }
-      const availability = getDelayedAvailabilityForUnitAdmin(unitId, carId, pickup, ret, null);
-      if(availability.status === 'unavailable'){
-        toast('Cette unité n\'est pas disponible pour ces dates');
+      if(getDelayedAvailabilityForUnitAdmin(unitId, carId, pickup, ret, null).status === 'unavailable'){
+        toast(buildUnavailableMessageAdmin(car, unitId, pickup, ret, null));
         refreshUnitPicker();
         return;
       }
@@ -1846,7 +1893,7 @@ function openManualBookingModal(){
       toast(r.unitPlate ? `Réservation créée — unité assignée : ${r.unitPlate}` : 'Réservation créée');
       closeModal(); await refreshAdminData(); if(currentView==='reservations') renderReservationsRows();
     }
-    else toast(r.error === 'sold_out' ? 'Plus de stock disponible pour ce véhicule' : (r.error || 'Échec'));
+    else toast(r.error === 'sold_out' ? buildUnavailableMessageAdmin(car, unitId, pickup, ret, null) : (r.error || 'Échec'));
   });
 }
 
@@ -1934,9 +1981,8 @@ function openBookingEditModal(booking){
       // the public site, and the backend re-validates regardless.
       unitId = document.getElementById('ebUnit').value;
       if(!unitId){ toast('Veuillez choisir une unité'); return; }
-      const availability = getDelayedAvailabilityForUnitAdmin(unitId, carId, pickup, ret, booking.row);
-      if(availability.status === 'unavailable'){
-        toast('Cette unité n\'est pas disponible pour ces dates');
+      if(getDelayedAvailabilityForUnitAdmin(unitId, carId, pickup, ret, booking.row).status === 'unavailable'){
+        toast(buildUnavailableMessageAdmin(car, unitId, pickup, ret, booking.row));
         refreshUnitPicker();
         return;
       }
@@ -1957,7 +2003,7 @@ function openBookingEditModal(booking){
     if(r.success){
       toast(r.unitPlate ? `Réservation mise à jour — unité assignée : ${r.unitPlate}` : 'Réservation mise à jour');
       closeModal(); await refreshAdminData(); if(currentView==='reservations') renderReservationsRows();
-    } else toast(r.error === 'sold_out' ? 'Aucune disponibilité pour ces dates' : (r.error || 'Échec'));
+    } else toast(r.error === 'sold_out' ? buildUnavailableMessageAdmin(car, unitId, pickup, ret, booking.row) : (r.error || 'Échec'));
   });
 }
 

@@ -3115,6 +3115,30 @@ function getRemainingStockForRange(car, pickupVal, retVal){
    [pickupVal, retVal) check server-side (via getRemainingStockForRange /
    findAvailableUnitForBooking_), so a real conflict is only ever blocked
    there — never here. */
+/* The earliest moment AT OR AFTER `afterMs` (on the SAME calendar day) that
+   `carId` has fewer than `stock` units busy — used only for the "delayed"
+   rescue search in getDelayedAvailability below, which is deliberately NOT
+   the same question getEarliestAvailableTimeOnDay answers. That function
+   finds the day's globally earliest free moment (for the calendar's
+   click-to-select auto-suggest, where there's no "requested time" yet to
+   respect); this one only considers candidates from `afterMs` onward, so an
+   unrelated free gap EARLIER in the day (e.g. before some other booking)
+   never gets offered as a "later" rescue for a request that's already past
+   it — only a genuinely later opening (e.g. after THIS booking's own
+   return + buffer) counts. Returns null if no such moment exists that day. */
+function getEarliestAvailableTimeAfter_(carId, afterMs, stock){
+  const dayStart = new Date(new Date(afterMs).getFullYear(), new Date(afterMs).getMonth(), new Date(afterMs).getDate());
+  const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+  const intervals = (remoteBookedIntervals[carId] || [])
+    .map(iv => ({ start: new Date(iv.pickup).getTime() - CAR_TURNAROUND_BUFFER_MS, end: new Date(iv.ret).getTime() + CAR_TURNAROUND_BUFFER_MS }))
+    .filter(iv => iv.end > dayStart.getTime() && iv.start < dayEnd.getTime());
+  const candidates = intervals.map(iv => iv.end).filter(t => t >= afterMs && t < dayEnd.getTime());
+  candidates.sort((a, b) => a - b);
+  for(const t of candidates){
+    if(intervals.filter(iv => iv.start <= t && t < iv.end).length < stock) return new Date(t);
+  }
+  return null;
+}
 function getDelayedAvailability(car, pickupVal, retVal){
   if(!pickupVal || !retVal) return { status: 'unknown' };
   const remaining = getRemainingStockForRange(car, pickupVal, retVal);
@@ -3122,10 +3146,10 @@ function getDelayedAvailability(car, pickupVal, retVal){
   const [pickupDateStr, pickupTimeStr] = pickupVal.split('T');
   const [y, m, d] = pickupDateStr.split('-').map(Number);
   if(!y || !m || !d) return { status: 'unavailable' };
-  const earliest = getEarliestAvailableTimeOnDay(car.id, new Date(y, m - 1, d));
+  const earliest = getEarliestAvailableTimeAfter_(car.id, new Date(pickupVal).getTime(), effectiveStock(car));
+  if(!earliest) return { status: 'unavailable' }; // no later rescue slot that day
   const pad = n => String(n).padStart(2, '0');
   const earliestTimeStr = `${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
-  if(earliestTimeStr <= pickupTimeStr) return { status: 'unavailable' }; // no later rescue slot that day
   const delayedPickup = `${pickupDateStr}T${earliestTimeStr}`;
   const delayedRemaining = getRemainingStockForRange(car, delayedPickup, retVal);
   if(delayedRemaining > 0){
@@ -5446,14 +5470,7 @@ function isDayUnavailableForInput(input, cellDate){
   }
   return false;
 }
-/* True if `car` has NO valid moment left to pick on this calendar day — i.e.
-   every unit is still busy (accounting for the turnaround buffer) even in
-   the very last minute of the day. Checking only that last instant (instead
-   of the whole day) is deliberate: a car whose only booking returns at 10:00
-   becomes free again at 12:00 (after the 2h buffer) — the customer can still
-   pick THIS day and a later time, so the day itself must not be disabled
-   just because part of it was booked.
-
+/* True if `car` has NO valid moment left to pick on this calendar day.
    Mirrors the admin dashboard's isDayFullyBookedAdmin exactly: when this car
    has real fleet units registered, a legacy (no-unitId) booking still claims
    one of the free slots even though it can't be matched to a specific unit —
