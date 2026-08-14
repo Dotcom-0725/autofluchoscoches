@@ -5429,6 +5429,26 @@ function isDayFullyBookedForFleetRange(pickupIso, retIso, catKey){
   if(!candidates.length) return false;
   return candidates.every(c => getRemainingStockForRange(c, pickupIso, retIso) <= 0);
 }
+/* Fleet-wide equivalent of getEarliestAvailableTimeOnDay — the earliest
+   moment on `cellDate` that ANY car matching catKey has a free slot (the
+   soonest across every matching car, not just one). Used to auto-suggest a
+   pickup time for the hero Quick Booking widget the exact same way the
+   car-specific booking modal already does for a single car (see the
+   day-click handler below) — otherwise clicking a pickup day would keep
+   whatever stale time was already typed, which the paired-range check could
+   then wrongly reject even though a later time that same day works fine. */
+function getEarliestAvailableTimeOnDayForFleet(cellDate, catKey){
+  const candidates = CARS.filter(c => carMatchesCategory(c, catKey || 'all'));
+  const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+  if(!candidates.length) return dayStart;
+  let earliest = null;
+  candidates.forEach(c=>{
+    if(isDayFullyBooked(c.id, cellDate)) return; // no free moment at all today for this car
+    const t = getEarliestAvailableTimeOnDay(c.id, cellDate);
+    if(!earliest || t < earliest) earliest = t;
+  });
+  return earliest || dayStart;
+}
 /* Builds the "YYYY-MM-DDTHH:MM" range to test a candidate hero-widget day
    against: cellDate paired with whichever OTHER qb date the customer already
    selected (using the live qbPickupTime/qbReturnTime values — the hero
@@ -5464,6 +5484,16 @@ function isDayUnavailableForInput(input, cellDate){
   if(carId) return isDayFullyBooked(carId, cellDate);
   if(isQuickBookingDateInput(input)){
     const cat = document.getElementById('qbCategory')?.value || 'all';
+    // The PICKUP calendar always uses the day-in-isolation check, matching
+    // the car-specific booking modal's shading exactly — a day where SOME
+    // matching car has SOME free moment must stay clickable even once a
+    // return date is already chosen. The paired-range check was previously
+    // disabling entire pickup days based on whatever pickup TIME happened to
+    // still be typed in from before, when the customer hadn't had a chance
+    // to adjust it for that specific day yet — the day-click handler below
+    // now auto-suggests the fleet's earliest free time instead, so that
+    // stale-time false rejection can no longer happen.
+    if(input.id === 'qbPickupDate') return isDayFullyBookedForFleet(cellDate, cat);
     const paired = getQuickBookingPairedRange(input, cellDate);
     if(paired) return isDayFullyBookedForFleetRange(paired.pickup, paired.ret, cat);
     return isDayFullyBookedForFleet(cellDate, cat);
@@ -5633,6 +5663,23 @@ function openCustomDatePicker(input){
           const pad = n => String(n).padStart(2, '0');
           timeToUse = `${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
           currentTime = timeToUse;
+        } else if(input.id === 'qbPickupDate'){
+          const cat = document.getElementById('qbCategory')?.value || 'all';
+          const earliest = getEarliestAvailableTimeOnDayForFleet(cellDate, cat);
+          const pad = n => String(n).padStart(2, '0');
+          timeToUse = `${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
+          currentTime = timeToUse;
+          // qbPickupDate and qbPickupTime are separate inputs (unlike bkPickup's
+          // combined datetime-local value above), so the computed earliest time
+          // has to be written into the actual time field directly, or the
+          // "Rechercher" search would still run against whatever stale time was
+          // already there.
+          const qbTimeInput = document.getElementById('qbPickupTime');
+          if(qbTimeInput){
+            qbTimeInput.value = timeToUse;
+            qbTimeInput.dispatchEvent(new Event('input', { bubbles: true }));
+            qbTimeInput.dispatchEvent(new Event('change', { bubbles: true }));
+          }
         }
         writeDateValue(input, cellDate, timeToUse);
         // Selecting a day never auto-closes the popup anymore — for both
