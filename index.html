@@ -5484,16 +5484,26 @@ function isDayUnavailableForInput(input, cellDate){
   if(carId) return isDayFullyBooked(carId, cellDate);
   if(isQuickBookingDateInput(input)){
     const cat = document.getElementById('qbCategory')?.value || 'all';
-    // The PICKUP calendar always uses the day-in-isolation check, matching
-    // the car-specific booking modal's shading exactly — a day where SOME
-    // matching car has SOME free moment must stay clickable even once a
-    // return date is already chosen. The paired-range check was previously
-    // disabling entire pickup days based on whatever pickup TIME happened to
-    // still be typed in from before, when the customer hadn't had a chance
-    // to adjust it for that specific day yet — the day-click handler below
-    // now auto-suggests the fleet's earliest free time instead, so that
-    // stale-time false rejection can no longer happen.
-    if(input.id === 'qbPickupDate') return isDayFullyBookedForFleet(cellDate, cat);
+    if(input.id === 'qbPickupDate'){
+      const paired = getQuickBookingPairedRange(input, cellDate);
+      if(!paired) return isDayFullyBookedForFleet(cellDate, cat);
+      // Once a return date is already chosen, a day must still be shaded
+      // red/unavailable if NO matching car can actually complete that
+      // pickup→return span — that real "combined range" check must stay
+      // (a day with a free moment in isolation can still be genuinely
+      // unbookable once paired with the chosen return). What was wrong
+      // before is WHICH pickup time got tested: using whatever stale time
+      // happened to still be sitting in qbPickupTime could reject a day
+      // that a LATER time that same day would satisfy. Re-anchoring the
+      // candidate range at the fleet's own earliest free moment for this
+      // specific day fixes that false rejection while keeping every
+      // genuinely fully-booked day correctly marked booked.
+      const earliest = getEarliestAvailableTimeOnDayForFleet(cellDate, cat);
+      const pad = n => String(n).padStart(2, '0');
+      const earliestTimeStr = `${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
+      const dateStr = `${cellDate.getFullYear()}-${pad(cellDate.getMonth() + 1)}-${pad(cellDate.getDate())}`;
+      return isDayFullyBookedForFleetRange(`${dateStr}T${earliestTimeStr}`, paired.ret, cat);
+    }
     const paired = getQuickBookingPairedRange(input, cellDate);
     if(paired) return isDayFullyBookedForFleetRange(paired.pickup, paired.ret, cat);
     return isDayFullyBookedForFleet(cellDate, cat);

@@ -4,14 +4,14 @@
     {
       "name": "static-python",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8080"],
-      "port": 8080
+      "runtimeArgs": ["-m", "http.server", "8123"],
+      "port": 8123
     },
     {
       "name": "static-npx-serve",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", ".", "-l", "8080"],
-      "port": 8080
+      "runtimeArgs": ["serve", ".", "-l", "8123"],
+      "port": 8123
     }
   ]
 }
