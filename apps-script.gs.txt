@@ -350,13 +350,22 @@ function doPost(e) {
       return jsonResponse_({ success: false, error: 'Missing fields' });
     }
     const id = 'S' + Date.now();
-    getSeasonsSheet_().appendRow([body.name, body.start, body.end, '', '', id]);
+    getSeasonsSheet_().appendRow([body.name, body.start, body.end, '', '', id, !!body.recurring]);
     const pricesSheet = getSeasonPricesSheet_();
     Object.keys(body.prices || {}).forEach(carId => {
       const price = Number(body.prices[carId]);
       if (price > 0) pricesSheet.appendRow([id, carId, price]);
     });
     logActivity_(role, 'add_season', body.name);
+    return jsonResponse_({ success: true });
+  }
+
+  if (body.action === 'updateSeasonRecurring') {
+    const role = roleForPassword_(body.password);
+    if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
+    if (!body.row) return jsonResponse_({ success: false, error: 'Missing row' });
+    getSeasonsSheet_().getRange(Number(body.row), 7).setValue(!!body.recurring);
+    logActivity_(role, 'update_season_recurring', 'Row ' + body.row);
     return jsonResponse_({ success: true });
   }
 
@@ -934,6 +943,7 @@ function listSeasons_() {
       start: formatDateOnly_(rows[i][1]),
       end: formatDateOnly_(rows[i][2]),
       prices: prices,
+      recurring: rows[i][6] === true,
     });
   }
   return seasons;
@@ -1339,11 +1349,13 @@ function getSeasonsSheet_() {
   let sheet = ss.getSheetByName(SEASONS_SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SEASONS_SHEET_NAME);
-    sheet.appendRow(['name', 'start_date', 'end_date', 'type', 'value', 'id']);
-  } else if (sheet.getRange(1, 6).getValue() !== 'id') {
-    // Seasons created before per-car pricing existed only have 5 columns —
-    // append the id column non-destructively instead of touching their data.
-    sheet.getRange(1, 6).setValue('id');
+    sheet.appendRow(['name', 'start_date', 'end_date', 'type', 'value', 'id', 'recurring']);
+  } else {
+    // Seasons created before per-car pricing / yearly recurrence existed have
+    // fewer columns — append headers non-destructively instead of touching
+    // any existing row data.
+    if (sheet.getRange(1, 6).getValue() !== 'id') sheet.getRange(1, 6).setValue('id');
+    if (sheet.getRange(1, 7).getValue() !== 'recurring') sheet.getRange(1, 7).setValue('recurring');
   }
   return sheet;
 }

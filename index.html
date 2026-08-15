@@ -4118,11 +4118,24 @@ document.getElementById('bkPickup').addEventListener('change', ensureBkMinReturn
    modal estimate, checkout total) so the displayed price and the booked
    price can never drift apart. ---- */
 let SEASONAL_PERIODS = [];
+/* Recurring seasons (e.g. "Été", "Noël") repeat every year on the same
+   month/day range regardless of which year they were created in — compare
+   only month+day, not the full date, and handle ranges that wrap across a
+   year boundary (e.g. Dec 20 -> Jan 5). */
+function monthDayNum_(dateStr){
+  const parts = dateStr.split('-');
+  return Number(parts[1]) * 100 + Number(parts[2]);
+}
+function isDateInSeasonRange(dateStr, season){
+  if(!season.recurring) return dateStr >= season.start && dateStr <= season.end;
+  const d = monthDayNum_(dateStr), s = monthDayNum_(season.start), e = monthDayNum_(season.end);
+  return s <= e ? (d >= s && d <= e) : (d >= s || d <= e);
+}
 function getSeasonalDailyRate(car, pickupDatetimeLocal){
   const basePrice = car.price;
   if(!pickupDatetimeLocal) return basePrice;
   const pickupDate = pickupDatetimeLocal.slice(0, 10);
-  const active = SEASONAL_PERIODS.find(p => pickupDate >= p.start && pickupDate <= p.end);
+  const active = SEASONAL_PERIODS.find(p => isDateInSeasonRange(pickupDate, p));
   if(!active) return basePrice;
   const override = active.prices && active.prices[car.id];
   return (typeof override === 'number' && override > 0) ? override : basePrice;

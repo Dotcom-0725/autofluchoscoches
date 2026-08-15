@@ -2168,7 +2168,7 @@ function renderPricingTab(tab){
   const el = document.getElementById('pricingTabBody');
   if(tab === 'seasonal'){
     el.innerHTML = `
-      <div class="section-note">Couvre l'été, les vacances, Noël, les suppléments de week-end ou tout événement spécial — chaque voiture a son propre prix journalier à l'intérieur de chaque période ; une voiture sans prix défini pour une période garde simplement son prix normal.</div>
+      <div class="section-note">Couvre l'été, les vacances, Noël, les suppléments de week-end ou tout événement spécial — chaque voiture a son propre prix journalier à l'intérieur de chaque période ; une voiture sans prix défini pour une période garde simplement son prix normal. Cochez "Se répète chaque année" pour une période comme l'été ou Noël qui revient aux mêmes dates chaque année — plus besoin de la recréer.</div>
       ${isEditor() ? `<div class="card card-pad" style="margin-bottom:20px">
         <b>Ajouter une période tarifaire</b>
         <div class="field-grid" style="margin-top:12px">
@@ -2176,6 +2176,10 @@ function renderPricingTab(tab){
           <div class="field"><label>Date de début</label><input type="date" id="spStart"></div>
           <div class="field"><label>Date de fin</label><input type="date" id="spEnd"></div>
         </div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:.85rem">
+          <input type="checkbox" id="spRecurring" checked>
+          Se répète chaque année (mêmes jour/mois, peu importe l'année — recommandé pour Été, Noël, Vacances…)
+        </label>
         <div style="margin-top:14px;display:flex;gap:8px;align-items:end">
           <div class="field" style="max-width:160px"><label>Remplir tous les prix (%)</label><input type="number" id="spBulkPct" placeholder="ex. 20"></div>
           <button type="button" class="btn btn-secondary btn-sm" id="spBulkApply">Appliquer à tous</button>
@@ -2190,12 +2194,13 @@ function renderPricingTab(tab){
       </div>` : ''}
       <div class="card"><div class="table-wrap">
         <table>
-          <thead><tr><th>Nom</th><th>Début</th><th>Fin</th><th>Prix par voiture</th>${isEditor() ? '<th></th>' : ''}</tr></thead>
+          <thead><tr><th>Nom</th><th>Début</th><th>Fin</th><th>Chaque année</th><th>Prix par voiture</th>${isEditor() ? '<th></th>' : ''}</tr></thead>
           <tbody>
             ${state.seasons.map(s => `<tr><td>${s.name}</td><td>${s.start}</td><td>${s.end}</td>
+              <td>${isEditor() ? `<label style="display:flex;align-items:center;gap:6px"><input type="checkbox" data-toggle-recurring="${s.row}" ${s.recurring ? 'checked' : ''}> 🔁</label>` : (s.recurring ? '🔁 Oui' : 'Non')}</td>
               <td><button type="button" class="btn btn-secondary btn-sm" data-toggle-season-prices="${s.id}">Modifier les prix</button></td>
               ${isEditor() ? `<td><button class="btn btn-danger btn-sm" data-del-season="${s.row}">Supprimer</button></td>` : ''}</tr>
-              <tr class="season-prices-row" data-season-prices-row="${s.id}" style="display:none"><td colspan="${isEditor() ? 5 : 4}">
+              <tr class="season-prices-row" data-season-prices-row="${s.id}" style="display:none"><td colspan="${isEditor() ? 6 : 5}">
                 <div class="field-grid">
                   ${state.cars.map(c => `<div class="field"><label>${c.name}</label><input type="number" data-season-price-input data-season-id="${s.id}" data-car-id="${c.id}" value="${s.prices && s.prices[c.id] ? s.prices[c.id] : ''}" placeholder="${c.price} € (normal)" ${isEditor() ? '' : 'disabled'}></div>`).join('')}
                 </div>
@@ -2228,10 +2233,16 @@ function renderPricingTab(tab){
           const val = document.getElementById(`spPrice_${c.id}`)?.value;
           if(val) prices[c.id] = Number(val);
         });
-        const r = await apiPost({ action: 'addSeason', name, start, end, prices });
+        const recurring = document.getElementById('spRecurring').checked;
+        const r = await apiPost({ action: 'addSeason', name, start, end, prices, recurring });
         if(r.success){ toast('Période ajoutée'); await refreshAdminData(); renderPricingTab('seasonal'); }
         else toast(r.error || 'Échec');
       });
+      el.querySelectorAll('[data-toggle-recurring]').forEach(cb => cb.addEventListener('change', async ()=>{
+        const r = await apiPost({ action: 'updateSeasonRecurring', row: cb.dataset.toggleRecurring, recurring: cb.checked });
+        if(r.success){ toast(cb.checked ? 'Se répète chaque année désormais' : 'Ne se répète plus automatiquement'); await refreshAdminData(); }
+        else { toast(r.error || 'Échec'); cb.checked = !cb.checked; }
+      }));
       el.querySelectorAll('[data-del-season]').forEach(b => b.addEventListener('click', async ()=>{
         const r = await apiPost({ action: 'deleteSeason', row: b.dataset.delSeason });
         if(r.success){ toast('Période supprimée'); await refreshAdminData(); renderPricingTab('seasonal'); }
