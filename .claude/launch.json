@@ -4,14 +4,16 @@
     {
       "name": "static-python",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8123"],
-      "port": 8123
+      "runtimeArgs": ["-c", "import os,http.server,socketserver; PORT=int(os.environ.get('PORT','8123')); Handler=http.server.SimpleHTTPRequestHandler; socketserver.TCPServer.allow_reuse_address=True; socketserver.TCPServer(('0.0.0.0',PORT),Handler).serve_forever()"],
+      "port": 8123,
+      "autoPort": true
     },
     {
       "name": "static-npx-serve",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", ".", "-l", "8123"],
-      "port": 8123
+      "runtimeArgs": ["serve", "."],
+      "port": 8123,
+      "autoPort": true
     }
   ]
 }

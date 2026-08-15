@@ -49,6 +49,7 @@
 
 const BOOKINGS_SHEET_NAME = 'Bookings';
 const SEASONS_SHEET_NAME = 'Seasons';
+const SEASON_PRICES_SHEET_NAME = 'SeasonPrices';
 const CARS_SHEET_NAME = 'Cars';
 const SETTINGS_SHEET_NAME = 'Settings';
 const ACTIVITY_SHEET_NAME = 'ActivityLog';
@@ -345,13 +346,40 @@ function doPost(e) {
   if (body.action === 'addSeason') {
     const role = roleForPassword_(body.password);
     if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
-    if (!body.name || !body.start || !body.end || !body.value) {
+    if (!body.name || !body.start || !body.end) {
       return jsonResponse_({ success: false, error: 'Missing fields' });
     }
-    getSeasonsSheet_().appendRow([
-      body.name, body.start, body.end, body.type === 'fixed' ? 'fixed' : 'percent', Number(body.value),
-    ]);
+    const id = 'S' + Date.now();
+    getSeasonsSheet_().appendRow([body.name, body.start, body.end, '', '', id]);
+    const pricesSheet = getSeasonPricesSheet_();
+    Object.keys(body.prices || {}).forEach(carId => {
+      const price = Number(body.prices[carId]);
+      if (price > 0) pricesSheet.appendRow([id, carId, price]);
+    });
     logActivity_(role, 'add_season', body.name);
+    return jsonResponse_({ success: true });
+  }
+
+  if (body.action === 'updateSeasonPrice') {
+    const role = roleForPassword_(body.password);
+    if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
+    if (!body.seasonId || !body.carId) return jsonResponse_({ success: false, error: 'Missing fields' });
+    const sheet = getSeasonPricesSheet_();
+    const rows = sheet.getDataRange().getValues();
+    let existingRow = -1;
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] === body.seasonId && rows[i][1] === body.carId) { existingRow = i + 1; break; }
+    }
+    const price = Number(body.price);
+    if (price > 0) {
+      if (existingRow > 0) sheet.getRange(existingRow, 3).setValue(price);
+      else sheet.appendRow([body.seasonId, body.carId, price]);
+    } else if (existingRow > 0) {
+      // Blank/zero price means "no override" — remove the row so the car
+      // falls back to its normal base price for this season.
+      sheet.deleteRow(existingRow);
+    }
+    logActivity_(role, 'update_season_price', body.seasonId + ' / ' + body.carId);
     return jsonResponse_({ success: true });
   }
 
@@ -359,7 +387,17 @@ function doPost(e) {
     const role = roleForPassword_(body.password);
     if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
     if (!body.row) return jsonResponse_({ success: false, error: 'Missing row' });
-    getSeasonsSheet_().deleteRow(Number(body.row));
+    const seasonsSheet = getSeasonsSheet_();
+    const seasonRowNum = Number(body.row);
+    const seasonId = seasonsSheet.getRange(seasonRowNum, 6).getValue();
+    seasonsSheet.deleteRow(seasonRowNum);
+    if (seasonId) {
+      const pricesSheet = getSeasonPricesSheet_();
+      const rows = pricesSheet.getDataRange().getValues();
+      for (let i = rows.length - 1; i >= 1; i--) {
+        if (rows[i][0] === seasonId) pricesSheet.deleteRow(i + 1);
+      }
+    }
     logActivity_(role, 'delete_season', 'Row ' + body.row);
     return jsonResponse_({ success: true });
   }
@@ -866,18 +904,36 @@ function findBookingRowByRef_(ref) {
   return -1;
 }
 
+function listSeasonPrices_() {
+  const rows = getSeasonPricesSheet_().getDataRange().getValues();
+  const prices = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (!rows[i][0] || !rows[i][1]) continue;
+    prices.push({ row: i + 1, seasonId: rows[i][0], carId: rows[i][1], price: Number(rows[i][2]) });
+  }
+  return prices;
+}
+
+// Each season's daily rate is set per car (see SeasonPrices sheet / the
+// Tarification tab in admin.html) — cars with no entry for a season simply
+// keep their normal base price for that period, so seasons and base prices
+// never need to be edited in the same place.
 function listSeasons_() {
   const rows = getSeasonsSheet_().getDataRange().getValues();
+  const allPrices = listSeasonPrices_();
   const seasons = [];
   for (let i = 1; i < rows.length; i++) {
     if (!rows[i][0]) continue;
+    const id = rows[i][5] || ('row' + (i + 1));
+    const prices = {};
+    allPrices.forEach(p => { if (p.seasonId === id) prices[p.carId] = p.price; });
     seasons.push({
       row: i + 1,
+      id: id,
       name: rows[i][0],
       start: formatDateOnly_(rows[i][1]),
       end: formatDateOnly_(rows[i][2]),
-      type: rows[i][3] || 'percent',
-      value: rows[i][4],
+      prices: prices,
     });
   }
   return seasons;
@@ -1283,7 +1339,20 @@ function getSeasonsSheet_() {
   let sheet = ss.getSheetByName(SEASONS_SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SEASONS_SHEET_NAME);
-    sheet.appendRow(['name', 'start_date', 'end_date', 'type', 'value']);
+    sheet.appendRow(['name', 'start_date', 'end_date', 'type', 'value', 'id']);
+  } else if (sheet.getRange(1, 6).getValue() !== 'id') {
+    // Seasons created before per-car pricing existed only have 5 columns —
+    // append the id column non-destructively instead of touching their data.
+    sheet.getRange(1, 6).setValue('id');
+  }
+  return sheet;
+}
+function getSeasonPricesSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SEASON_PRICES_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SEASON_PRICES_SHEET_NAME);
+    sheet.appendRow(['season_id', 'car_id', 'price']);
   }
   return sheet;
 }

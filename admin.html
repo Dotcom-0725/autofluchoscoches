@@ -2168,44 +2168,78 @@ function renderPricingTab(tab){
   const el = document.getElementById('pricingTabBody');
   if(tab === 'seasonal'){
     el.innerHTML = `
-      <div class="section-note">Couvre l'été, les vacances, Noël, les suppléments de week-end ou tout événement spécial — chaque période applique automatiquement un ajustement en % ou en € fixe au prix journalier de chaque voiture lorsque la date de prise en charge y correspond.</div>
+      <div class="section-note">Couvre l'été, les vacances, Noël, les suppléments de week-end ou tout événement spécial — chaque voiture a son propre prix journalier à l'intérieur de chaque période ; une voiture sans prix défini pour une période garde simplement son prix normal.</div>
       ${isEditor() ? `<div class="card card-pad" style="margin-bottom:20px">
         <b>Ajouter une période tarifaire</b>
         <div class="field-grid" style="margin-top:12px">
           <div class="field"><label>Nom</label><input id="spName" placeholder="Été, Noël, Week-end…"></div>
-          <div class="field"><label>Type</label><select id="spType"><option value="percent">Augmentation en %</option><option value="fixed">€ fixe / jour</option></select></div>
           <div class="field"><label>Date de début</label><input type="date" id="spStart"></div>
           <div class="field"><label>Date de fin</label><input type="date" id="spEnd"></div>
-          <div class="field"><label>Valeur</label><input type="number" id="spValue" placeholder="ex. 20"></div>
         </div>
-        <button class="btn btn-primary" id="spAdd">Ajouter la période</button>
+        <div style="margin-top:14px;display:flex;gap:8px;align-items:end">
+          <div class="field" style="max-width:160px"><label>Remplir tous les prix (%)</label><input type="number" id="spBulkPct" placeholder="ex. 20"></div>
+          <button type="button" class="btn btn-secondary btn-sm" id="spBulkApply">Appliquer à tous</button>
+        </div>
+        <div style="margin-top:14px">
+          <label style="font-size:.82rem;color:var(--ink-dim)">Prix journalier par voiture (laisser vide = prix normal)</label>
+          <div class="field-grid" style="margin-top:8px">
+            ${state.cars.map(c => `<div class="field"><label>${c.name}</label><input type="number" id="spPrice_${c.id}" placeholder="${c.price} € (normal)"></div>`).join('')}
+          </div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:14px" id="spAdd">Créer la période</button>
       </div>` : ''}
       <div class="card"><div class="table-wrap">
         <table>
-          <thead><tr><th>Nom</th><th>Début</th><th>Fin</th><th>Ajustement</th>${isEditor() ? '<th></th>' : ''}</tr></thead>
+          <thead><tr><th>Nom</th><th>Début</th><th>Fin</th><th>Prix par voiture</th>${isEditor() ? '<th></th>' : ''}</tr></thead>
           <tbody>
-            ${state.seasons.map(s => `<tr><td>${s.name}</td><td>${s.start}</td><td>${s.end}</td><td>${s.type==='fixed' ? '+€'+s.value+'/jour' : '+'+s.value+'%'}</td>
-              ${isEditor() ? `<td><button class="btn btn-danger btn-sm" data-del-season="${s.row}">Supprimer</button></td>` : ''}</tr>`).join('')
+            ${state.seasons.map(s => `<tr><td>${s.name}</td><td>${s.start}</td><td>${s.end}</td>
+              <td><button type="button" class="btn btn-secondary btn-sm" data-toggle-season-prices="${s.id}">Modifier les prix</button></td>
+              ${isEditor() ? `<td><button class="btn btn-danger btn-sm" data-del-season="${s.row}">Supprimer</button></td>` : ''}</tr>
+              <tr class="season-prices-row" data-season-prices-row="${s.id}" style="display:none"><td colspan="${isEditor() ? 5 : 4}">
+                <div class="field-grid">
+                  ${state.cars.map(c => `<div class="field"><label>${c.name}</label><input type="number" data-season-price-input data-season-id="${s.id}" data-car-id="${c.id}" value="${s.prices && s.prices[c.id] ? s.prices[c.id] : ''}" placeholder="${c.price} € (normal)" ${isEditor() ? '' : 'disabled'}></div>`).join('')}
+                </div>
+              </td></tr>`).join('')
               || `<tr><td colspan="5" class="empty-state">Aucune période tarifaire pour le moment.</td></tr>`}
           </tbody>
         </table>
       </div></div>
     `;
+    el.querySelectorAll('[data-toggle-season-prices]').forEach(b => b.addEventListener('click', ()=>{
+      const row = el.querySelector(`[data-season-prices-row="${b.dataset.toggleSeasonPrices}"]`);
+      if(row) row.style.display = row.style.display === 'none' ? '' : 'none';
+    }));
     if(isEditor()){
+      document.getElementById('spBulkApply').addEventListener('click', ()=>{
+        const pct = Number(document.getElementById('spBulkPct').value);
+        if(!pct) return;
+        state.cars.forEach(c=>{
+          const input = document.getElementById(`spPrice_${c.id}`);
+          if(input) input.value = Math.round(c.price * (1 + pct / 100));
+        });
+      });
       document.getElementById('spAdd').addEventListener('click', async ()=>{
         const name = document.getElementById('spName').value.trim();
         const start = document.getElementById('spStart').value;
         const end = document.getElementById('spEnd').value;
-        const value = document.getElementById('spValue').value;
-        const type = document.getElementById('spType').value;
-        if(!name || !start || !end || !value){ toast('Veuillez remplir tous les champs'); return; }
-        const r = await apiPost({ action: 'addSeason', name, start, end, value, type });
+        if(!name || !start || !end){ toast('Veuillez remplir tous les champs'); return; }
+        const prices = {};
+        state.cars.forEach(c=>{
+          const val = document.getElementById(`spPrice_${c.id}`)?.value;
+          if(val) prices[c.id] = Number(val);
+        });
+        const r = await apiPost({ action: 'addSeason', name, start, end, prices });
         if(r.success){ toast('Période ajoutée'); await refreshAdminData(); renderPricingTab('seasonal'); }
         else toast(r.error || 'Échec');
       });
       el.querySelectorAll('[data-del-season]').forEach(b => b.addEventListener('click', async ()=>{
         const r = await apiPost({ action: 'deleteSeason', row: b.dataset.delSeason });
         if(r.success){ toast('Période supprimée'); await refreshAdminData(); renderPricingTab('seasonal'); }
+      }));
+      el.querySelectorAll('[data-season-price-input]').forEach(input => input.addEventListener('change', async ()=>{
+        const r = await apiPost({ action: 'updateSeasonPrice', seasonId: input.dataset.seasonId, carId: input.dataset.carId, price: input.value });
+        if(r.success){ toast('Prix mis à jour'); await refreshAdminData(); }
+        else toast(r.error || 'Échec');
       }));
     }
   } else {

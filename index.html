@@ -3318,7 +3318,7 @@ function renderFleet(dict, cat){
       </div>
       <div class="car-body">
         <h3>${c.name}</h3>
-        <div class="car-price">${fmtPrice(c.price)} <span>${dict.per_day}</span></div>
+        <div class="car-price">${fmtPrice(getSeasonalDailyRate(c, qbRange.pickup))} <span>${dict.per_day}</span></div>
         <div class="car-specs">
           <span>👥 ${c.seats} ${dict.seats}</span>
           <span>⚙️ ${gearLabel}</span>
@@ -4109,16 +4109,23 @@ function ensureBkMinReturn(){
 document.getElementById('bkPickup').addEventListener('change', ensureBkMinReturn);
 
 /* ---- Seasonal pricing: admin-defined periods (Summer/Holidays/Christmas/
-   Special events) override the car's daily rate automatically when the
-   pickup date falls inside one. Empty until the agency creates periods in
-   the admin panel — no invented seasonal prices. ---- */
+   Special events) override each car's daily rate independently — a season
+   carries a price PER CAR (active.prices[car.id]), not one adjustment
+   applied to every car alike. A car with no explicit price for an active
+   season simply keeps its normal base price. Empty until the agency creates
+   periods in the admin panel — no invented seasonal prices. This is the
+   single function used everywhere a price is shown (fleet cards, booking
+   modal estimate, checkout total) so the displayed price and the booked
+   price can never drift apart. ---- */
 let SEASONAL_PERIODS = [];
-function getSeasonalDailyRate(basePrice, pickupDatetimeLocal){
+function getSeasonalDailyRate(car, pickupDatetimeLocal){
+  const basePrice = car.price;
   if(!pickupDatetimeLocal) return basePrice;
   const pickupDate = pickupDatetimeLocal.slice(0, 10);
   const active = SEASONAL_PERIODS.find(p => pickupDate >= p.start && pickupDate <= p.end);
   if(!active) return basePrice;
-  return active.type === 'percent' ? basePrice * (1 + active.value / 100) : basePrice + active.value;
+  const override = active.prices && active.prices[car.id];
+  return (typeof override === 'number' && override > 0) ? override : basePrice;
 }
 async function fetchSeasonalPeriods(){
   try {
@@ -4175,7 +4182,7 @@ function updateTotal(){
   const deposit = DEPOSITS[document.getElementById('bkDeposit').value || 0];
   const resourcesFee = getResourcesBreakdown('bk').fee;
   const outsideHoursFee = getOutsideHoursFee('bkPickup', 'bkReturn');
-  const seasonalRate = getSeasonalDailyRate(activeBookingCar.price, document.getElementById('bkPickup').value);
+  const seasonalRate = getSeasonalDailyRate(activeBookingCar, document.getElementById('bkPickup').value);
 
   const total = (seasonalRate * days)
     + pickupLoc.fee + dropoffLoc.fee
@@ -4647,7 +4654,7 @@ bookingForm.addEventListener('submit', async e=>{
   // Itemized breakdown behind `total` above — see buildPriceBreakdownLines.
   const priceBreakdown = buildPriceBreakdownLines(dict, {
     basePrice: activeBookingCar.price,
-    seasonalRate: getSeasonalDailyRate(activeBookingCar.price, pickup),
+    seasonalRate: getSeasonalDailyRate(activeBookingCar, pickup),
     days: computeDays('bkPickup', 'bkReturn'),
     pickupFee: pickupLocData.fee, dropoffFee: dropoffLocData.fee,
     depositSurcharge: depositData.surcharge,
