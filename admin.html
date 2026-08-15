@@ -477,6 +477,7 @@ function navigate(view){
 
 /* ---------------- Shared helpers ---------------- */
 function bookingStatus(b){
+  if(b.bookingStatus === 'cancelled') return { label: 'Annulée', cls: 'pill-red' };
   const now = new Date();
   const ret = new Date(b.ret);
   const pickup = new Date(b.pickup);
@@ -485,8 +486,19 @@ function bookingStatus(b){
   return { label: 'À venir', cls: 'pill-blue' };
 }
 function carById(id){ return state.cars.find(c => c.id === id); }
+/* Bookings that actually occupy a car/unit right now — excludes cancelled
+   ones (bookingStatus === 'cancelled'), which the backend keeps as
+   permanent history instead of deleting (see the `cancel` action in
+   apps-script.gs.txt) but which must never keep blocking availability.
+   Every stock/overlap/day-shading check below reads from this instead of
+   raw state.bookings; only the Reservations table, Customers list, Reports,
+   and CSV exports intentionally still use state.bookings directly, since
+   those are meant to show the full history including cancellations. */
+function occupyingBookings(){
+  return state.bookings.filter(b => b.bookingStatus !== 'cancelled');
+}
 function remainingStock(car){
-  const booked = state.bookings.filter(b => b.carId === car.id).length;
+  const booked = occupyingBookings().filter(b => b.carId === car.id).length;
   return Math.max(0, (Number(car.stock) || 1) - booked);
 }
 
@@ -505,7 +517,7 @@ function rangesOverlapAdmin(startA, endA, startB, endB){
          new Date(startA).getTime() < new Date(endB).getTime() + CAR_TURNAROUND_BUFFER_MS_ADMIN;
 }
 function getOverlapCountAdmin(carId, pickupVal, retVal, excludeRow){
-  const bookingsPool = excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings;
+  const bookingsPool = excludeRow ? occupyingBookings().filter(b => b.row !== excludeRow) : occupyingBookings();
   return bookingsPool.filter(b => b.carId === carId && rangesOverlapAdmin(pickupVal, retVal, b.pickup, b.ret)).length;
 }
 /* The earliest moment AT OR AFTER `afterMs` (on the SAME calendar day) that
@@ -519,7 +531,7 @@ function getOverlapCountAdmin(carId, pickupVal, retVal, excludeRow){
 function getEarliestAvailableTimeAfterAdmin_(carId, afterMs, stock, excludeRow){
   const dayStart = new Date(new Date(afterMs).getFullYear(), new Date(afterMs).getMonth(), new Date(afterMs).getDate());
   const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
-  const bookingsPool = (excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings)
+  const bookingsPool = (excludeRow ? occupyingBookings().filter(b => b.row !== excludeRow) : occupyingBookings())
     .filter(b => b.carId === carId);
   const intervals = bookingsPool
     .map(b => ({ start: new Date(b.pickup).getTime() - CAR_TURNAROUND_BUFFER_MS_ADMIN, end: new Date(b.ret).getTime() + CAR_TURNAROUND_BUFFER_MS_ADMIN }))
@@ -578,7 +590,7 @@ function isDayFullyBookedAdmin(carId, cellDate, excludeRow){
   // moment where the busy count can hit a new low — the start of the day,
   // and each interval's end+buffer — since those are the only points a
   // previously fully-busy day can become free again.
-  const bookingsPool = excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings;
+  const bookingsPool = excludeRow ? occupyingBookings().filter(b => b.row !== excludeRow) : occupyingBookings();
   const units = state.fleetUnits.filter(u => u.carId === carId);
   if(units.length > 0){
     const intervals = bookingsPool
@@ -645,7 +657,7 @@ function getEarliestAvailableTimeOnDayAdmin(carId, cellDate, excludeRow){
   const car = carById(carId);
   if(!car) return dayStart;
   const stock = Number(car.stock) || 1;
-  const bookingsPool = (excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings)
+  const bookingsPool = (excludeRow ? occupyingBookings().filter(b => b.row !== excludeRow) : occupyingBookings())
     .filter(b => b.carId === carId);
   // Buffer applies on BOTH sides of each existing booking (see
   // isDayFullyBookedAdmin above) — a candidate pickup time must also leave
@@ -672,7 +684,7 @@ function getEarliestAvailableTimeOnDayAdmin(carId, cellDate, excludeRow){
 function getEarliestAvailableTimeForUnitAdmin(unitId, carId, cellDate, excludeRow){
   const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
   const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
-  const bookingsPool = (excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings)
+  const bookingsPool = (excludeRow ? occupyingBookings().filter(b => b.row !== excludeRow) : occupyingBookings())
     .filter(b => b.carId === carId && (b.unitId === unitId || !b.unitId));
   // Buffer applies on BOTH sides of each existing booking — see
   // isDayFullyBookedAdmin above.
@@ -696,7 +708,7 @@ function getEarliestAvailableTimeForUnitAdmin(unitId, carId, cellDate, excludeRo
    actually blocked there, never here. */
 function getDelayedAvailabilityForUnitAdmin(unitId, carId, pickupVal, retVal, excludeRow){
   if(!pickupVal || !retVal) return { status: 'unknown' };
-  const bookingsPool = (excludeRow ? state.bookings.filter(b => b.row !== excludeRow) : state.bookings)
+  const bookingsPool = (excludeRow ? occupyingBookings().filter(b => b.row !== excludeRow) : occupyingBookings())
     .filter(b => b.carId === carId && (b.unitId === unitId || !b.unitId));
   const conflict = bookingsPool.some(b => rangesOverlapAdmin(pickupVal, retVal, b.pickup, b.ret));
   if(!conflict) return { status: 'available' };
@@ -1173,7 +1185,7 @@ function renderInventory(){
         <thead><tr><th>Véhicule</th><th>Stock total</th><th>Actuellement réservé</th><th>Disponible maintenant</th>${isEditor() ? '<th>Ajuster</th>' : ''}</tr></thead>
         <tbody>
           ${state.cars.map(c => {
-            const booked = state.bookings.filter(b=>b.carId===c.id).length;
+            const booked = occupyingBookings().filter(b=>b.carId===c.id).length;
             return `<tr>
               <td><b>${c.name}</b></td>
               <td>${c.stock}</td>
@@ -1232,7 +1244,7 @@ function fleetUnitStatusMeta(status){
    unitId, so it always reflects reality without any manual upkeep. */
 function liveUnitBookingLabel(unitId){
   const now = new Date();
-  const bookingsForUnit = state.bookings.filter(b => b.unitId === unitId);
+  const bookingsForUnit = occupyingBookings().filter(b => b.unitId === unitId);
   const active = bookingsForUnit.find(b => new Date(b.pickup) <= now && now <= new Date(b.ret));
   if(active) return { text: `Réservée jusqu'au ${fmtDate(active.ret)}`, pill: 'pill-red' };
   const upcoming = bookingsForUnit
@@ -1784,7 +1796,7 @@ function renderReservationsRows(){
         <button class="btn btn-outline btn-sm" data-edit="${b.row}">Modifier</button>
         <button class="btn btn-outline btn-sm" data-pdf="${b.row}">🖨️ PDF</button>
         <button class="btn btn-outline btn-sm" data-whatsapp="${b.row}">💬 WhatsApp</button>
-        <button class="btn btn-danger btn-sm" data-cancel="${b.row}">Annuler</button>
+        ${b.bookingStatus === 'cancelled' ? '' : `<button class="btn btn-danger btn-sm" data-cancel="${b.row}">Annuler</button>`}
       </td>
     </tr>`;
   }).join('') || `<tr><td colspan="13" class="empty-state">${
@@ -1811,9 +1823,9 @@ function renderReservationsRows(){
     if(booking) openWhatsAppLink(booking);
   }));
   tbody.querySelectorAll('[data-cancel]').forEach(btn => btn.addEventListener('click', async ()=>{
-    if(!confirm('Annuler cette réservation et libérer le véhicule ?')) return;
+    if(!confirm("Annuler cette réservation et libérer le véhicule ? Elle restera visible dans l'historique avec le statut « Annulée ».")) return;
     const r = await apiPost({ action: 'cancel', row: btn.dataset.cancel });
-    if(r.success){ toast('Réservation annulée'); await refreshAdminData(); renderReservationsRows(); }
+    if(r.success){ toast('Réservation annulée — véhicule libéré, historique conservé'); await refreshAdminData(); renderReservationsRows(); }
     else toast(r.error || 'Échec');
   }));
   tbody.querySelectorAll('.payment-status-select').forEach(sel => sel.addEventListener('change', async ()=>{

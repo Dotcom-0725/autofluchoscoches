@@ -160,7 +160,7 @@ function doGet(e) {
   const bookedCounts = {};
   const bookedReturns = {};
   const bookedIntervals = {};
-  listActiveBookings_().forEach(b => {
+  listOccupyingBookings_().forEach(b => {
     bookedCounts[b.carId] = (bookedCounts[b.carId] || 0) + 1;
     if (!bookedReturns[b.carId]) bookedReturns[b.carId] = [];
     if (b.ret) bookedReturns[b.carId].push(new Date(b.ret).toISOString());
@@ -228,11 +228,15 @@ function doPost(e) {
     if (!body.row) return jsonResponse_({ success: false, error: 'Missing row' });
     const cancelSheet = getBookingsSheet_();
     const cancelRowNum = Number(body.row);
-    // Read the booking's own data before deleting the row — the Telegram
-    // notification below needs it, and there's nothing left to read once
-    // deleteRow() runs.
     const cancelledBooking = cancelSheet.getRange(cancelRowNum, 1, 1, 21).getValues()[0];
-    cancelSheet.deleteRow(cancelRowNum);
+    // Soft-cancel: mark the row 'cancelled' (booking_status, column 15)
+    // instead of deleting it, so the customer's record stays in the
+    // Reservations history — the owner explicitly wants to keep proof a
+    // booking existed and was cancelled, not just silently lose the row.
+    // The car/unit frees up immediately regardless, because every
+    // availability computation reads listOccupyingBookings_() (which
+    // excludes 'cancelled' rows), not the raw sheet contents.
+    cancelSheet.getRange(cancelRowNum, 15).setValue('cancelled');
     logActivity_(role, 'cancel_booking', 'Row ' + body.row);
     if (cancelledBooking[0]) {
       sendTelegramMessage_(
@@ -592,7 +596,10 @@ function doPost(e) {
     if (pickupDate && new Date(pickupDate).getTime() - Date.now() < CANCELLATION_WINDOW_HOURS * 60 * 60 * 1000) {
       return jsonResponse_({ success: false, error: 'cancellation_window_passed' });
     }
-    sheet.deleteRow(row);
+    // Soft-cancel (see the admin `cancel` action above for the full
+    // rationale): mark booking_status 'cancelled' instead of deleting the
+    // row, so the customer's own booking history still shows it happened.
+    sheet.getRange(row, 15).setValue('cancelled');
     return jsonResponse_({ success: true });
   }
 
@@ -717,7 +724,7 @@ function doPost(e) {
      / raced choice can never double-book a unit. */
 function findAvailableUnitForBooking_(carId, pickup, ret, stock, excludeRow, manualUnitId) {
   const units = listFleetUnits_().filter(u => u.carId === carId);
-  const bookingsPool = excludeRow ? listActiveBookings_().filter(b => b.row !== excludeRow) : listActiveBookings_();
+  const bookingsPool = excludeRow ? listOccupyingBookings_().filter(b => b.row !== excludeRow) : listOccupyingBookings_();
   if (units.length === 0) {
     const overlapping = pickup && ret
       ? bookingsPool.filter(b => b.carId === carId && rangesOverlap_(pickup, ret, b.pickup, b.ret)).length
@@ -748,14 +755,19 @@ function findAvailableUnitForBooking_(carId, pickup, ret, stock, excludeRow, man
 /* Frees up stock automatically once a booking's return date has passed.
    Installed as an hourly time-driven trigger (see v3 setup notes). Also
    checks pending "notify me" requests afterwards, since freeing stock here
-   is exactly the moment a sold-out car might become bookable again. */
+   is exactly the moment a sold-out car might become bookable again.
+   Cancelled bookings (bookingStatus === 'cancelled', column 15) are never
+   deleted here — they already don't occupy any stock (see
+   listOccupyingBookings_), so there's nothing left to "expire" for them; the
+   row stays as permanent history, same as the `cancel` action intends. */
 function autoExpireBookings() {
   const sheet = getBookingsSheet_();
   const rows = sheet.getDataRange().getValues();
   const now = new Date();
   for (let i = rows.length - 1; i >= 1; i--) {
     const ret = rows[i][5];
-    if (ret && new Date(ret) < now) {
+    const bookingStatus = rows[i][14];
+    if (ret && new Date(ret) < now && bookingStatus !== 'cancelled') {
       sheet.deleteRow(i + 1);
     }
   }
@@ -773,7 +785,7 @@ function notifyAvailabilityRequests_() {
   if (rows.length < 2) return;
   const cars = listCars_();
   const bookedCounts = {};
-  listActiveBookings_().forEach(b => { bookedCounts[b.carId] = (bookedCounts[b.carId] || 0) + 1; });
+  listOccupyingBookings_().forEach(b => { bookedCounts[b.carId] = (bookedCounts[b.carId] || 0) + 1; });
   for (let i = rows.length - 1; i >= 1; i--) {
     const carId = rows[i][0];
     const car = cars.find(c => c.id === carId);
@@ -831,6 +843,18 @@ function listActiveBookings_() {
     });
   }
   return bookings;
+}
+/* Cancelling a booking now keeps its row in the sheet (bookingStatus set to
+   'cancelled') instead of deleting it, so the customer's history stays on
+   record — see the `cancel` and `customerCancelBooking` actions in doPost.
+   That means listActiveBookings_() above (used for the admin dashboard's
+   Reservations table and a customer's own "My Account" history) returns
+   cancelled bookings too, on purpose. Anything that decides whether a car/
+   unit is actually OCCUPIED — availability shading, conflict checks at
+   booking time, "notify me when free" — must use THIS filtered view instead,
+   or a cancelled booking would keep blocking the car forever. */
+function listOccupyingBookings_() {
+  return listActiveBookings_().filter(b => b.bookingStatus !== 'cancelled');
 }
 /* Finds a booking row by its reference code (unique per booking). Returns
    the 1-indexed sheet row number, or -1 if not found. */

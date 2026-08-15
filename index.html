@@ -4830,7 +4830,7 @@ function renderAccountBookings(bookings){
         <b>${b.carName || ''}</b>
         <div class="admin-booking-details">
           ${formatDateTimeForPdf(b.pickup, dict.htmlLang)} → ${formatDateTimeForPdf(b.ret, dict.htmlLang)}<br>
-          ${dict.account_ref_label} ${b.ref || '—'} · <span class="account-booking-status">${paymentStatusLabelForAccount(b.paymentStatus, dict)}</span>${b.total ? ' · ' + b.total : ''}
+          ${dict.account_ref_label} ${b.ref || '—'} · <span class="account-booking-status">${isCancelled ? dict.account_payment_cancelled : paymentStatusLabelForAccount(b.paymentStatus, dict)}</span>${b.total ? ' · ' + b.total : ''}
         </div>
       </div>
       <div class="account-booking-actions">
