@@ -1581,14 +1581,17 @@ const PDF_FR = {
   pickup: 'Date de prise en charge', ret: 'Date de retour', nationality: 'Nationalité',
   license: 'Permis de conduire', passport: 'Passeport',
   pickup_loc: 'Lieu de prise en charge', dropoff_loc: 'Lieu de retour',
+  email: 'Email', unit: 'Unité assignée', flight_number: 'Numéro de vol',
+  license_years: "Années d'obtention du permis de conduire", deposit: 'Caution',
+  resources: 'Ressources', notes: 'Remarques',
 };
-/* Reservation PDF — identical visual layout to index.html's generateBookingPdf.
-   Pickup/drop-off location is now persisted on the Bookings sheet (see
-   ADMIN_LOCATIONS / adminLocationOptions above) and shown here when present.
-   Other `data` fields the sheet still doesn't store (deposit choice,
-   resources, license years) are simply omitted from the bullet list when
-   absent, the same way regardless of whether the booking came from the
-   website or a manual reservation. */
+/* Reservation PDF — identical visual layout and field set to index.html's
+   generateBookingPdf, both sourced from the same persisted Bookings sheet
+   columns (see apps-script.gs.txt) — so a booking placed on the website and
+   one created manually from this dashboard always produce an identical PDF,
+   and reprinting an old booking here shows exactly what the original
+   Telegram/email notification and checkout PDF showed. Fields genuinely
+   absent (e.g. no email left, no flight number) are simply omitted. */
 async function generateReservationPdfAdmin(data){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -1651,11 +1654,23 @@ async function generateReservationPdfAdmin(data){
     [PDF_FR.pickup, data.pickup],
     [PDF_FR.ret, data.ret],
   ];
+  if(data.email) bullets.push([PDF_FR.email, data.email]);
   if(data.nationality) bullets.push([PDF_FR.nationality, data.nationality]);
-  if(data.pickupLoc) bullets.push([PDF_FR.pickup_loc, data.pickupLoc]);
-  if(data.dropoffLoc) bullets.push([PDF_FR.dropoff_loc, data.dropoffLoc]);
   if(data.licenseUrl) bullets.push([PDF_FR.license, 'Voir le document', data.licenseUrl]);
   if(data.passportUrl) bullets.push([PDF_FR.passport, 'Voir le document', data.passportUrl]);
+  if(data.licenseYears) bullets.push([PDF_FR.license_years, String(data.licenseYears)]);
+  if(data.unit) bullets.push([PDF_FR.unit, data.unit]);
+  if(data.pickupLoc) bullets.push([PDF_FR.pickup_loc, data.pickupLoc]);
+  if(data.dropoffLoc) bullets.push([PDF_FR.dropoff_loc, data.dropoffLoc]);
+  if(data.flightNumber) bullets.push([PDF_FR.flight_number, data.flightNumber]);
+  if(data.deposit) bullets.push([PDF_FR.deposit, data.deposit]);
+  if(data.resources) bullets.push([PDF_FR.resources, data.resources]);
+  // Itemized price breakdown (base × days, seasonal adjustment, location
+  // fees, no-deposit surcharge, outside-hours surcharge) — same persisted
+  // "Label: value | Label: value" string apps-script.gs.txt stores, split
+  // back into bullet rows by downloadReservationPdf below.
+  if(Array.isArray(data.priceBreakdown)) data.priceBreakdown.forEach(row => bullets.push(row));
+  if(data.notes) bullets.push([PDF_FR.notes, data.notes]);
 
   bullets.forEach(([label, value, url])=>{
     pdfTextAdmin(doc, '• ' + label + ':', productX, py, { bold: true, sizePt: 9.5, color: DARK });
@@ -1711,9 +1726,19 @@ async function downloadReservationPdf(booking){
     ref: booking.ref || '—',
     date: fmtDate(booking.bookedAt || booking.pickup),
     name: booking.customerName || '—', phone: booking.phone || '—', nationality: booking.nationality || '',
+    email: booking.email || '',
     carName: booking.carName || (car ? car.name : '—'),
+    unit: unitLabelForBooking(booking) !== '—' ? unitLabelForBooking(booking) : '',
     pickup: formatDateTimeForPdfAdmin(booking.pickup), ret: formatDateTimeForPdfAdmin(booking.ret),
     pickupLoc: booking.pickupLoc || '', dropoffLoc: booking.dropoffLoc || '',
+    flightNumber: booking.flightNumber || '', licenseYears: booking.licenseYears || '',
+    deposit: booking.deposit || '', resources: booking.resources || '', notes: booking.notes || '',
+    priceBreakdown: booking.priceBreakdown
+      ? String(booking.priceBreakdown).split(' | ').map(pair => {
+          const idx = pair.indexOf(': ');
+          return idx === -1 ? [pair, ''] : [pair.slice(0, idx), pair.slice(idx + 2)];
+        })
+      : [],
     quantity: 1, total: booking.total || '—',
     licenseUrl: booking.licenseUrl || '', passportUrl: booking.passportUrl || '',
     carImg, logoImg,

@@ -678,6 +678,12 @@ function doPost(e) {
       assignment.unitId || '',
       body.pickupLoc || '',
       body.dropoffLoc || '',
+      body.flightNumber || '',
+      body.licenseYears || '',
+      body.deposit || '',
+      body.resources || '',
+      body.priceBreakdown || '',
+      body.notes || '',
     ]);
     // Phone numbers start with "+" (country code, e.g. "+212 6..."), which
     // Google Sheets auto-parses as the start of a formula/number and shows
@@ -816,6 +822,12 @@ function listActiveBookings_() {
       unitId: rows[i][18] || '',
       pickupLoc: rows[i][19] || '',
       dropoffLoc: rows[i][20] || '',
+      flightNumber: rows[i][21] || '',
+      licenseYears: rows[i][22] || '',
+      deposit: rows[i][23] || '',
+      resources: rows[i][24] || '',
+      priceBreakdown: rows[i][25] || '',
+      notes: rows[i][26] || '',
     });
   }
   return bookings;
@@ -1230,7 +1242,7 @@ function getBookingsSheet_() {
   let sheet = ss.getSheetByName(BOOKINGS_SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(BOOKINGS_SHEET_NAME);
-    sheet.appendRow(['car_id', 'car_name', 'customer_name', 'phone', 'pickup_date', 'return_date', 'reference', 'booked_at', 'stock', 'total', 'source', 'customer_email', 'payment_method', 'payment_status', 'booking_status', 'license_url', 'passport_url', 'nationality', 'unit_id']);
+    sheet.appendRow(['car_id', 'car_name', 'customer_name', 'phone', 'pickup_date', 'return_date', 'reference', 'booked_at', 'stock', 'total', 'source', 'customer_email', 'payment_method', 'payment_status', 'booking_status', 'license_url', 'passport_url', 'nationality', 'unit_id', 'pickup_location', 'dropoff_location', 'flight_number', 'license_years', 'deposit', 'resources', 'price_breakdown', 'notes']);
   }
   return sheet;
 }

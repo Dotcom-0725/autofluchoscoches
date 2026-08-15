@@ -4504,11 +4504,14 @@ async function generateBookingPdf(dict, data){
   if(data.licenseFileName) bullets.push([dict.modal_license_label, data.licenseFileName, data.licenseUrl]);
   if(data.passportFileName) bullets.push([dict.modal_passport_label, data.passportFileName, data.passportUrl]);
   if(data.licenseYears) bullets.push([dict.modal_license_years_label, String(data.licenseYears)]);
-  // pickupLoc/dropoffLoc/deposit/washing are only known at the moment of a
-  // live checkout (see finalizeBooking) — they're never persisted to the
-  // Bookings sheet, so a PDF regenerated later (My Account > Download, or
-  // the admin dashboard's reprint) simply omits these bullets instead of
-  // printing "undefined".
+  // pickupLoc/dropoffLoc/flightNumber/deposit/resources/priceBreakdown are
+  // all persisted as real Bookings sheet columns (see finalizeBooking and
+  // apps-script.gs.txt), so a PDF regenerated later (My Account > Download,
+  // or the admin dashboard's reprint) shows them identically to the
+  // original live-checkout PDF — they simply stay omitted if genuinely
+  // absent, instead of printing "undefined". `includeWashing` is the one
+  // exception: it's a live-checkout-only toggle, never persisted, so a
+  // regenerated PDF always shows the washing bullet (its default state).
   if(data.pickupLoc) bullets.push([dict.modal_pickup_location_label, data.pickupLoc]);
   if(data.dropoffLoc) bullets.push([dict.modal_dropoff_location_label, data.dropoffLoc]);
   if(data.flightNumber) bullets.push([dict.modal_flight_number_label, data.flightNumber]);
@@ -4517,8 +4520,10 @@ async function generateBookingPdf(dict, data){
   if(data.resources) bullets.push([dict.modal_resources_title, data.resources]);
   // Itemized price breakdown (base × days, seasonal adjustment, location
   // fees, no-deposit surcharge, outside-hours surcharge) — see
-  // buildPriceBreakdownLines. Also only known at live-checkout time, same
-  // caveat as pickupLoc/dropoffLoc/deposit above.
+  // buildPriceBreakdownLines. Persisted as a single string (see
+  // finalizeBooking) and split back into [label, value] pairs by whichever
+  // caller reconstructs it from a saved booking (downloadAccountBookingPdf,
+  // admin.html's downloadReservationPdf).
   if(Array.isArray(data.priceBreakdown)) data.priceBreakdown.forEach(row => bullets.push(row));
   if(data.notes) bullets.push([dict.modal_notes_label, data.notes]);
 
@@ -4920,6 +4925,7 @@ async function downloadAccountBookingPdf(booking){
     ref: booking.ref || '—',
     date: new Date(booking.bookedAt || booking.pickup).toLocaleDateString(dict.htmlLang, { year: 'numeric', month: 'long', day: 'numeric' }),
     name: booking.customerName || customerSession.name || '', phone: booking.phone || '', nationality: booking.nationality || '',
+    email: booking.email || '',
     carName: booking.carName || (car ? car.name : ''),
     pickup: formatDateTimeForPdf(booking.pickup, dict.htmlLang), ret: formatDateTimeForPdf(booking.ret, dict.htmlLang),
     quantity: 1, total: booking.total || '',
@@ -4927,6 +4933,18 @@ async function downloadAccountBookingPdf(booking){
     licenseUrl: booking.licenseUrl || '',
     passportFileName: booking.passportUrl ? dict.document_view_label : '',
     passportUrl: booking.passportUrl || '',
+    pickupLoc: booking.pickupLoc || '', dropoffLoc: booking.dropoffLoc || '',
+    flightNumber: booking.flightNumber || '', licenseYears: booking.licenseYears || '',
+    deposit: booking.deposit || '', resources: booking.resources || '', notes: booking.notes || '',
+    // priceBreakdown is persisted as a single "Label: value | Label: value"
+    // string (see finalizeBooking/apps-script.gs.txt) — split it back into
+    // the [label, value] pairs generateBookingPdf's bullet list expects.
+    priceBreakdown: booking.priceBreakdown
+      ? String(booking.priceBreakdown).split(' | ').map(pair => {
+          const idx = pair.indexOf(': ');
+          return idx === -1 ? [pair, ''] : [pair.slice(0, idx), pair.slice(idx + 2)];
+        })
+      : [],
     carImg, logoImg,
     paymentMethodLabel: paymentMethodLabelForAccount(booking.paymentMethod, dict),
   };
@@ -5126,10 +5144,11 @@ async function finalizeBooking(choice){
   const bookingResult = await addBookedCar(data.car.id, {
     ref, carName: data.car.name, customerName: data.name, phone: data.phone, email: data.email,
     nationality: data.nationality, pickup: data.pickup, ret: data.ret, stock: data.car.stock || 1, total: data.total,
-    // Sent only so the instant Telegram/email owner notification (see
-    // sendBookingEmail_ in apps-script.gs.txt) can show the same detail the
-    // PDF shows — these fields are NOT added as Bookings sheet columns, so
-    // they're unavailable if that notification is ever regenerated later.
+    // Persisted as real Bookings sheet columns (not just sent for the instant
+    // Telegram/email owner notification — see sendBookingEmail_ in
+    // apps-script.gs.txt), so a PDF regenerated later (My Account >
+    // Download, or the admin dashboard's reprint) shows the exact same
+    // detail the original checkout PDF and that notification did.
     pickupLoc: data.pickupLoc, dropoffLoc: data.dropoffLoc, deposit: data.deposit,
     resources: data.resources, licenseYears: data.licenseYears,
     flightNumber: data.flightNumber, notes: data.notes,
