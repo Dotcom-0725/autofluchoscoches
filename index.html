@@ -2012,6 +2012,18 @@ async function loadCarsFromBackend(){
     const data = await res.json();
     if(data && Array.isArray(data.cars) && data.cars.length > 0){
       CARS = data.cars;
+      // If the customer already opened the booking modal on the (possibly
+      // stale-priced) fallback array before this fetch resolved,
+      // activeBookingCar is still pointing at that OLD object — reassigning
+      // CARS above does NOT update it, since it's a separate reference, not
+      // a live view into the array. Re-point it at the matching car in the
+      // freshly-loaded data and recompute the total so a booking in progress
+      // never gets silently priced off stale/hardcoded numbers (this is
+      // exactly how a 40€ car got billed at the old 30€ fallback price).
+      if(activeBookingCar){
+        const refreshed = CARS.find(c => c.id === activeBookingCar.id);
+        if(refreshed){ activeBookingCar = refreshed; updateTotal(); }
+      }
     }
   } catch(e) { /* offline or backend unreachable — the fallback array above still works */ }
 }
