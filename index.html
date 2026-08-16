@@ -2890,6 +2890,55 @@ function saveLang(lang){
 }
 let currentLang = getSavedLang() || 'en';
 
+/* ---- Live Google review count sync ----
+   The site's true review count drifts from the hardcoded "489" as new
+   Google reviews come in (it was already at 504 as of writing). Instead of
+   editing this number by hand, fetch the real live count from the Google
+   Business Profile via the Maps JavaScript API and patch every place it's
+   shown (trust bar, about section, testimonials subtitle in every language,
+   the JSON-LD aggregateRating, and the og:description meta tag). Only the
+   review COUNT is synced this way — the rating itself is left as the
+   editorial "5.0★" claim already in the copy, since the business's real
+   Google rating has consistently been a flat 5.0 and changing that text
+   would need per-language decimal-format handling (5.0 vs 5,0) this doesn't
+   attempt. Restricted-by-referrer key: safe to ship in page source. */
+const GOOGLE_MAPS_API_KEY = 'AIzaSyA02HGhkUmGZPZaYpEGcZvJujbCBBlscn4';
+const GOOGLE_PLACE_ID = 'ChIJV6dBMcRDCw0R3k9s-0NZPUk';
+let liveGoogleReviewCount = null;
+
+function applyLiveGoogleReviewCount(){
+  if(!liveGoogleReviewCount) return;
+  document.querySelectorAll('[data-i18n="trust_google"], [data-i18n="about_text"], [data-i18n="testi_sub"]').forEach(el=>{
+    el.innerHTML = el.innerHTML.replace(/489/g, liveGoogleReviewCount);
+  });
+  const jsonLd = document.getElementById('localBusinessJsonLd');
+  if(jsonLd){
+    try {
+      const data = JSON.parse(jsonLd.textContent);
+      if(data.aggregateRating) data.aggregateRating.reviewCount = String(liveGoogleReviewCount);
+      jsonLd.textContent = JSON.stringify(data);
+    } catch(e){ /* malformed JSON-LD would already be broken before this ran — leave it alone */ }
+  }
+  const ogDesc = document.querySelector('meta[property="og:description"]');
+  if(ogDesc) ogDesc.setAttribute('content', ogDesc.getAttribute('content').replace(/489/g, liveGoogleReviewCount));
+}
+
+function initGoogleReviewsSync(){
+  window.__onGoogleMapsLoaded = function(){
+    const service = new google.maps.places.PlacesService(document.createElement('div'));
+    service.getDetails({ placeId: GOOGLE_PLACE_ID, fields: ['user_ratings_total'] }, (place, status)=>{
+      if(status === google.maps.places.PlacesServiceStatus.OK && place && place.user_ratings_total){
+        liveGoogleReviewCount = place.user_ratings_total;
+        applyLiveGoogleReviewCount();
+      }
+    });
+  };
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=__onGoogleMapsLoaded`;
+  script.async = true;
+  document.head.appendChild(script);
+}
+
 function applyLang(lang){
   const dict = I18N[lang];
   if(!dict) return;
@@ -2920,6 +2969,7 @@ function applyLang(lang){
   if(typeof populateCarSelect === 'function') populateCarSelect(dict);
   if(typeof updateTotal === 'function') updateTotal();
   if(typeof updateAccountNavLabel === 'function') updateAccountNavLabel();
+  applyLiveGoogleReviewCount();
 }
 
 /* =========================================================
@@ -5332,6 +5382,7 @@ document.getElementById('wisePayBtn').addEventListener('click', async ()=>{
 document.getElementById('wiseCloseBtn').addEventListener('click', closePaymentModal);
 
 applyLang(currentLang);
+initGoogleReviewsSync();
 document.querySelectorAll('.currency-switch-group button').forEach(b=>{
   b.classList.toggle('active', b.dataset.currency === currentCurrency);
 });
