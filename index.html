@@ -5574,6 +5574,29 @@ function getQuickBookingPairedRange(input, cellDate){
   }
   return null;
 }
+/* Builds the "YYYY-MM-DDTHH:MM" range to test a candidate booking-modal day
+   against: cellDate paired with whichever OTHER bkPickup/bkReturn value the
+   customer already committed (its .value is always current — both the date
+   click and the time-column clicks call writeDateValue immediately, before
+   this ever runs). Mirrors getQuickBookingPairedRange, but for the single
+   combined datetime-local fields the modal uses instead of separate
+   date+time inputs. Returns null when the other field isn't set yet, so the
+   caller can fall back to the day-in-isolation check instead. */
+function getBkPairedRange(input, cellDate, currentTimeStr){
+  const pad = n => String(n).padStart(2, '0');
+  const cellIso = (d, t) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${t}`;
+  if(input.id === 'bkPickup'){
+    const otherVal = document.getElementById('bkReturn')?.value;
+    if(!otherVal) return null;
+    return { pickup: cellIso(cellDate, currentTimeStr || '10:00'), ret: otherVal };
+  }
+  if(input.id === 'bkReturn'){
+    const otherVal = document.getElementById('bkPickup')?.value;
+    if(!otherVal) return null;
+    return { pickup: otherVal, ret: cellIso(cellDate, currentTimeStr || '10:00') };
+  }
+  return null;
+}
 /* Single entry point the calendar grid uses to decide whether to shade+disable
    a day, regardless of which date input opened it — a specific car for the
    booking modal, or the whole matching fleet for the car-agnostic hero
@@ -5581,9 +5604,33 @@ function getQuickBookingPairedRange(input, cellDate){
    otherwise). Both read from the same remoteBookedIntervals data (populated
    from the backend's single Bookings sheet, shared by website AND manual
    reservations), so availability always agrees across the two. */
-function isDayUnavailableForInput(input, cellDate){
+function isDayUnavailableForInput(input, cellDate, currentTimeStr){
   const carId = getCarIdForDateInput(input);
-  if(carId) return isDayFullyBooked(carId, cellDate);
+  if(carId){
+    const car = CARS.find(c => c.id === carId);
+    if(!car) return isDayFullyBooked(carId, cellDate);
+    // isDayFullyBooked alone only tells us whether SOME moment that day is
+    // free in isolation — it can miss a day that starts free but has no
+    // moment left that also satisfies whichever pickup/return the customer
+    // already picked on the other field (e.g. every unit collectively covers
+    // the requested span even though no single unit is booked the whole
+    // day). Once both fields are set, test the exact combined range instead,
+    // same as the Quick Booking widget already does fleet-wide.
+    const paired = getBkPairedRange(input, cellDate, currentTimeStr);
+    if(!paired) return isDayFullyBooked(carId, cellDate);
+    if(input.id === 'bkPickup'){
+      // Re-anchor the candidate pickup time at this car's own earliest free
+      // moment that day (mirrors qbPickupDate's handling) so a day the car
+      // happens to return on isn't wrongly flagged just because whatever
+      // time is currently sitting in the picker is too early.
+      const earliest = getEarliestAvailableTimeOnDay(carId, cellDate);
+      const pad = n => String(n).padStart(2, '0');
+      const dateStr = `${cellDate.getFullYear()}-${pad(cellDate.getMonth() + 1)}-${pad(cellDate.getDate())}`;
+      const anchoredPickup = `${dateStr}T${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
+      return getRemainingStockForRange(car, anchoredPickup, paired.ret) <= 0;
+    }
+    return getRemainingStockForRange(car, paired.pickup, paired.ret) <= 0;
+  }
   if(isQuickBookingDateInput(input)){
     const cat = document.getElementById('qbCategory')?.value || 'all';
     if(input.id === 'qbPickupDate'){
@@ -5753,7 +5800,7 @@ function openCustomDatePicker(input){
       // specific car when this picker belongs to the final booking modal, or
       // fleet-wide when it's the car-agnostic hero Quick Booking widget — so
       // the customer can only ever pick genuinely available dates.
-      if(isDayUnavailableForInput(input, cellDate)){
+      if(isDayUnavailableForInput(input, cellDate, currentTime)){
         btn.classList.add('cdp-booked');
         btn.disabled = true;
         btn.title = dict.datepicker_booked_day || '';
