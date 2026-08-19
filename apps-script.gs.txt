@@ -201,6 +201,18 @@ function doGet(e) {
 // booking's pickup for the SAME physical car (cleaning/inspection buffer) —
 // a car becomes bookable again exactly this many hours after its scheduled
 // return, on the same day if that's when the buffer elapses.
+//
+// ============================================================
+// CANONICAL DEFINITION — DO NOT LET THIS DRIFT
+// This buffer value and the overlap formula in rangesOverlap_ below are the
+// single source of truth for the whole system. The client-side shared
+// module (availability.js, loaded by both index.html and admin.html) MUST
+// use the exact same buffer (2h) and the exact same bidirectional formula:
+//   startB < endA + buffer && startA < endB + buffer
+// If this value ever changes here, Availability.BUFFER_MS in availability.js
+// must be updated to match, or the client-side preview will silently
+// disagree with what findAvailableUnitForBooking_ actually enforces.
+// ============================================================
 const CAR_TURNAROUND_BUFFER_MS = 2 * 60 * 60 * 1000;
 
 // Customers can cancel their own reservation online free of charge up to

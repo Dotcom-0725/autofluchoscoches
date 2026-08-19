@@ -1787,6 +1787,8 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
 
 <!-- jsPDF: used only to generate the booking PDF client-side, no backend involved -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- Shared availability engine (single source of truth, also used by admin.html) -->
+<script src="availability.js"></script>
 <script>
 /* =========================================================
    0) BOOKING FORM DATA — pick-up/drop-off locations and deposit
@@ -3120,10 +3122,14 @@ const CAR_TURNAROUND_BUFFER_MS = 2 * 60 * 60 * 1000;
    CAR_TURNAROUND_BUFFER_MS gap is required between one range's end and the
    other's start — mirrors the backend's rangesOverlap_ so the client can
    pre-check availability for a specific date range instead of only knowing a
-   car's overall current booked count. */
+   car's overall current booked count.
+
+   Thin wrapper around the shared Availability module (availability.js) —
+   the actual math lives there now, shared verbatim with admin.html, so the
+   two pages can never silently disagree with each other again. Kept under
+   this exact name/signature since nothing else in this file needs to change. */
 function rangesOverlap(startA, endA, startB, endB){
-  return new Date(startB).getTime() < new Date(endA).getTime() + CAR_TURNAROUND_BUFFER_MS &&
-         new Date(startA).getTime() < new Date(endB).getTime() + CAR_TURNAROUND_BUFFER_MS;
+  return Availability.rangesOverlap(startA, endA, startB, endB);
 }
 /* How many of a car's active bookings actually overlap the given [pickup, ret)
    range — the count that matters for "is this car free for THESE dates",
@@ -3132,42 +3138,39 @@ function rangesOverlap(startA, endA, startB, endB){
 function getOverlapCount(carId, pickupVal, retVal){
   const intervals = remoteBookedIntervals[carId];
   if(!intervals || !pickupVal || !retVal) return getBookedCounts()[carId] || 0;
-  return intervals.filter(iv => rangesOverlap(pickupVal, retVal, iv.pickup, iv.ret)).length;
+  return Availability.getOverlapCount(intervals, pickupVal, retVal);
 }
 /* Remaining units of `car` for a specific [pickupVal, retVal) range. Falls
    back to the global getRemainingStock() when no date range is supplied or
    interval data isn't available (e.g. local-only offline fallback).
 
    Mirrors the admin dashboard's exact per-unit algorithm (see
-   availableUnitsForRangeAdmin in admin.html and findAvailableUnitForBooking_
-   in apps-script.gs.txt) instead of a bare count-vs-stock check, whenever
-   this car has real fleet units registered: a booking with no matching
-   registered unit (a "legacy" booking made before the car had units set up)
-   still occupies one real physical car, so it still claims one of the free
-   slots below — otherwise a car with older unassigned bookings mixed with
-   newer unit-assigned ones could wrongly look more available here than the
-   admin panel says it actually is. Cars with no units registered yet fall
-   back to the previous simple count-vs-stock check, exactly like the admin
-   dashboard does for the same case. */
+   getRemainingStockForRange's shared implementation in availability.js, and
+   findAvailableUnitForBooking_ in apps-script.gs.txt) instead of a bare
+   count-vs-stock check, whenever this car has real fleet units registered:
+   a booking with no matching registered unit (a "legacy" booking made
+   before the car had units set up) still occupies one real physical car,
+   so it still claims one of the free slots below — otherwise a car with
+   older unassigned bookings mixed with newer unit-assigned ones could
+   wrongly look more available here than the admin panel says it actually
+   is. Cars with no units registered yet fall back to the previous simple
+   count-vs-stock check, exactly like the admin dashboard does for the same
+   case. */
 function getRemainingStockForRange(car, pickupVal, retVal){
   if(!pickupVal || !retVal) return getRemainingStock(car);
-  const unitIds = remoteCarUnitIds[car.id];
-  if(!unitIds || !unitIds.length){
-    const overlap = getOverlapCount(car.id, pickupVal, retVal);
-    return Math.max(0, effectiveStock(car) - overlap);
-  }
-  const intervals = remoteBookedIntervals[car.id] || [];
-  const overlapping = intervals.filter(iv => rangesOverlap(pickupVal, retVal, iv.pickup, iv.ret));
-  const assignedOverlapUnitIds = overlapping.filter(iv => iv.unitId).map(iv => iv.unitId);
-  const legacyOverlapCount = overlapping.filter(iv => !iv.unitId).length;
-  const freeUnits = unitIds.filter(id => assignedOverlapUnitIds.indexOf(id) === -1);
-  return Math.max(0, freeUnits.length - legacyOverlapCount);
+  return Availability.getRemainingStockForRange({
+    bookings: remoteBookedIntervals[car.id] || [],
+    unitIds: remoteCarUnitIds[car.id],
+    stock: effectiveStock(car),
+    pickupVal, retVal,
+  });
 }
 /* Three-state availability check for search/browse: 'available' (free at the
    exact requested pickup/return), 'delayed' (not free at the exact requested
    time, but WOULD be free later the same pickup day — e.g. a booking returns
    at 10:00 and the mandatory 2h buffer clears it at 12:00), or 'unavailable'
-   (no rescue that day, or the return-side still conflicts).
+   (no same-day rescue — see getNextAvailableMoment below for the multi-day
+   search used once this returns 'unavailable').
 
    This exists so the initial search never has to reject a car outright just
    because the customer's exact chosen time lands inside another booking's
@@ -3177,47 +3180,25 @@ function getRemainingStockForRange(car, pickupVal, retVal){
    [pickupVal, retVal) check server-side (via getRemainingStockForRange /
    findAvailableUnitForBooking_), so a real conflict is only ever blocked
    there — never here. */
-/* The earliest moment AT OR AFTER `afterMs` (on the SAME calendar day) that
-   `carId` has fewer than `stock` units busy — used only for the "delayed"
-   rescue search in getDelayedAvailability below, which is deliberately NOT
-   the same question getEarliestAvailableTimeOnDay answers. That function
-   finds the day's globally earliest free moment (for the calendar's
-   click-to-select auto-suggest, where there's no "requested time" yet to
-   respect); this one only considers candidates from `afterMs` onward, so an
-   unrelated free gap EARLIER in the day (e.g. before some other booking)
-   never gets offered as a "later" rescue for a request that's already past
-   it — only a genuinely later opening (e.g. after THIS booking's own
-   return + buffer) counts. Returns null if no such moment exists that day. */
-function getEarliestAvailableTimeAfter_(carId, afterMs, stock){
-  const dayStart = new Date(new Date(afterMs).getFullYear(), new Date(afterMs).getMonth(), new Date(afterMs).getDate());
-  const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
-  const intervals = (remoteBookedIntervals[carId] || [])
-    .map(iv => ({ start: new Date(iv.pickup).getTime() - CAR_TURNAROUND_BUFFER_MS, end: new Date(iv.ret).getTime() + CAR_TURNAROUND_BUFFER_MS }))
-    .filter(iv => iv.end > dayStart.getTime() && iv.start < dayEnd.getTime());
-  const candidates = intervals.map(iv => iv.end).filter(t => t >= afterMs && t < dayEnd.getTime());
-  candidates.sort((a, b) => a - b);
-  for(const t of candidates){
-    if(intervals.filter(iv => iv.start <= t && t < iv.end).length < stock) return new Date(t);
-  }
-  return null;
-}
 function getDelayedAvailability(car, pickupVal, retVal){
-  if(!pickupVal || !retVal) return { status: 'unknown' };
-  const remaining = getRemainingStockForRange(car, pickupVal, retVal);
-  if(remaining > 0) return { status: 'available', remaining, effectivePickup: pickupVal };
-  const [pickupDateStr, pickupTimeStr] = pickupVal.split('T');
-  const [y, m, d] = pickupDateStr.split('-').map(Number);
-  if(!y || !m || !d) return { status: 'unavailable' };
-  const earliest = getEarliestAvailableTimeAfter_(car.id, new Date(pickupVal).getTime(), effectiveStock(car));
-  if(!earliest) return { status: 'unavailable' }; // no later rescue slot that day
-  const pad = n => String(n).padStart(2, '0');
-  const earliestTimeStr = `${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
-  const delayedPickup = `${pickupDateStr}T${earliestTimeStr}`;
-  const delayedRemaining = getRemainingStockForRange(car, delayedPickup, retVal);
-  if(delayedRemaining > 0){
-    return { status: 'delayed', remaining: delayedRemaining, effectivePickup: delayedPickup, earliestTimeStr, pickupDateStr };
-  }
-  return { status: 'unavailable' };
+  return Availability.getDelayedAvailability({
+    bookings: remoteBookedIntervals[car.id] || [],
+    unitIds: remoteCarUnitIds[car.id],
+    stock: effectiveStock(car),
+    pickupVal, retVal,
+  });
+}
+/* Multi-day equivalent of the same-day rescue inside getDelayedAvailability:
+   the true next moment (possibly days out, across several consecutive
+   bookings) that `car` has a free unit — used to always show a concrete
+   next-available date+time instead of a generic "choose another date". */
+function getNextAvailableMoment(car, fromMs){
+  return Availability.findNextAvailableMoment({
+    bookings: remoteBookedIntervals[car.id] || [],
+    unitIds: remoteCarUnitIds[car.id],
+    stock: effectiveStock(car),
+    fromMs: fromMs == null ? Date.now() : fromMs,
+  });
 }
 /* Reads the hero Quick Booking widget's currently selected pickup/return
    datetimes (as datetime-local-style strings), if present, so fleet
@@ -4314,6 +4295,22 @@ function checkSelectedCarAvailability(){
     return true;
   }
   const available = availability.status === 'available';
+  if(!available){
+    // No same-day rescue exists — search forward across multiple days so the
+    // customer sees exactly when this car frees up (however far out) instead
+    // of a generic "choose a different date". Submission stays blocked
+    // either way; this is purely informational.
+    const next = getNextAvailableMoment(activeBookingCar, new Date(pickup).getTime());
+    if(next.found){
+      const nd = next.moment;
+      const pad = n => String(n).padStart(2, '0');
+      const formattedDate = `${pad(nd.getDate())}/${pad(nd.getMonth() + 1)}/${nd.getFullYear()}`;
+      const timeStr = `${pad(nd.getHours())}:${pad(nd.getMinutes())}`;
+      warningEl.textContent = dict.vehicle_available_later.replace('{time}', timeStr).replace('{date}', formattedDate);
+    } else {
+      warningEl.textContent = dict.dates_unavailable_error;
+    }
+  }
   warningEl.classList.toggle('show', !available);
   if(laterNoteEl) laterNoteEl.hidden = true;
   if(submitBtn) submitBtn.disabled = !available;
@@ -5681,78 +5678,39 @@ function isDayUnavailableForInput(input, cellDate, currentTimeStr){
   return false;
 }
 /* True if `car` has NO valid moment left to pick on this calendar day.
-   Mirrors the admin dashboard's isDayFullyBookedAdmin exactly: when this car
-   has real fleet units registered, a legacy (no-unitId) booking still claims
-   one of the free slots even though it can't be matched to a specific unit —
-   otherwise this calendar could show a day as bookable when the admin panel
-   (running the same check against the same bookings) would not. Cars with no
-   units registered fall back to the previous simple count-vs-stock check. */
+   Mirrors the admin dashboard's isDayFullyBookedAdmin exactly (both are now
+   thin wrappers around the shared Availability.isDayFullyBooked): when this
+   car has real fleet units registered, a legacy (no-unitId) booking still
+   claims one of the free slots even though it can't be matched to a
+   specific unit — otherwise this calendar could show a day as bookable when
+   the admin panel (running the same check against the same bookings) would
+   not. Cars with no units registered fall back to the previous simple
+   count-vs-stock check. */
 function isDayFullyBooked(carId, cellDate){
   const car = CARS.find(c => c.id === carId);
   if(!car) return false;
-  const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
-  const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
-  // Each existing booking blocks [pickup - buffer, return + buffer) — buffer
-  // applies on BOTH sides (mirrors rangesOverlap's bidirectional check for a
-  // zero-length candidate instant), not just after the return. Previously
-  // this only inspected the day's LAST minute to decide whether the whole
-  // day should be disabled, which correctly widened a day that starts
-  // booked and frees up later, but wrongly blacked out an entire day when a
-  // booking only starts partway through it (e.g. pickup at 18:00 left the
-  // 00:00–16:00 morning showing as unavailable). The fix scans every moment
-  // where the busy count can hit a new low — the start of the day, and each
-  // interval's end+buffer — since those are the only points a previously
-  // fully-busy day can become free again.
-  const unitIds = remoteCarUnitIds[carId];
-  if(unitIds && unitIds.length){
-    const intervals = (remoteBookedIntervals[carId] || [])
-      .map(iv => ({ start: new Date(iv.pickup).getTime() - CAR_TURNAROUND_BUFFER_MS, end: new Date(iv.ret).getTime() + CAR_TURNAROUND_BUFFER_MS, unitId: iv.unitId }))
-      .filter(iv => iv.end > dayStart.getTime() && iv.start < dayEnd.getTime());
-    const candidates = [dayStart.getTime(), ...intervals.map(iv => iv.end).filter(t => t > dayStart.getTime() && t < dayEnd.getTime())];
-    return !candidates.some(t => {
-      const active = intervals.filter(iv => iv.start <= t && t < iv.end);
-      const assignedUnitIds = active.filter(iv => iv.unitId).map(iv => iv.unitId);
-      const legacyCount = active.filter(iv => !iv.unitId).length;
-      const freeUnits = unitIds.filter(id => assignedUnitIds.indexOf(id) === -1);
-      return freeUnits.length > legacyCount;
-    });
-  }
-  const stock = effectiveStock(car);
-  const intervals = (remoteBookedIntervals[carId] || [])
-    .map(iv => ({ start: new Date(iv.pickup).getTime() - CAR_TURNAROUND_BUFFER_MS, end: new Date(iv.ret).getTime() + CAR_TURNAROUND_BUFFER_MS }))
-    .filter(iv => iv.end > dayStart.getTime() && iv.start < dayEnd.getTime());
-  const candidates = [dayStart.getTime(), ...intervals.map(iv => iv.end).filter(t => t > dayStart.getTime() && t < dayEnd.getTime())];
-  return !candidates.some(t => intervals.filter(iv => iv.start <= t && t < iv.end).length < stock);
+  return Availability.isDayFullyBooked({
+    bookings: remoteBookedIntervals[carId] || [],
+    unitIds: remoteCarUnitIds[carId],
+    stock: effectiveStock(car),
+    cellDate,
+  });
 }
 /* The earliest bookable time on `cellDate` for `carId`, accounting for the
    mandatory CAR_TURNAROUND_BUFFER_MS after any booking's return — e.g. a car
    returning at 10:00 with a 2h buffer becomes bookable at 12:00 THAT SAME
-   DAY, not at midnight and not "the next day". Each existing booking is
-   treated as occupying [pickup, ret + buffer) — exactly what rangesOverlap
-   checks — and this walks the moments where a unit frees up during the day
-   to find the first one where fewer than `stock` units are still occupied.
-   Falls back to the start of the day when nothing on this day restricts it. */
+   DAY, not at midnight and not "the next day". Falls back to the start of
+   the day when nothing on this day restricts it. */
 function getEarliestAvailableTimeOnDay(carId, cellDate){
   const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
-  const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
   const car = CARS.find(c => c.id === carId);
   if(!car) return dayStart;
-  const stock = effectiveStock(car);
-  const intervals = remoteBookedIntervals[carId] || [];
-  // Buffer applies on BOTH sides of each existing booking (see
-  // isDayFullyBooked above) — a candidate pickup time must also leave room
-  // for the mandatory turnaround before any UPCOMING booking, not just
-  // clear of a past one's return.
-  const events = intervals
-    .map(iv => ({ start: new Date(iv.pickup).getTime() - CAR_TURNAROUND_BUFFER_MS, end: new Date(iv.ret).getTime() + CAR_TURNAROUND_BUFFER_MS }))
-    .filter(iv => iv.end > dayStart.getTime() && iv.start < dayEnd.getTime());
-  const candidates = [dayStart.getTime(), ...events.map(iv => iv.end).filter(t => t > dayStart.getTime() && t < dayEnd.getTime())];
-  candidates.sort((a, b) => a - b);
-  for(const t of candidates){
-    const activeCount = events.filter(iv => iv.start <= t && t < iv.end).length;
-    if(activeCount < stock) return new Date(t);
-  }
-  return dayStart;
+  return Availability.getEarliestTimeOnDay({
+    bookings: remoteBookedIntervals[carId] || [],
+    unitIds: remoteCarUnitIds[carId],
+    stock: effectiveStock(car),
+    cellDate,
+  });
 }
 function openCustomDatePicker(input){
   closeCustomDatePicker();
