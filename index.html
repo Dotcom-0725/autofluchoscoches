@@ -3630,6 +3630,17 @@ document.getElementById('year').textContent = new Date().getFullYear();
    NOT generate a PDF and does NOT mark the car unavailable.
 ========================================================= */
 let activeBookingCar = null;
+// Whether the customer has actually interacted with bkPickup/bkReturn's own
+// picker this time the modal is open, as opposed to it still holding the
+// auto-filled default openBookingModal() always sets. Combined-range shading
+// (see getBkPairedRange) must only pair against a field the customer has
+// deliberately touched — pairing against an untouched default would test a
+// huge, meaningless span (e.g. "today" through whatever far date they're
+// just browsing) and could black out an entire month over one unrelated
+// booking somewhere in between, even though the actual dates they'd pick
+// once they get to it are completely free.
+let bkPickupUserSet = false;
+let bkReturnUserSet = false;
 
 const bookingOverlay = document.getElementById('bookingOverlay');
 const confirmOverlay = document.getElementById('confirmOverlay');
@@ -3749,6 +3760,8 @@ async function openBookingModal(carId){
   populateCarSelect(I18N[currentLang]);
   document.getElementById('modalCarSelect').value = activeBookingCar.id;
   refreshPickupMin();
+  bkPickupUserSet = false;
+  bkReturnUserSet = false;
   setDefaultBookingDates();
   setDefaultBookingLocations();
   copyQuickBookingIntoBookingForm();
@@ -5580,17 +5593,25 @@ function getQuickBookingPairedRange(input, cellDate){
    click and the time-column clicks call writeDateValue immediately, before
    this ever runs). Mirrors getQuickBookingPairedRange, but for the single
    combined datetime-local fields the modal uses instead of separate
-   date+time inputs. Returns null when the other field isn't set yet, so the
-   caller can fall back to the day-in-isolation check instead. */
+   date+time inputs. Returns null when the other field isn't set yet — OR
+   hasn't been deliberately touched by the customer this time the modal is
+   open (still holding openBookingModal's auto-filled default) — so the
+   caller falls back to the day-in-isolation check instead. Pairing against
+   an untouched default would test whatever huge, meaningless span happens
+   to sit between "today" and wherever the customer is currently browsing,
+   and one unrelated booking anywhere in that gap would then black out every
+   day beyond it even though the dates they'd actually pick are free. */
 function getBkPairedRange(input, cellDate, currentTimeStr){
   const pad = n => String(n).padStart(2, '0');
   const cellIso = (d, t) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${t}`;
   if(input.id === 'bkPickup'){
+    if(!bkReturnUserSet) return null;
     const otherVal = document.getElementById('bkReturn')?.value;
     if(!otherVal) return null;
     return { pickup: cellIso(cellDate, currentTimeStr || '10:00'), ret: otherVal };
   }
   if(input.id === 'bkReturn'){
+    if(!bkPickupUserSet) return null;
     const otherVal = document.getElementById('bkPickup')?.value;
     if(!otherVal) return null;
     return { pickup: otherVal, ret: cellIso(cellDate, currentTimeStr || '10:00') };
@@ -5811,6 +5832,8 @@ function openCustomDatePicker(input){
         // propagation here, the document-level "click outside" listener
         // would see a now-detached e.target and incorrectly close the popup.
         e.stopPropagation();
+        if(input.id === 'bkPickup') bkPickupUserSet = true;
+        else if(input.id === 'bkReturn') bkReturnUserSet = true;
         let timeToUse = currentTime || '10:00';
         // Picking the pickup day auto-suggests the earliest moment THAT DAY
         // the car is actually free (its last return + the mandatory
@@ -5882,6 +5905,8 @@ function openCustomDatePicker(input){
       }
 
       const hourCol = timeCol(24, curH, h=>{
+        if(input.id === 'bkPickup') bkPickupUserSet = true;
+        else if(input.id === 'bkReturn') bkReturnUserSet = true;
         currentTime = `${String(h).padStart(2,'0')}:${String(curM).padStart(2,'0')}`;
         writeDateValue(input, selected, currentTime);
         render();
@@ -5890,6 +5915,8 @@ function openCustomDatePicker(input){
       sep.className = 'cdp-time-sep';
       sep.textContent = ':';
       const minuteCol = timeCol(60, curM, m=>{
+        if(input.id === 'bkPickup') bkPickupUserSet = true;
+        else if(input.id === 'bkReturn') bkReturnUserSet = true;
         currentTime = `${String(curH).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
         writeDateValue(input, selected, currentTime);
         render();
