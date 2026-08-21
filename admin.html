@@ -845,6 +845,33 @@ function openAdminDatePicker(input, carId, excludeRow){
           const pad = n => String(n).padStart(2, '0');
           timeToUse = `${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
           currentTime = timeToUse;
+        } else if(carId && (input.id === 'mbReturn' || input.id === 'ebReturn')){
+          // Mirror image of the pickup case above: picking a return day
+          // auto-suggests the LATEST valid moment that day (given the
+          // already-chosen pickup) instead of leaving whatever time was
+          // already there — which could be past the actual cutoff (e.g. an
+          // upcoming reservation at 14:00 with a 2h buffer means 12:00 is
+          // the latest valid return) and get instantly rejected even though
+          // the day itself is fine.
+          const pickupFieldId = input.id === 'mbReturn' ? 'mbPickup' : 'ebPickup';
+          const pickupVal = document.getElementById(pickupFieldId)?.value;
+          if(pickupVal){
+            const car = carById(carId);
+            const bookingsPool = (excludeRow ? occupyingBookings().filter(b => b.row !== excludeRow) : occupyingBookings())
+              .filter(b => b.carId === carId);
+            const units = state.fleetUnits.filter(u => u.carId === carId);
+            const latest = Availability.getLatestValidReturnTime({
+              bookings: bookingsPool,
+              unitIds: units.length ? units.map(u => u.unitId) : null,
+              stock: Number(car?.stock) || 1,
+              pickupVal, cellDate,
+            });
+            if(latest){
+              const pad = n => String(n).padStart(2, '0');
+              timeToUse = `${pad(latest.getHours())}:${pad(latest.getMinutes())}`;
+              currentTime = timeToUse;
+            }
+          }
         }
         writeAdminDateValue(input, cellDate, timeToUse);
         selected.setFullYear(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());

@@ -161,6 +161,37 @@
     return dayStart;
   }
 
+  /* The LATEST valid RETURN moment on `cellDate` given a FIXED pickup
+     (`pickupVal`) — the mirror image of getEarliestTimeOnDay, which anchors
+     a candidate PICKUP at the earliest free moment of a day. This exists so
+     a return-date picker never blacks out an entire day just because
+     whatever return TIME happens to be sitting in the field is later than
+     the actual cutoff: e.g. an upcoming reservation pickup at 14:00 with a
+     2h buffer means the latest valid return that day is 12:00 — the day
+     itself must stay selectable, with only times after 12:00 blocked.
+     Scans candidates in descending order (end of day, and each upcoming
+     booking's buffered START that falls within the day — the instant right
+     before its exclusion zone begins) and returns the first one where the
+     FULL [pickupVal, candidate) range is actually free (a real range check,
+     not just a single-instant one, so any OTHER conflict between pickupVal
+     and the candidate is still caught). Returns null if no valid return
+     moment exists on this day at all. */
+  function getLatestValidReturnTime({ bookings, unitIds, stock, pickupVal, cellDate, bufferMs }){
+    bufferMs = bufferMs == null ? BUFFER_MS : bufferMs;
+    bookings = bookings || [];
+    const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+    const dayStartMs = dayStart.getTime();
+    const dayEndMs = dayStartMs + 24 * 60 * 60 * 1000;
+    const candidates = [dayEndMs - 1, ...bookings
+      .map(b => new Date(b.pickup).getTime() - bufferMs)
+      .filter(t => t > dayStartMs && t < dayEndMs)].sort((a, b) => b - a);
+    for(const t of candidates){
+      const remaining = getRemainingStockForRange({ bookings, unitIds, stock, pickupVal, retVal: new Date(t).toISOString(), bufferMs });
+      if(remaining > 0) return new Date(t);
+    }
+    return null;
+  }
+
   /* NEW: finds the true next-available moment, searching forward across
      MULTIPLE DAYS (not just the same day) when no same-day rescue exists —
      powers "this car isn't free now, but it will be from {date} {time}"
@@ -209,6 +240,7 @@
     getDelayedAvailability,
     isDayFullyBooked,
     getEarliestTimeOnDay,
+    getLatestValidReturnTime,
     findNextAvailableMoment,
   };
 })(window);

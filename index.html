@@ -5561,6 +5561,23 @@ function getEarliestAvailableTimeOnDayForFleet(cellDate, catKey){
   });
   return earliest || dayStart;
 }
+/* True only if EVERY car matching catKey has NO valid return moment on
+   `cellDate` given the fixed `pickupVal` — the fleet-wide mirror of
+   getLatestValidReturnTime, used so the hero widget's return-date shading
+   doesn't black out a whole day just because SOME cars' cutoff time has
+   already passed while others still have a valid (possibly later) return
+   moment that same day. */
+function isDayFullyBookedForFleetReturn(pickupVal, cellDate, catKey){
+  const candidates = CARS.filter(c => carMatchesCategory(c, catKey || 'all'));
+  if(!candidates.length) return false;
+  return candidates.every(c => Availability.getLatestValidReturnTime({
+    bookings: remoteBookedIntervals[c.id] || [],
+    unitIds: remoteCarUnitIds[c.id],
+    stock: effectiveStock(c),
+    pickupVal,
+    cellDate,
+  }) === null);
+}
 /* Builds the "YYYY-MM-DDTHH:MM" range to test a candidate hero-widget day
    against: cellDate paired with whichever OTHER qb date the customer already
    selected (using the live qbPickupTime/qbReturnTime values — the hero
@@ -5647,7 +5664,22 @@ function isDayUnavailableForInput(input, cellDate, currentTimeStr){
       const anchoredPickup = `${dateStr}T${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
       return getRemainingStockForRange(car, anchoredPickup, paired.ret) <= 0;
     }
-    return getRemainingStockForRange(car, paired.pickup, paired.ret) <= 0;
+    // bkReturn: mirror image of the pickup case above — re-anchor the
+    // candidate RETURN time at this car's own LATEST valid moment that day
+    // (given the fixed pickup), instead of testing whatever return time
+    // happens to be sitting in the picker. Without this, a day that's only
+    // invalid AFTER some cutoff (e.g. an upcoming reservation at 14:00 with
+    // a 2h buffer means 12:00 is the latest valid return) would wrongly show
+    // as fully unavailable just because the field's current time (say the
+    // default) is later than that cutoff — the day itself must stay
+    // selectable, with only the actual invalid times blocked.
+    return Availability.getLatestValidReturnTime({
+      bookings: remoteBookedIntervals[carId] || [],
+      unitIds: remoteCarUnitIds[carId],
+      stock: effectiveStock(car),
+      pickupVal: paired.pickup,
+      cellDate,
+    }) === null;
   }
   if(isQuickBookingDateInput(input)){
     const cat = document.getElementById('qbCategory')?.value || 'all';
@@ -5671,8 +5703,13 @@ function isDayUnavailableForInput(input, cellDate, currentTimeStr){
       const dateStr = `${cellDate.getFullYear()}-${pad(cellDate.getMonth() + 1)}-${pad(cellDate.getDate())}`;
       return isDayFullyBookedForFleetRange(`${dateStr}T${earliestTimeStr}`, paired.ret, cat);
     }
+    // qbReturnDate: mirror image of qbPickupDate above — re-anchor at the
+    // fleet's own LATEST valid return moment for this day (given the fixed
+    // pickup) instead of testing whatever stale return time is sitting in
+    // qbReturnTime, so a day only invalid after some cutoff still stays
+    // selectable, same fix as the booking modal's bkReturn case.
     const paired = getQuickBookingPairedRange(input, cellDate);
-    if(paired) return isDayFullyBookedForFleetRange(paired.pickup, paired.ret, cat);
+    if(paired) return isDayFullyBookedForFleetReturn(paired.pickup, cellDate, cat);
     return isDayFullyBookedForFleet(cellDate, cat);
   }
   return false;
@@ -5819,6 +5856,57 @@ function openCustomDatePicker(input){
             qbTimeInput.value = timeToUse;
             qbTimeInput.dispatchEvent(new Event('input', { bubbles: true }));
             qbTimeInput.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        } else if(carIdForShading && input.id === 'bkReturn'){
+          // Mirror image of the bkPickup case above: picking a return day
+          // auto-suggests the LATEST valid moment that day (given the
+          // already-chosen pickup) instead of leaving whatever time was
+          // already there — which could be past the actual cutoff and get
+          // instantly rejected even though the day itself is fine.
+          const pickupVal = document.getElementById('bkPickup')?.value;
+          if(pickupVal){
+            const latest = Availability.getLatestValidReturnTime({
+              bookings: remoteBookedIntervals[carIdForShading] || [],
+              unitIds: remoteCarUnitIds[carIdForShading],
+              stock: effectiveStock(CARS.find(c => c.id === carIdForShading)),
+              pickupVal, cellDate,
+            });
+            if(latest){
+              const pad = n => String(n).padStart(2, '0');
+              timeToUse = `${pad(latest.getHours())}:${pad(latest.getMinutes())}`;
+              currentTime = timeToUse;
+            }
+          }
+        } else if(input.id === 'qbReturnDate'){
+          // Fleet-wide mirror of qbPickupDate's auto-suggestion — the latest
+          // valid return moment across every matching car (the most generous
+          // option), same rationale as bkReturn above.
+          const otherPickupDate = document.getElementById('qbPickupDate')?.value;
+          const pickupTime = document.getElementById('qbPickupTime')?.value || '10:00';
+          if(otherPickupDate){
+            const cat = document.getElementById('qbCategory')?.value || 'all';
+            const pickupVal = `${otherPickupDate}T${pickupTime}`;
+            let latestOverall = null;
+            CARS.filter(c => carMatchesCategory(c, cat)).forEach(c=>{
+              const latest = Availability.getLatestValidReturnTime({
+                bookings: remoteBookedIntervals[c.id] || [],
+                unitIds: remoteCarUnitIds[c.id],
+                stock: effectiveStock(c),
+                pickupVal, cellDate,
+              });
+              if(latest && (!latestOverall || latest > latestOverall)) latestOverall = latest;
+            });
+            if(latestOverall){
+              const pad = n => String(n).padStart(2, '0');
+              timeToUse = `${pad(latestOverall.getHours())}:${pad(latestOverall.getMinutes())}`;
+              currentTime = timeToUse;
+              const qbReturnTimeInput = document.getElementById('qbReturnTime');
+              if(qbReturnTimeInput){
+                qbReturnTimeInput.value = timeToUse;
+                qbReturnTimeInput.dispatchEvent(new Event('input', { bubbles: true }));
+                qbReturnTimeInput.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+            }
           }
         }
         writeDateValue(input, cellDate, timeToUse);
