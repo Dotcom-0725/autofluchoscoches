@@ -5541,6 +5541,26 @@ function isDayFullyBookedForFleetRange(pickupIso, retIso, catKey){
   if(!candidates.length) return false;
   return candidates.every(c => getRemainingStockForRange(c, pickupIso, retIso) <= 0);
 }
+/* Per-car anchored version of isDayFullyBookedForFleetRange: testing every
+   car against one shared pickup time (the fleet's single earliest same-day
+   opening, see getEarliestAvailableTimeOnDayForFleet below) wrongly marks a
+   day fully booked whenever THAT car can't complete the full paired range,
+   even though a different matching car — one that happens to open later
+   that same day — actually could. Each car must be tested against ITS OWN
+   earliest same-day moment instead; the day is only unavailable if EVERY
+   matching car fails at its own best time. */
+function isDayFullyBookedForFleetRangeAnchored(cellDate, retIso, catKey){
+  const candidates = CARS.filter(c => carMatchesCategory(c, catKey || 'all'));
+  if(!candidates.length) return false;
+  const pad = n => String(n).padStart(2, '0');
+  const dateStr = `${cellDate.getFullYear()}-${pad(cellDate.getMonth() + 1)}-${pad(cellDate.getDate())}`;
+  return candidates.every(c => {
+    if(isDayFullyBooked(c.id, cellDate)) return true;
+    const t = getEarliestAvailableTimeOnDay(c.id, cellDate);
+    const anchoredPickup = `${dateStr}T${pad(t.getHours())}:${pad(t.getMinutes())}`;
+    return getRemainingStockForRange(c, anchoredPickup, retIso) <= 0;
+  });
+}
 /* Fleet-wide equivalent of getEarliestAvailableTimeOnDay — the earliest
    moment on `cellDate` that ANY car matching catKey has a free slot (the
    soonest across every matching car, not just one). Used to auto-suggest a
@@ -5548,7 +5568,11 @@ function isDayFullyBookedForFleetRange(pickupIso, retIso, catKey){
    car-specific booking modal already does for a single car (see the
    day-click handler below) — otherwise clicking a pickup day would keep
    whatever stale time was already typed, which the paired-range check could
-   then wrongly reject even though a later time that same day works fine. */
+   then wrongly reject even though a later time that same day works fine.
+   Only used when no return date is picked yet (day-in-isolation case); once
+   a return is picked, getEarliestFleetPickupTimeForRange below must be used
+   instead — see its comment for why a plain fleet-wide minimum isn't safe
+   once a full range needs to survive. */
 function getEarliestAvailableTimeOnDayForFleet(cellDate, catKey){
   const candidates = CARS.filter(c => carMatchesCategory(c, catKey || 'all'));
   const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
@@ -5560,6 +5584,30 @@ function getEarliestAvailableTimeOnDayForFleet(cellDate, catKey){
     if(!earliest || t < earliest) earliest = t;
   });
   return earliest || dayStart;
+}
+/* Same per-car anchoring as isDayFullyBookedForFleetRangeAnchored, but
+   returns the earliest pickup time instead of a plain boolean: the minimum,
+   across matching cars, of each car's own earliest same-day moment among
+   only the cars whose full [ownEarliest, retIso) range actually survives.
+   Using the plain fleet-wide minimum (getEarliestAvailableTimeOnDayForFleet)
+   here would pre-fill qbPickupTime with a time that only works for a car
+   that can't actually complete the trip, producing the exact same false
+   "no cars available" result the shading fix above prevents. */
+function getEarliestFleetPickupTimeForRange(cellDate, retIso, catKey){
+  const candidates = CARS.filter(c => carMatchesCategory(c, catKey || 'all'));
+  const dayStart = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+  if(!candidates.length) return dayStart;
+  const pad = n => String(n).padStart(2, '0');
+  const dateStr = `${cellDate.getFullYear()}-${pad(cellDate.getMonth() + 1)}-${pad(cellDate.getDate())}`;
+  let best = null;
+  candidates.forEach(c => {
+    if(isDayFullyBooked(c.id, cellDate)) return;
+    const t = getEarliestAvailableTimeOnDay(c.id, cellDate);
+    const anchoredPickup = `${dateStr}T${pad(t.getHours())}:${pad(t.getMinutes())}`;
+    if(getRemainingStockForRange(c, anchoredPickup, retIso) <= 0) return;
+    if(!best || t < best) best = t;
+  });
+  return best || dayStart;
 }
 /* True only if EVERY car matching catKey has NO valid return moment on
    `cellDate` given the fixed `pickupVal` — the fleet-wide mirror of
@@ -5696,12 +5744,12 @@ function isDayUnavailableForInput(input, cellDate, currentTimeStr){
       // that a LATER time that same day would satisfy. Re-anchoring the
       // candidate range at the fleet's own earliest free moment for this
       // specific day fixes that false rejection while keeping every
-      // genuinely fully-booked day correctly marked booked.
-      const earliest = getEarliestAvailableTimeOnDayForFleet(cellDate, cat);
-      const pad = n => String(n).padStart(2, '0');
-      const earliestTimeStr = `${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
-      const dateStr = `${cellDate.getFullYear()}-${pad(cellDate.getMonth() + 1)}-${pad(cellDate.getDate())}`;
-      return isDayFullyBookedForFleetRange(`${dateStr}T${earliestTimeStr}`, paired.ret, cat);
+      // genuinely fully-booked day correctly marked booked. Testing every
+      // car against ONE shared anchor time (the fleet's single earliest
+      // same-day opening) is itself unsafe once a return is already fixed —
+      // see isDayFullyBookedForFleetRangeAnchored's comment — so each car
+      // must be anchored at its own earliest moment instead.
+      return isDayFullyBookedForFleetRangeAnchored(cellDate, paired.ret, cat);
     }
     // qbReturnDate: mirror image of qbPickupDate above — re-anchor at the
     // fleet's own LATEST valid return moment for this day (given the fixed
@@ -5842,7 +5890,16 @@ function openCustomDatePicker(input){
           currentTime = timeToUse;
         } else if(input.id === 'qbPickupDate'){
           const cat = document.getElementById('qbCategory')?.value || 'all';
-          const earliest = getEarliestAvailableTimeOnDayForFleet(cellDate, cat);
+          // Once a return date is already chosen, the pre-filled time must
+          // be one that actually survives the full paired range (see
+          // getEarliestFleetPickupTimeForRange's comment) — otherwise this
+          // suggests a time that only works for a car other than the one
+          // that's actually bookable for this pickup->return combo.
+          const otherReturnDate = document.getElementById('qbReturnDate')?.value;
+          const returnTime = document.getElementById('qbReturnTime')?.value || '10:00';
+          const earliest = otherReturnDate
+            ? getEarliestFleetPickupTimeForRange(cellDate, `${otherReturnDate}T${returnTime}`, cat)
+            : getEarliestAvailableTimeOnDayForFleet(cellDate, cat);
           const pad = n => String(n).padStart(2, '0');
           timeToUse = `${pad(earliest.getHours())}:${pad(earliest.getMinutes())}`;
           currentTime = timeToUse;
