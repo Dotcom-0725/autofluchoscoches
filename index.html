@@ -746,9 +746,16 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
   display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;
   color:var(--ink-dim);font-size:.82rem;
 }
-.admin-link{opacity:.7;transition:opacity .15s;font-weight:600}
-.admin-link:hover{opacity:1;color:var(--blue-400)}
-
+.account-tab{
+  background:none;border:none;padding:10px 4px;margin-right:16px;font-weight:700;font-size:.88rem;
+  color:var(--ink-dim);cursor:pointer;border-bottom:2px solid transparent;
+}
+.account-tab.active{color:var(--blue-500);border-bottom-color:var(--blue-500)}
+/* .admin-tabs / .admin-booking-item / .admin-booking-details: despite the
+   name, these are used by the Customer Account "My Reservations" list
+   (renderAccountBookings) — a leftover class name from before that feature
+   had its own styles, not a reference to the admin dashboard. */
+.admin-tabs{display:flex;gap:8px;margin-bottom:18px;border-bottom:1px solid var(--card-border)}
 .admin-booking-item{
   display:flex;justify-content:space-between;align-items:center;gap:14px;
   background:var(--navy-900);border:1px solid var(--card-border);border-radius:10px;
@@ -756,30 +763,6 @@ footer{background:var(--navy-800);border-top:1px solid var(--card-border);paddin
 }
 .admin-booking-item b{display:block;margin-bottom:4px}
 .admin-booking-details{color:var(--ink-dim);font-size:.78rem;line-height:1.5}
-
-.admin-tabs{display:flex;gap:8px;margin-bottom:18px;border-bottom:1px solid var(--card-border)}
-.admin-tab{
-  background:none;border:none;padding:10px 4px;margin-right:16px;font-weight:700;font-size:.88rem;
-  color:var(--ink-dim);cursor:pointer;border-bottom:2px solid transparent;
-}
-.admin-tab.active{color:var(--blue-500);border-bottom-color:var(--blue-500)}
-.account-tab{
-  background:none;border:none;padding:10px 4px;margin-right:16px;font-weight:700;font-size:.88rem;
-  color:var(--ink-dim);cursor:pointer;border-bottom:2px solid transparent;
-}
-.account-tab.active{color:var(--blue-500);border-bottom-color:var(--blue-500)}
-.admin-seasons-help{color:var(--ink-dim);font-size:.82rem;margin-bottom:14px}
-.admin-season-form{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
-.admin-season-form input,.admin-season-form select{
-  background:var(--navy-900);border:1px solid var(--card-border);color:var(--ink);
-  padding:8px 10px;border-radius:8px;font-size:.82rem;flex:1;min-width:100px;
-}
-.admin-season-form button{flex:none}
-.admin-season-item{
-  display:flex;justify-content:space-between;align-items:center;gap:14px;
-  background:var(--navy-900);border:1px solid var(--card-border);border-radius:10px;
-  padding:12px 16px;margin-bottom:10px;font-size:.85rem;
-}
 .admin-booking-item .btn{flex:none;padding:9px 16px;font-size:.8rem}
 
 /* ---------- Customer account modal ---------- */
@@ -1384,7 +1367,6 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
     </div>
     <div class="footer-bottom">
       <span>© <span id="year"></span> <span data-i18n="footer_by">by</span> autofluchoscoches.com</span>
-      <a href="admin.html" id="adminLink" class="admin-link" target="_blank" rel="noopener" data-i18n="admin_link_text">🔑 Admin</a>
     </div>
   </div>
 </footer>
@@ -1554,53 +1536,6 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
     <h3 data-i18n="terms_title">General Conditions</h3>
     <p data-i18n="terms_body">Minimum age 25. Minimum rental period 3 days. A deposit of $300 or $500 (depending on the vehicle) is required at pick-up. Please bring a valid driving license and passport/ID. Contact us on WhatsApp for the complete terms.</p>
     <button type="button" class="btn btn-outline btn-block" id="termsCloseBtn" data-i18n="confirm_close">Close</button>
-  </div>
-</div>
-
-<!-- ================= ADMIN PANEL (owner only — cancel a booking to free the car up again) ================= -->
-<div class="modal-overlay" id="adminOverlay">
-  <div class="modal-box modal-box-lg">
-    <button class="modal-close" id="adminClose" aria-label="Close">✕</button>
-    <h3 data-i18n="admin_title">Admin — Manage Bookings</h3>
-
-    <div id="adminLoginPanel">
-      <p data-i18n="admin_login_sub">Enter the admin password to view and cancel bookings.</p>
-      <label data-i18n="admin_password_label">Password</label>
-      <input type="password" id="adminPasswordInput">
-      <p class="modal-error" id="adminLoginError" data-i18n="admin_wrong_password">Incorrect password.</p>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-blue btn-block" id="adminLoginBtn" data-i18n="admin_login_btn">Log in</button>
-      </div>
-    </div>
-
-    <div id="adminBookingsPanel" style="display:none">
-      <div class="admin-tabs">
-        <button type="button" class="admin-tab active" data-admin-tab="bookings" data-i18n="admin_tab_bookings">Bookings</button>
-        <button type="button" class="admin-tab" data-admin-tab="seasons" data-i18n="admin_tab_seasons">Seasonal Pricing</button>
-      </div>
-
-      <div id="adminBookingsTab">
-        <div id="adminBookingsList"></div>
-        <p id="adminEmptyMsg" data-i18n="admin_no_bookings" style="display:none">No active bookings.</p>
-      </div>
-
-      <div id="adminSeasonsTab" style="display:none">
-        <p class="admin-seasons-help" data-i18n="admin_seasons_help">Create a pricing period (e.g. Summer, Christmas). Bookings picked up inside that date range are automatically priced with the adjustment below.</p>
-        <form id="adminSeasonForm" class="admin-season-form">
-          <input type="text" id="seasonName" placeholder="Summer" required>
-          <input type="date" id="seasonStart" required>
-          <input type="date" id="seasonEnd" required>
-          <select id="seasonType">
-            <option value="percent" data-i18n="admin_season_percent">% surcharge</option>
-            <option value="fixed" data-i18n="admin_season_fixed">Fixed €/day</option>
-          </select>
-          <input type="number" id="seasonValue" placeholder="20" required>
-          <button type="submit" class="btn btn-blue" data-i18n="admin_season_add">Add period</button>
-        </form>
-        <div id="adminSeasonsList"></div>
-        <p id="adminSeasonsEmpty" data-i18n="admin_no_seasons" style="display:none">No seasonal pricing periods yet.</p>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -1787,7 +1722,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
 
 <!-- jsPDF: used only to generate the booking PDF client-side, no backend involved -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<!-- Shared availability engine (single source of truth, also used by admin.html) -->
+<!-- Shared availability engine (single source of truth, also used by console-dccc429d7232.html) -->
 <script src="availability.js"></script>
 <script>
 /* =========================================================
@@ -1965,7 +1900,7 @@ function populateLocationAndDepositSelects(dict){
    code changes needed, the booking engine already supports N > 1. */
 /* This array is now just the OFFLINE FALLBACK, used only if the Apps Script
    backend is unreachable. The real fleet is managed from the admin dashboard
-   (admin.html) and lives in the "Cars" sheet tab — loadCarsFromBackend()
+   (console-dccc429d7232.html) and lives in the "Cars" sheet tab — loadCarsFromBackend()
    below replaces the contents of this array with that live data on page load. */
 let CARS = [
   {id:'clio5-auto', cat:'berline', offer:'30€', price:30, name:'RENAULT CLIO 5 AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', stock:2},
@@ -2005,7 +1940,7 @@ function carMatchesCategory(c, catKey){
 }
 
 /* Replaces the hardcoded fallback CARS array above with the live catalog
-   from the Cars sheet (managed via admin.html). If the backend is
+   from the Cars sheet (managed via console-dccc429d7232.html). If the backend is
    unreachable, the fallback array just stays in place — the site keeps
    working, it just won't reflect the latest admin edits until it's back. */
 async function loadCarsFromBackend(){
@@ -2030,7 +1965,7 @@ async function loadCarsFromBackend(){
   } catch(e) { /* offline or backend unreachable — the fallback array above still works */ }
 }
 
-/* Applies admin-configured contact info (Settings > Contact in admin.html)
+/* Applies admin-configured contact info (Settings > Contact in console-dccc429d7232.html)
    to every tagged element on the page: data-contact-link updates an anchor's
    href (tel:/mailto:/wa.me — wa.me links keep whatever ?text= query they
    already had), data-contact-text updates visible text, data-contact-title
@@ -2077,7 +2012,7 @@ function applyContactInfo(settings){
   }
 }
 
-/* SEO meta + contact info overrides set from admin.html's Settings screen.
+/* SEO meta + contact info overrides set from console-dccc429d7232.html's Settings screen.
    Only applies fields that are actually set — an empty Settings sheet
    changes nothing, so the defaults already in the page (meta tags, contact
    details) stay exactly as they were. */
@@ -2274,18 +2209,6 @@ const I18N = {
     contact_hours_label:'Hours', contact_hours_value:'Open 24/7',
     cta_whatsapp2:'Chat on WhatsApp', cta_directions:'📍 Google Maps directions',
     footer_links:'Quick links', footer_about:'About Us', footer_newcars:'New Cars', footer_by:'by',
-    admin_link_text:'🔑 Admin', admin_title:'Admin — Manage Bookings',
-    admin_login_sub:'Enter the admin password to view and cancel bookings.',
-    admin_password_label:'Password', admin_wrong_password:'Incorrect password.',
-    admin_login_btn:'Log in', admin_no_bookings:'No active bookings.',
-    admin_tab_bookings:'Bookings', admin_tab_seasons:'Seasonal Pricing',
-    admin_seasons_help:'Create a pricing period (e.g. Summer, Christmas). Bookings picked up inside that date range are automatically priced with the adjustment below.',
-    admin_season_percent:'% surcharge', admin_season_fixed:'Fixed €/day', admin_season_add:'Add period',
-    admin_no_seasons:'No seasonal pricing periods yet.', admin_season_delete:'Delete',
-    admin_cancel_btn:'Cancel booking', admin_confirm_cancel:'Cancel this booking and make the car available again?',
-    admin_cancel_failed:'Could not cancel the booking. Please try again.',
-    admin_not_configured:'The booking backend is not configured yet.',
-    admin_network_error:'Network error. Please try again.',
     modal_title:'Book This Car', modal_car_label:'Car', modal_car_select_label:'Selected vehicle (change anytime)', modal_name_label:'Full Name', modal_phone_label:'Phone Number',
     modal_pickup_label:'Pick-up Date', modal_return_label:'Drop-off Date', modal_notes_label:'Notes (optional)',
     modal_submit:'Generate Booking (PDF)', modal_cancel:'Cancel',
@@ -2447,18 +2370,6 @@ const I18N = {
     contact_hours_label:'Horaires', contact_hours_value:'Ouvert 24h/24',
     cta_whatsapp2:'Discuter sur WhatsApp', cta_directions:'📍 Itinéraire Google Maps',
     footer_links:'Liens rapides', footer_about:'À propos', footer_newcars:'Nouvelles voitures', footer_by:'par',
-    admin_link_text:'🔑 Admin', admin_title:'Admin — Gérer les réservations',
-    admin_login_sub:'Entrez le mot de passe admin pour voir et annuler les réservations.',
-    admin_password_label:'Mot de passe', admin_wrong_password:'Mot de passe incorrect.',
-    admin_login_btn:'Se connecter', admin_no_bookings:'Aucune réservation active.',
-    admin_tab_bookings:'Réservations', admin_tab_seasons:'Tarification saisonnière',
-    admin_seasons_help:'Créez une période tarifaire (ex. Été, Noël). Les réservations dont la prise en charge tombe dans cette période sont automatiquement tarifées avec l\'ajustement ci-dessous.',
-    admin_season_percent:'Supplément %', admin_season_fixed:'Fixe €/jour', admin_season_add:'Ajouter la période',
-    admin_no_seasons:'Aucune période tarifaire pour le moment.', admin_season_delete:'Supprimer',
-    admin_cancel_btn:'Annuler la réservation', admin_confirm_cancel:'Annuler cette réservation et rendre la voiture disponible à nouveau ?',
-    admin_cancel_failed:"Impossible d'annuler la réservation. Veuillez réessayer.",
-    admin_not_configured:"Le backend de réservation n'est pas encore configuré.",
-    admin_network_error:'Erreur réseau. Veuillez réessayer.',
     modal_title:'Réserver cette voiture', modal_car_label:'Voiture', modal_car_select_label:'Véhicule sélectionné (modifiable à tout moment)', modal_name_label:'Nom complet', modal_phone_label:'Numéro de téléphone',
     modal_pickup_label:'Date de prise en charge', modal_return_label:'Date de retour', modal_notes_label:'Remarques (facultatif)',
     modal_submit:'Générer la réservation (PDF)', modal_cancel:'Annuler',
@@ -2621,18 +2532,6 @@ const I18N = {
     contact_hours_label:'Horario', contact_hours_value:'Abierto 24h',
     cta_whatsapp2:'Chatear por WhatsApp', cta_directions:'📍 Cómo llegar (Google Maps)',
     footer_links:'Enlaces rápidos', footer_about:'Sobre nosotros', footer_newcars:'Coches nuevos', footer_by:'por',
-    admin_link_text:'🔑 Admin', admin_title:'Admin — Gestionar reservas',
-    admin_login_sub:'Introduzca la contraseña de administrador para ver y cancelar reservas.',
-    admin_password_label:'Contraseña', admin_wrong_password:'Contraseña incorrecta.',
-    admin_login_btn:'Iniciar sesión', admin_no_bookings:'No hay reservas activas.',
-    admin_tab_bookings:'Reservas', admin_tab_seasons:'Precios de temporada',
-    admin_seasons_help:'Cree un período de precios (ej. Verano, Navidad). Las reservas cuya recogida caiga dentro de ese rango de fechas se calculan automáticamente con el ajuste indicado abajo.',
-    admin_season_percent:'Recargo %', admin_season_fixed:'Fijo €/día', admin_season_add:'Añadir período',
-    admin_no_seasons:'Aún no hay períodos de precios de temporada.', admin_season_delete:'Eliminar',
-    admin_cancel_btn:'Cancelar reserva', admin_confirm_cancel:'¿Cancelar esta reserva y volver a poner el coche disponible?',
-    admin_cancel_failed:'No se pudo cancelar la reserva. Inténtelo de nuevo.',
-    admin_not_configured:'El backend de reservas aún no está configurado.',
-    admin_network_error:'Error de red. Inténtelo de nuevo.',
     modal_title:'Reservar este coche', modal_car_label:'Coche', modal_car_select_label:'Vehículo seleccionado (puede cambiarlo en cualquier momento)', modal_name_label:'Nombre completo', modal_phone_label:'Número de teléfono',
     modal_pickup_label:'Fecha de recogida', modal_return_label:'Fecha de devolución', modal_notes_label:'Notas (opcional)',
     modal_submit:'Generar reserva (PDF)', modal_cancel:'Cancelar',
@@ -2795,18 +2694,6 @@ const I18N = {
     contact_hours_label:'أوقات العمل', contact_hours_value:'مفتوح 24/24',
     cta_whatsapp2:'تواصل عبر واتساب', cta_directions:'📍 الاتجاهات عبر خرائط غوغل',
     footer_links:'روابط سريعة', footer_about:'من نحن', footer_newcars:'سيارات جديدة', footer_by:'من طرف',
-    admin_link_text:'🔑 الإدارة', admin_title:'الإدارة — تسيير الحجوزات',
-    admin_login_sub:'أدخل كلمة سر الإدارة لعرض وإلغاء الحجوزات.',
-    admin_password_label:'كلمة السر', admin_wrong_password:'كلمة السر غير صحيحة.',
-    admin_login_btn:'تسجيل الدخول', admin_no_bookings:'لا توجد حجوزات نشطة.',
-    admin_tab_bookings:'الحجوزات', admin_tab_seasons:'التسعير الموسمي',
-    admin_seasons_help:'أنشئ فترة تسعير (مثلاً الصيف، عيد الميلاد). الحجوزات التي يقع تاريخ استلامها ضمن هذه الفترة يتم تسعيرها تلقائياً بالتعديل أدناه.',
-    admin_season_percent:'نسبة % إضافية', admin_season_fixed:'مبلغ ثابت €/اليوم', admin_season_add:'إضافة فترة',
-    admin_no_seasons:'لا توجد فترات تسعير موسمي بعد.', admin_season_delete:'حذف',
-    admin_cancel_btn:'إلغاء الحجز', admin_confirm_cancel:'هل تريد إلغاء هذا الحجز وجعل السيارة متوفرة من جديد؟',
-    admin_cancel_failed:'تعذّر إلغاء الحجز. حاول مرة أخرى.',
-    admin_not_configured:'لم يتم إعداد نظام الحجوزات بعد.',
-    admin_network_error:'خطأ في الاتصال. حاول مرة أخرى.',
     modal_title:'احجز هذه السيارة', modal_car_label:'السيارة', modal_car_select_label:'السيارة المختارة (يمكن تغييرها في أي وقت)', modal_name_label:'الاسم الكامل', modal_phone_label:'رقم الهاتف',
     modal_pickup_label:'تاريخ الاستلام', modal_return_label:'تاريخ الإرجاع', modal_notes_label:'ملاحظات (اختياري)',
     modal_submit:'إنشاء الحجز (PDF)', modal_cancel:'إلغاء',
@@ -3125,7 +3012,7 @@ const CAR_TURNAROUND_BUFFER_MS = 2 * 60 * 60 * 1000;
    car's overall current booked count.
 
    Thin wrapper around the shared Availability module (availability.js) —
-   the actual math lives there now, shared verbatim with admin.html, so the
+   the actual math lives there now, shared verbatim with console-dccc429d7232.html, so the
    two pages can never silently disagree with each other again. Kept under
    this exact name/signature since nothing else in this file needs to change. */
 function rangesOverlap(startA, endA, startB, endB){
@@ -3844,227 +3731,6 @@ document.getElementById('termsClose').addEventListener('click', ()=> termsOverla
 document.getElementById('termsCloseBtn').addEventListener('click', ()=> termsOverlay.classList.remove('open'));
 termsOverlay.addEventListener('click', e=>{ if(e.target === termsOverlay) termsOverlay.classList.remove('open'); });
 
-/* =========================================================
-   ADMIN PANEL — password-protected booking cancellation.
-   The password is checked server-side (in the Apps Script), not just in
-   this JS, so it can't be bypassed by reading the page source. Once
-   logged in for this page load, the password is kept in memory (not
-   persisted) to avoid re-typing it for every cancel click.
-========================================================= */
-const adminOverlay = document.getElementById('adminOverlay');
-let adminPassword = null;
-
-function openAdminModal(){
-  document.getElementById('adminPasswordInput').value = '';
-  document.getElementById('adminLoginError').classList.remove('show');
-  document.getElementById('adminLoginPanel').style.display = 'block';
-  document.getElementById('adminBookingsPanel').style.display = 'none';
-  adminOverlay.classList.add('open');
-  if(adminPassword) loadAdminBookings();
-}
-function closeAdminModal(){ adminOverlay.classList.remove('open'); }
-
-// The footer's "🔑 Admin" link now opens admin.html directly (the complete
-// dashboard — it covers everything this in-page modal did, plus fleet/pricing/
-// reports/etc.). The modal below is kept as dead code only in case it's ever
-// needed again; nothing currently opens it.
-document.getElementById('adminClose').addEventListener('click', closeAdminModal);
-adminOverlay.addEventListener('click', e=>{ if(e.target === adminOverlay) closeAdminModal(); });
-
-function showAdminLoginError(text){
-  const el = document.getElementById('adminLoginError');
-  if(text) el.textContent = text;
-  el.classList.add('show');
-}
-
-async function loadAdminBookings(){
-  const dict = I18N[currentLang];
-  try {
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=admin&password=${encodeURIComponent(adminPassword)}`);
-    const data = await res.json();
-    if(!data.success){
-      adminPassword = null;
-      showAdminLoginError(dict.admin_wrong_password);
-      document.getElementById('adminLoginPanel').style.display = 'block';
-      document.getElementById('adminBookingsPanel').style.display = 'none';
-      return;
-    }
-    renderAdminBookings(data.bookings);
-    renderAdminSeasons(data.seasons || []);
-    document.getElementById('adminLoginPanel').style.display = 'none';
-    document.getElementById('adminBookingsPanel').style.display = 'block';
-  } catch(e){
-    showAdminLoginError(dict.admin_network_error);
-  }
-}
-
-function renderAdminBookings(bookings){
-  const dict = I18N[currentLang];
-  const list = document.getElementById('adminBookingsList');
-  const emptyMsg = document.getElementById('adminEmptyMsg');
-  list.innerHTML = '';
-  if(!bookings.length){
-    emptyMsg.style.display = 'block';
-    return;
-  }
-  emptyMsg.style.display = 'none';
-  bookings.forEach(b=>{
-    const item = document.createElement('div');
-    item.className = 'admin-booking-item';
-    item.innerHTML = `
-      <div>
-        <b>${b.carName}</b>
-        <div class="admin-booking-details">${b.customerName} · ${b.phone}<br>${b.pickup} → ${b.ret} · ${b.ref}</div>
-      </div>
-      <button type="button" class="btn btn-outline" data-row="${b.row}" data-carid="${b.carId}">${dict.admin_cancel_btn}</button>`;
-    list.appendChild(item);
-  });
-}
-
-document.getElementById('adminLoginBtn').addEventListener('click', async ()=>{
-  const dict = I18N[currentLang];
-  const pwd = document.getElementById('adminPasswordInput').value;
-  document.getElementById('adminLoginError').classList.remove('show');
-  if(APPS_SCRIPT_URL.startsWith('PASTE_')){
-    showAdminLoginError(dict.admin_not_configured);
-    return;
-  }
-  try {
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=admin&password=${encodeURIComponent(pwd)}`);
-    const data = await res.json();
-    if(!data.success){
-      showAdminLoginError(dict.admin_wrong_password);
-      return;
-    }
-    adminPassword = pwd;
-    renderAdminBookings(data.bookings);
-    renderAdminSeasons(data.seasons || []);
-    document.getElementById('adminLoginPanel').style.display = 'none';
-    document.getElementById('adminBookingsPanel').style.display = 'block';
-  } catch(e){
-    showAdminLoginError(dict.admin_network_error);
-  }
-});
-
-/* ---- Admin tabs (Bookings / Seasonal Pricing) ---- */
-document.querySelectorAll('.admin-tab').forEach(tab=>{
-  tab.addEventListener('click', ()=>{
-    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById('adminBookingsTab').style.display = tab.dataset.adminTab === 'bookings' ? 'block' : 'none';
-    document.getElementById('adminSeasonsTab').style.display = tab.dataset.adminTab === 'seasons' ? 'block' : 'none';
-  });
-});
-
-/* ---- Seasonal pricing CRUD (admin) ---- */
-function renderAdminSeasons(seasons){
-  const dict = I18N[currentLang];
-  const list = document.getElementById('adminSeasonsList');
-  const emptyMsg = document.getElementById('adminSeasonsEmpty');
-  list.innerHTML = '';
-  if(!seasons.length){
-    emptyMsg.style.display = 'block';
-    return;
-  }
-  emptyMsg.style.display = 'none';
-  seasons.forEach(s=>{
-    const item = document.createElement('div');
-    item.className = 'admin-season-item';
-    const adjustment = s.type === 'fixed' ? `+€${s.value}/day` : `+${s.value}%`;
-    item.innerHTML = `
-      <div>
-        <b>${s.name}</b>
-        <div class="admin-booking-details">${s.start} → ${s.end} · ${adjustment}</div>
-      </div>
-      <button type="button" class="btn btn-outline" data-season-row="${s.row}">${dict.admin_season_delete}</button>`;
-    list.appendChild(item);
-  });
-}
-
-document.getElementById('adminSeasonForm').addEventListener('submit', async e=>{
-  e.preventDefault();
-  const dict = I18N[currentLang];
-  const name = document.getElementById('seasonName').value.trim();
-  const start = document.getElementById('seasonStart').value;
-  const end = document.getElementById('seasonEnd').value;
-  const type = document.getElementById('seasonType').value;
-  const value = document.getElementById('seasonValue').value;
-  if(!name || !start || !end || !value) return;
-  try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action: 'addSeason', password: adminPassword, name, start, end, type, value }),
-    });
-    const data = await res.json();
-    if(data.success){
-      document.getElementById('adminSeasonForm').reset();
-      document.getElementById('seasonType').value = 'percent';
-      await fetchSeasonalPeriods();
-      loadAdminBookings();
-    } else {
-      alert(dict.admin_cancel_failed);
-    }
-  } catch(e){
-    alert(dict.admin_network_error);
-  }
-});
-
-document.getElementById('adminSeasonsList').addEventListener('click', async e=>{
-  const btn = e.target.closest('button[data-season-row]');
-  if(!btn) return;
-  const dict = I18N[currentLang];
-  if(!confirm(dict.admin_confirm_cancel)) return;
-  btn.disabled = true;
-  try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action: 'deleteSeason', password: adminPassword, row: btn.dataset.seasonRow }),
-    });
-    const data = await res.json();
-    if(data.success){
-      await fetchSeasonalPeriods();
-      loadAdminBookings();
-    } else {
-      alert(dict.admin_cancel_failed);
-      btn.disabled = false;
-    }
-  } catch(e){
-    alert(dict.admin_network_error);
-    btn.disabled = false;
-  }
-});
-
-document.getElementById('adminBookingsList').addEventListener('click', async e=>{
-  const btn = e.target.closest('button[data-row]');
-  if(!btn) return;
-  const dict = I18N[currentLang];
-  if(!confirm(dict.admin_confirm_cancel)) return;
-  btn.disabled = true;
-  try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action: 'cancel', password: adminPassword, row: btn.dataset.row }),
-    });
-    const data = await res.json();
-    if(data.success){
-      if(remoteBookedCounts && remoteBookedCounts[btn.dataset.carid]){
-        remoteBookedCounts[btn.dataset.carid] = Math.max(0, remoteBookedCounts[btn.dataset.carid] - 1);
-      }
-      renderFleet(dict, document.querySelector('#fleetFilter button.active')?.dataset.cat || 'all');
-      loadAdminBookings();
-    } else {
-      alert(dict.admin_cancel_failed);
-      btn.disabled = false;
-    }
-  } catch(e){
-    alert(dict.admin_cancel_failed);
-    btn.disabled = false;
-  }
-});
-
 /* ---- live price estimate (Booking Form only): days x price
    + pick-up/drop-off location fees + deposit-based daily surcharge
    + mandatory €5 car wash + resources (second driver + baby seats x qty)
@@ -4603,7 +4269,7 @@ async function generateBookingPdf(dict, data){
   // buildPriceBreakdownLines. Persisted as a single string (see
   // finalizeBooking) and split back into [label, value] pairs by whichever
   // caller reconstructs it from a saved booking (downloadAccountBookingPdf,
-  // admin.html's downloadReservationPdf).
+  // console-dccc429d7232.html's downloadReservationPdf).
   if(Array.isArray(data.priceBreakdown)) data.priceBreakdown.forEach(row => bullets.push(row));
   if(data.notes) bullets.push([dict.modal_notes_label, data.notes]);
 
@@ -4747,7 +4413,7 @@ bookingForm.addEventListener('submit', async e=>{
    reservation history and re-download their contract PDF later, without
    needing to keep the original download around.
 
-   Deliberately mirrors the site's existing auth model (admin.html's
+   Deliberately mirrors the site's existing auth model (console-dccc429d7232.html's
    sessionStorage password, index.html's own adminPassword variable above):
    there's no server-side session/token layer — the email+password pair is
    just re-sent and re-verified by the backend on every request. The one
