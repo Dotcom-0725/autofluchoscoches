@@ -1,7 +1,7 @@
 /* ============================================================
    AUTO FLUCHOS COCHES — shared availability engine
    Single source of truth for "is this car/unit free" math, used by both
-   index.html (public site) and console-dccc429d7232.html (admin dashboard) so the two
+   index.html (public site) and gestion.html (admin dashboard) so the two
    pages can never silently disagree with each other again. Mirrors the
    backend's CAR_TURNAROUND_BUFFER_MS / rangesOverlap_ in apps-script.gs.txt
    exactly (same buffer value, same bidirectional overlap formula) — if that
@@ -9,7 +9,7 @@
 
    Every function here is pure: it takes the caller's own data as plain
    arguments (bookings/unitIds/stock/dates) and returns a result — nothing
-   here reads index.html's or console-dccc429d7232.html's global state directly. Each host
+   here reads index.html's or gestion.html's global state directly. Each host
    page is responsible for mapping its own booking/unit data into the shapes
    documented below before calling in.
 
@@ -80,7 +80,7 @@
      that has a free slot — used for the "delayed" same-day rescue search.
      `unitIds` is optional here on purpose: getDelayedAvailability below
      intentionally calls this WITHOUT unitIds (aggregate-only) to preserve
-     the exact pre-existing behavior of index.html's/console-dccc429d7232.html's original
+     the exact pre-existing behavior of index.html's/gestion.html's original
      functions — the per-unit precision is applied by the subsequent
      getRemainingStockForRange call instead. findNextAvailableMoment (the
      new multi-day search) DOES pass unitIds for full per-unit precision. */

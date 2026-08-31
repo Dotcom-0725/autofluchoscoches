@@ -1722,7 +1722,7 @@ html[dir="rtl"] .modal-close{inset-inline-end:auto;inset-inline-start:16px}
 
 <!-- jsPDF: used only to generate the booking PDF client-side, no backend involved -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<!-- Shared availability engine (single source of truth, also used by console-dccc429d7232.html) -->
+<!-- Shared availability engine (single source of truth, also used by gestion.html) -->
 <script src="availability.js"></script>
 <script>
 /* =========================================================
@@ -1900,7 +1900,7 @@ function populateLocationAndDepositSelects(dict){
    code changes needed, the booking engine already supports N > 1. */
 /* This array is now just the OFFLINE FALLBACK, used only if the Apps Script
    backend is unreachable. The real fleet is managed from the admin dashboard
-   (console-dccc429d7232.html) and lives in the "Cars" sheet tab — loadCarsFromBackend()
+   (gestion.html) and lives in the "Cars" sheet tab — loadCarsFromBackend()
    below replaces the contents of this array with that live data on page load. */
 let CARS = [
   {id:'clio5-auto', cat:'berline', offer:'30€', price:30, name:'RENAULT CLIO 5 AUTOMATIQUE', seats:5, gearKey:'auto', doors:4, fuelKey:'essence', stock:2},
@@ -1940,7 +1940,7 @@ function carMatchesCategory(c, catKey){
 }
 
 /* Replaces the hardcoded fallback CARS array above with the live catalog
-   from the Cars sheet (managed via console-dccc429d7232.html). If the backend is
+   from the Cars sheet (managed via gestion.html). If the backend is
    unreachable, the fallback array just stays in place — the site keeps
    working, it just won't reflect the latest admin edits until it's back. */
 async function loadCarsFromBackend(){
@@ -1965,7 +1965,7 @@ async function loadCarsFromBackend(){
   } catch(e) { /* offline or backend unreachable — the fallback array above still works */ }
 }
 
-/* Applies admin-configured contact info (Settings > Contact in console-dccc429d7232.html)
+/* Applies admin-configured contact info (Settings > Contact in gestion.html)
    to every tagged element on the page: data-contact-link updates an anchor's
    href (tel:/mailto:/wa.me — wa.me links keep whatever ?text= query they
    already had), data-contact-text updates visible text, data-contact-title
@@ -2012,7 +2012,7 @@ function applyContactInfo(settings){
   }
 }
 
-/* SEO meta + contact info overrides set from console-dccc429d7232.html's Settings screen.
+/* SEO meta + contact info overrides set from gestion.html's Settings screen.
    Only applies fields that are actually set — an empty Settings sheet
    changes nothing, so the defaults already in the page (meta tags, contact
    details) stay exactly as they were. */
@@ -3012,7 +3012,7 @@ const CAR_TURNAROUND_BUFFER_MS = 2 * 60 * 60 * 1000;
    car's overall current booked count.
 
    Thin wrapper around the shared Availability module (availability.js) —
-   the actual math lives there now, shared verbatim with console-dccc429d7232.html, so the
+   the actual math lives there now, shared verbatim with gestion.html, so the
    two pages can never silently disagree with each other again. Kept under
    this exact name/signature since nothing else in this file needs to change. */
 function rangesOverlap(startA, endA, startB, endB){
@@ -4269,7 +4269,7 @@ async function generateBookingPdf(dict, data){
   // buildPriceBreakdownLines. Persisted as a single string (see
   // finalizeBooking) and split back into [label, value] pairs by whichever
   // caller reconstructs it from a saved booking (downloadAccountBookingPdf,
-  // console-dccc429d7232.html's downloadReservationPdf).
+  // gestion.html's downloadReservationPdf).
   if(Array.isArray(data.priceBreakdown)) data.priceBreakdown.forEach(row => bullets.push(row));
   if(data.notes) bullets.push([dict.modal_notes_label, data.notes]);
 
@@ -4413,7 +4413,7 @@ bookingForm.addEventListener('submit', async e=>{
    reservation history and re-download their contract PDF later, without
    needing to keep the original download around.
 
-   Deliberately mirrors the site's existing auth model (console-dccc429d7232.html's
+   Deliberately mirrors the site's existing auth model (gestion.html's
    sessionStorage password, index.html's own adminPassword variable above):
    there's no server-side session/token layer — the email+password pair is
    just re-sent and re-verified by the backend on every request. The one

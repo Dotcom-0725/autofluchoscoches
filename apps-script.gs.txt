@@ -20,7 +20,7 @@
      sheets, single shared admin password, stock-aware inventory, overbooking
      prevention, auto-expiry, seasonal pricing, automatic confirmation email).
    - Fleet data (the car catalog) lives in a "Cars" sheet tab instead of being
-     hardcoded in index.html, so the admin dashboard (console-dccc429d7232.html) can actually
+     hardcoded in index.html, so the admin dashboard (gestion.html) can actually
      create/edit/delete/duplicate vehicles.
    - "Settings" sheet stores SEO meta title/description overrides that
      index.html applies at runtime.
@@ -36,7 +36,7 @@
       Never hardcode passwords in this file — it is public on GitHub.
    5. Save (Ctrl+S).
    6. Deploy > Manage deployments > edit (pencil) > Version: "New version" > Deploy.
-      The Web App URL stays the same — no change needed in index.html/console-dccc429d7232.html.
+      The Web App URL stays the same — no change needed in index.html/gestion.html.
    7. "Cars", "Settings" and "ActivityLog" sheet tabs are created automatically
       the first time they're needed. The FIRST time you deploy this version,
       the "Cars" sheet will be empty — run the one-time function
@@ -137,7 +137,7 @@ function doGet(e) {
 
   // Customer-initiated: the "My Account" bookings list. Auth is just
   // email+password re-checked on every call (see customerLogin above) —
-  // there's no separate session-token layer, matching how console-dccc429d7232.html
+  // there's no separate session-token layer, matching how gestion.html
   // re-sends the admin password on every request.
   if (action === 'customerBookings') {
     const customer = findCustomerByEmail_(String(e.parameter.email || '').trim().toLowerCase());
@@ -206,7 +206,7 @@ function doGet(e) {
 // CANONICAL DEFINITION — DO NOT LET THIS DRIFT
 // This buffer value and the overlap formula in rangesOverlap_ below are the
 // single source of truth for the whole system. The client-side shared
-// module (availability.js, loaded by both index.html and console-dccc429d7232.html) MUST
+// module (availability.js, loaded by both index.html and gestion.html) MUST
 // use the exact same buffer (2h) and the exact same bidirectional formula:
 //   startB < endA + buffer && startA < endB + buffer
 // If this value ever changes here, Availability.BUFFER_MS in availability.js
@@ -603,7 +603,7 @@ function doPost(e) {
 
   // Customer-initiated: log in with email/password. Returns the customer's
   // own profile fields on success — the frontend then stores {email,
-  // password} in localStorage (mirroring how console-dccc429d7232.html keeps the admin
+  // password} in localStorage (mirroring how gestion.html keeps the admin
   // password in sessionStorage) and resends both on every subsequent
   // customerBookings/customerUpdateProfile call, since there's no separate
   // session-token layer here.
@@ -703,7 +703,7 @@ function doPost(e) {
   try {
     const stock = Number(body.stock) || 1;
     // adminPassword is only ever sent by the admin dashboard's manual
-    // reservation form (see console-dccc429d7232.html), never by the public website
+    // reservation form (see gestion.html), never by the public website
     // checkout — so a client-supplied unitId (the admin's manual choice of
     // which physical unit to assign, from the Reservations > + Manual
     // reservation modal) is only honored once we've confirmed it actually
@@ -936,7 +936,7 @@ function listSeasonPrices_() {
 }
 
 // Each season's daily rate is set per car (see SeasonPrices sheet / the
-// Tarification tab in console-dccc429d7232.html) — cars with no entry for a season simply
+// Tarification tab in gestion.html) — cars with no entry for a season simply
 // keep their normal base price for that period, so seasons and base prices
 // never need to be edited in the same place.
 function listSeasons_() {
@@ -982,7 +982,7 @@ function listCars_() {
       offer: rows[i][11] || (rows[i][2] + '€'),
       sortOrder: rows[i][12] === '' || rows[i][12] == null ? i : Number(rows[i][12]),
       // Up to 2 additional photos per vehicle (see cfImgSrc2/cfImgSrc3 in
-      // console-dccc429d7232.html) - imgSrc stays the primary/thumbnail photo so older
+      // gestion.html) - imgSrc stays the primary/thumbnail photo so older
       // rows without these columns keep working unchanged.
       imgSrc2: rows[i][13] || '',
       imgSrc3: rows[i][14] || '',
