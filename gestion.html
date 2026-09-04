@@ -1931,7 +1931,7 @@ function openManualBookingModal(){
     </select></div>
     <div class="field-grid">
       <div class="field"><label>Nom du client</label><input id="mbName" required></div>
-      <div class="field"><label>Téléphone</label><input id="mbPhone" required></div>
+      <div class="field"><label>Téléphone (optionnel)</label><input id="mbPhone"></div>
       <div class="field"><label>Prise en charge</label><input type="text" id="mbPickup" data-custom-picker readonly required placeholder="Sélectionner date et heure"></div>
       <div class="field"><label>Retour</label><input type="text" id="mbReturn" data-custom-picker readonly required placeholder="Sélectionner date et heure"></div>
       <div class="field"><label>Lieu de prise en charge</label><select id="mbPickupLoc">${adminLocationOptions()}</select></div>
@@ -1981,7 +1981,7 @@ function openManualBookingModal(){
     const phone = document.getElementById('mbPhone').value.trim();
     const pickup = document.getElementById('mbPickup').value;
     const ret = document.getElementById('mbReturn').value;
-    if(!car || !name || !phone || !pickup || !ret){ toast('Veuillez remplir tous les champs requis'); return; }
+    if(!car || !name || !pickup || !ret){ toast('Veuillez remplir tous les champs requis'); return; }
     const allUnits = state.fleetUnits.filter(u => u.carId === carId);
     let unitId = '';
     if(allUnits.length){
