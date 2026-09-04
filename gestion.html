@@ -480,9 +480,13 @@ function navigate(view){
 /* ---------------- Shared helpers ---------------- */
 function bookingStatus(b){
   if(b.bookingStatus === 'cancelled') return { label: 'Annulée', cls: 'pill-red' };
+  if(b.bookingStatus === 'completed') return { label: 'Terminée', cls: 'pill-gray' };
   const now = new Date();
   const ret = new Date(b.ret);
   const pickup = new Date(b.pickup);
+  // Genuinely still "late" only in the brief window before the hourly
+  // autoExpireBookings job stamps it 'completed' above — kept as a fallback
+  // so a just-ended reservation doesn't sit unlabeled until that job runs.
   if(ret < now) return { label: 'En retard', cls: 'pill-red' };
   if(pickup <= now && now <= ret) return { label: 'En cours', cls: 'pill-green' };
   return { label: 'À venir', cls: 'pill-blue' };
@@ -1339,15 +1343,44 @@ function openFleetUnitModal(unit){
 
 /* ================= RESERVATIONS ================= */
 // Persists across re-renders (e.g. after edit/cancel refresh) so the admin's
-// chosen sort order (pickup or return date, asc/desc) doesn't reset itself.
-let reservationsSortField = 'pickup'; // 'pickup' | 'ret'
-let reservationsSortDir = 'asc'; // 'asc' | 'desc'
+// chosen sort order doesn't reset itself. Defaults to newest-created first
+// (bookedAt desc) — a reservation dashboard should read like an inbox, not
+// be sorted by pickup date (a booking made today for a pickup next month
+// would otherwise bury itself under old ones). Column headers can still
+// switch to sorting by pickup/return date explicitly.
+let reservationsSortField = 'bookedAt'; // 'bookedAt' | 'pickup' | 'ret'
+let reservationsSortDir = 'desc'; // 'asc' | 'desc'
 // Same persistence idea for the vehicle/unit filters — 'all', a carId, or a unitId.
 let reservationsCarFilter = 'all';
 let reservationsUnitFilter = 'all';
+// Free-text search across ALL reservations (active AND archived) — ref,
+// customer name, phone, vehicle name, nationality. Typing anything here
+// bypasses the "hide archived" default below so an old/completed/cancelled
+// reservation is always instantly findable, never requiring a separate
+// "deep archive" screen.
+let reservationsSearchQuery = '';
+// Archived = completed (return date passed) or cancelled. Hidden from the
+// default view to keep it focused on what's actually actionable, but never
+// deleted — a search query or this toggle brings them back instantly.
+let reservationsShowArchived = false;
+let reservationsPage = 1;
+const RESERVATIONS_PAGE_SIZE = 25;
 function reservationsSortArrow(field){
   if(reservationsSortField !== field) return '';
   return reservationsSortDir === 'asc' ? ' ▲' : ' ▼';
+}
+/* A reservation is archived once it's no longer actionable: cancelled, or
+   its return date has passed. The backend also stamps bookingStatus as
+   'completed' about an hour after the fact (see autoExpireBookings in
+   apps-script.gs.txt) — checking the date live here too means a just-ended
+   reservation is treated as archived immediately in the dashboard, without
+   waiting for that hourly job to catch up. */
+function isReservationArchived(b){
+  return b.bookingStatus === 'cancelled' || b.bookingStatus === 'completed' || new Date(b.ret) < new Date();
+}
+function reservationMatchesSearch(b, q){
+  return [b.ref, b.customerName, b.phone, b.carName, b.nationality, b.email]
+    .some(v => String(v || '').toLowerCase().includes(q));
 }
 function renderReservations(){
   const root = document.getElementById('viewRoot');
@@ -1361,6 +1394,7 @@ function renderReservations(){
   root.innerHTML = `
     <div class="toolbar-row">
       <div class="tag-row">
+        <input type="search" id="reservationsSearch" placeholder="🔍 Rechercher par réf, client, téléphone, véhicule…" style="min-width:280px" value="${esc(reservationsSearchQuery)}">
         <select id="reservationsCarFilter">
           <option value="all">Tous les véhicules</option>
           ${state.cars.map(c => `<option value="${c.id}" ${c.id === reservationsCarFilter ? 'selected' : ''}>${c.name}</option>`).join('')}
@@ -1369,32 +1403,50 @@ function renderReservations(){
           <option value="all">Toutes les unités</option>
           ${unitsForFilter.map(u => `<option value="${u.unitId}" ${u.unitId === reservationsUnitFilter ? 'selected' : ''}>${(u.plate || u.nickname || u.unitId)}${u.nickname && u.plate ? ' — ' + u.nickname : ''}</option>`).join('')}
         </select>
+        <label class="field-check" style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:var(--ink-dim)">
+          <input type="checkbox" id="reservationsShowArchived" ${reservationsShowArchived ? 'checked' : ''}> Afficher les archivées (terminées/annulées)
+        </label>
       </div>
       <button class="btn btn-primary" id="newBookingBtn">+ Réservation manuelle</button>
     </div>
-    <div class="section-note">Les réservations manuelles (téléphone, agence, sans rendez-vous) utilisent le même moteur de réservation que le site web — l'inventaire se met à jour automatiquement et la surréservation est empêchée. Cliquez sur "Prise en charge" ou "Retour" dans l'en-tête du tableau pour trier par cette date, ou filtrez par véhicule/unité ci-dessus.</div>
+    <div class="section-note">Les réservations manuelles (téléphone, agence, sans rendez-vous) utilisent le même moteur de réservation que le site web — l'inventaire se met à jour automatiquement et la surréservation est empêchée. Les réservations terminées ou annulées sont archivées automatiquement (masquées ici par défaut) mais jamais supprimées — la recherche ci-dessus les retrouve instantanément. Cliquez sur "Prise en charge" ou "Retour" dans l'en-tête du tableau pour trier par cette date.</div>
     <div class="card"><div class="table-wrap">
       <table>
         <thead><tr><th>Réf</th><th>Client</th><th>Nationalité</th><th>Téléphone</th><th>Véhicule</th><th>Unité / Plaque</th><th class="sortable-th" data-sort-field="pickup" title="Trier par date de prise en charge">Prise en charge${reservationsSortArrow('pickup')}</th><th class="sortable-th" data-sort-field="ret" title="Trier par date de retour">Retour${reservationsSortArrow('ret')}</th><th>Total</th><th>Source</th><th>Statut</th><th>Paiement</th><th>Actions</th></tr></thead>
         <tbody id="reservationsBody"></tbody>
       </table>
-    </div></div>
+    </div>
+    <div class="toolbar-row" id="reservationsPagination" style="justify-content:center;gap:14px"></div>
+    </div>
   `;
   renderReservationsRows();
   document.getElementById('newBookingBtn').addEventListener('click', openManualBookingModal);
+  document.getElementById('reservationsSearch').addEventListener('input', e=>{
+    reservationsSearchQuery = e.target.value;
+    reservationsPage = 1;
+    renderReservationsRows();
+  });
+  document.getElementById('reservationsShowArchived').addEventListener('change', e=>{
+    reservationsShowArchived = e.target.checked;
+    reservationsPage = 1;
+    renderReservationsRows();
+  });
   document.getElementById('reservationsCarFilter').addEventListener('change', e=>{
     reservationsCarFilter = e.target.value;
     reservationsUnitFilter = 'all'; // switching vehicle invalidates any unit choice
+    reservationsPage = 1;
     renderReservations();
   });
   document.getElementById('reservationsUnitFilter').addEventListener('change', e=>{
     reservationsUnitFilter = e.target.value;
+    reservationsPage = 1;
     renderReservationsRows();
   });
   root.querySelectorAll('.sortable-th').forEach(th => th.addEventListener('click', ()=>{
     const field = th.dataset.sortField;
     if(reservationsSortField === field) reservationsSortDir = reservationsSortDir === 'asc' ? 'desc' : 'asc';
     else { reservationsSortField = field; reservationsSortDir = 'asc'; }
+    reservationsPage = 1;
     renderReservations();
   }));
 }
@@ -1770,13 +1822,39 @@ function unitLabelForBooking(b){
 }
 function renderReservationsRows(){
   const tbody = document.getElementById('reservationsBody');
-  const sortKey = reservationsSortField === 'ret' ? 'ret' : 'pickup';
+  const sortKey = ['pickup', 'ret', 'bookedAt'].includes(reservationsSortField) ? reservationsSortField : 'bookedAt';
   const dirMul = reservationsSortDir === 'desc' ? -1 : 1;
-  const filtered = state.bookings
+  const q = reservationsSearchQuery.trim().toLowerCase();
+  let filtered = state.bookings
     .filter(b => reservationsCarFilter === 'all' || b.carId === reservationsCarFilter)
     .filter(b => reservationsUnitFilter === 'all' || b.unitId === reservationsUnitFilter);
+  // A search query always searches EVERYTHING (active + archived) instantly —
+  // otherwise, respect the "hide archived by default" toggle above.
+  if(q){
+    filtered = filtered.filter(b => reservationMatchesSearch(b, q));
+  } else if(!reservationsShowArchived){
+    filtered = filtered.filter(b => !isReservationArchived(b));
+  }
   const sorted = [...filtered].sort((a,b)=> (new Date(a[sortKey]) - new Date(b[sortKey])) * dirMul);
-  tbody.innerHTML = sorted.map(b=>{
+  // Pagination is applied AFTER sorting, so with the default newest-first
+  // sort, page 1 is always guaranteed to show the latest entries — never a
+  // stale/arbitrary slice.
+  const totalPages = Math.max(1, Math.ceil(sorted.length / RESERVATIONS_PAGE_SIZE));
+  if(reservationsPage > totalPages) reservationsPage = totalPages;
+  if(reservationsPage < 1) reservationsPage = 1;
+  const pageStart = (reservationsPage - 1) * RESERVATIONS_PAGE_SIZE;
+  const pageItems = sorted.slice(pageStart, pageStart + RESERVATIONS_PAGE_SIZE);
+  const paginationEl = document.getElementById('reservationsPagination');
+  if(paginationEl){
+    paginationEl.innerHTML = totalPages <= 1 ? '' : `
+      <button class="btn btn-outline btn-sm" id="reservationsPrevPage" ${reservationsPage <= 1 ? 'disabled' : ''}>← Précédent</button>
+      <span style="font-size:.82rem;color:var(--ink-dim)">Page ${reservationsPage} / ${totalPages} (${sorted.length} réservation${sorted.length === 1 ? '' : 's'})</span>
+      <button class="btn btn-outline btn-sm" id="reservationsNextPage" ${reservationsPage >= totalPages ? 'disabled' : ''}>Suivant →</button>
+    `;
+    document.getElementById('reservationsPrevPage')?.addEventListener('click', ()=>{ reservationsPage--; renderReservationsRows(); });
+    document.getElementById('reservationsNextPage')?.addEventListener('click', ()=>{ reservationsPage++; renderReservationsRows(); });
+  }
+  tbody.innerHTML = pageItems.map(b=>{
     const st = bookingStatus(b);
     const paymentStatus = b.paymentStatus || 'pending';
     return `<tr>
@@ -1795,13 +1873,15 @@ function renderReservationsRows(){
         <button class="btn btn-outline btn-sm" data-edit="${b.row}">Modifier</button>
         <button class="btn btn-outline btn-sm" data-pdf="${b.row}">🖨️ PDF</button>
         <button class="btn btn-outline btn-sm" data-whatsapp="${b.row}">💬 WhatsApp</button>
-        ${b.bookingStatus === 'cancelled' ? '' : `<button class="btn btn-danger btn-sm" data-cancel="${b.row}">Annuler</button>`}
+        ${b.bookingStatus === 'cancelled' || b.bookingStatus === 'completed' ? '' : `<button class="btn btn-danger btn-sm" data-cancel="${b.row}">Annuler</button>`}
       </td>
     </tr>`;
   }).join('') || `<tr><td colspan="13" class="empty-state">${
-    reservationsUnitFilter !== 'all' ? 'Aucune réservation pour cette unité.'
+    q ? `Aucune réservation ne correspond à « ${esc(reservationsSearchQuery.trim())} ».`
+    : reservationsUnitFilter !== 'all' ? 'Aucune réservation pour cette unité.'
     : reservationsCarFilter !== 'all' ? 'Aucune réservation pour ce véhicule.'
-    : 'Aucune réservation pour le moment.'
+    : reservationsShowArchived ? 'Aucune réservation pour le moment.'
+    : 'Aucune réservation active — cochez « Afficher les archivées » ou recherchez pour voir l\'historique.'
   }</td></tr>`;
   tbody.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', ()=>{
     const booking = state.bookings.find(b => String(b.row) === btn.dataset.edit);

@@ -815,10 +815,17 @@ function findAvailableUnitForBooking_(carId, pickup, ret, stock, excludeRow, man
    Installed as an hourly time-driven trigger (see v3 setup notes). Also
    checks pending "notify me" requests afterwards, since freeing stock here
    is exactly the moment a sold-out car might become bookable again.
-   Cancelled bookings (bookingStatus === 'cancelled', column 15) are never
-   deleted here — they already don't occupy any stock (see
-   listOccupyingBookings_), so there's nothing left to "expire" for them; the
-   row stays as permanent history, same as the `cancel` action intends. */
+   IMPORTANT: this used to hard-delete the row once it expired — that
+   permanently destroyed reservation history (the admin dashboard's
+   Reservations table, search, and CSV/reports all read the same sheet, so a
+   deleted row was gone everywhere, forever, roughly an hour after it ended).
+   Now it archives instead: bookingStatus is set to 'completed' (column 15).
+   The row keeps occupying zero stock either way (listOccupyingBookings_
+   already excludes anything that isn't 'pending'/'confirmed'-style active
+   state via the date/cancelled checks used elsewhere), but nothing is ever
+   deleted here anymore. Cancelled bookings (bookingStatus === 'cancelled')
+   are left untouched, same as before — they're already archived by the
+   `cancel` action itself. */
 function autoExpireBookings() {
   const sheet = getBookingsSheet_();
   const rows = sheet.getDataRange().getValues();
@@ -826,8 +833,8 @@ function autoExpireBookings() {
   for (let i = rows.length - 1; i >= 1; i--) {
     const ret = rows[i][5];
     const bookingStatus = rows[i][14];
-    if (ret && new Date(ret) < now && bookingStatus !== 'cancelled') {
-      sheet.deleteRow(i + 1);
+    if (ret && new Date(ret) < now && bookingStatus !== 'cancelled' && bookingStatus !== 'completed') {
+      sheet.getRange(i + 1, 15).setValue('completed');
     }
   }
   notifyAvailabilityRequests_();
