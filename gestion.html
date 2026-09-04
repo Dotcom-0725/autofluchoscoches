@@ -1363,6 +1363,10 @@ let reservationsSearchQuery = '';
 // default view to keep it focused on what's actually actionable, but never
 // deleted — a search query or this toggle brings them back instantly.
 let reservationsShowArchived = false;
+// Filter reservations by creation date range — 'YYYY-MM-DD' strings from the
+// two <input type="date"> fields, or '' when unset (no lower/upper bound).
+let reservationsCreatedFrom = '';
+let reservationsCreatedTo = '';
 let reservationsPage = 1;
 const RESERVATIONS_PAGE_SIZE = 25;
 function reservationsSortArrow(field){
@@ -1406,13 +1410,20 @@ function renderReservations(){
         <label class="field-check" style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:var(--ink-dim)">
           <input type="checkbox" id="reservationsShowArchived" ${reservationsShowArchived ? 'checked' : ''}> Afficher les archivées (terminées/annulées)
         </label>
+        <label style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:var(--ink-dim)">
+          Créée entre
+          <input type="date" id="reservationsCreatedFrom" value="${esc(reservationsCreatedFrom)}">
+          et
+          <input type="date" id="reservationsCreatedTo" value="${esc(reservationsCreatedTo)}">
+        </label>
+        ${(reservationsCreatedFrom || reservationsCreatedTo) ? `<button class="btn btn-outline btn-sm" id="reservationsClearCreatedFilter">✕ Effacer</button>` : ''}
       </div>
       <button class="btn btn-primary" id="newBookingBtn">+ Réservation manuelle</button>
     </div>
-    <div class="section-note">Les réservations manuelles (téléphone, agence, sans rendez-vous) utilisent le même moteur de réservation que le site web — l'inventaire se met à jour automatiquement et la surréservation est empêchée. Les réservations terminées ou annulées sont archivées automatiquement (masquées ici par défaut) mais jamais supprimées — la recherche ci-dessus les retrouve instantanément. Cliquez sur "Prise en charge" ou "Retour" dans l'en-tête du tableau pour trier par cette date.</div>
+    <div class="section-note">Les réservations manuelles (téléphone, agence, sans rendez-vous) utilisent le même moteur de réservation que le site web — l'inventaire se met à jour automatiquement et la surréservation est empêchée. Les réservations terminées ou annulées sont archivées automatiquement (masquées ici par défaut) mais jamais supprimées — la recherche ci-dessus les retrouve instantanément. Cliquez sur "Créée le", "Prise en charge" ou "Retour" dans l'en-tête du tableau pour trier par cette date.</div>
     <div class="card"><div class="table-wrap">
       <table>
-        <thead><tr><th>Réf</th><th>Client</th><th>Nationalité</th><th>Téléphone</th><th>Véhicule</th><th>Unité / Plaque</th><th class="sortable-th" data-sort-field="pickup" title="Trier par date de prise en charge">Prise en charge${reservationsSortArrow('pickup')}</th><th class="sortable-th" data-sort-field="ret" title="Trier par date de retour">Retour${reservationsSortArrow('ret')}</th><th>Total</th><th>Source</th><th>Statut</th><th>Paiement</th><th>Actions</th></tr></thead>
+        <thead><tr><th class="sortable-th" data-sort-field="bookedAt" title="Trier par date de création">Créée le${reservationsSortArrow('bookedAt')}</th><th>Client</th><th>Nationalité</th><th>Téléphone</th><th>Véhicule</th><th>Unité / Plaque</th><th class="sortable-th" data-sort-field="pickup" title="Trier par date de prise en charge">Prise en charge${reservationsSortArrow('pickup')}</th><th class="sortable-th" data-sort-field="ret" title="Trier par date de retour">Retour${reservationsSortArrow('ret')}</th><th>Total</th><th>Source</th><th>Statut</th><th>Paiement</th><th>Actions</th></tr></thead>
         <tbody id="reservationsBody"></tbody>
       </table>
     </div>
@@ -1430,6 +1441,22 @@ function renderReservations(){
     reservationsShowArchived = e.target.checked;
     reservationsPage = 1;
     renderReservationsRows();
+  });
+  document.getElementById('reservationsCreatedFrom').addEventListener('change', e=>{
+    reservationsCreatedFrom = e.target.value;
+    reservationsPage = 1;
+    renderReservations();
+  });
+  document.getElementById('reservationsCreatedTo').addEventListener('change', e=>{
+    reservationsCreatedTo = e.target.value;
+    reservationsPage = 1;
+    renderReservations();
+  });
+  document.getElementById('reservationsClearCreatedFilter')?.addEventListener('click', ()=>{
+    reservationsCreatedFrom = '';
+    reservationsCreatedTo = '';
+    reservationsPage = 1;
+    renderReservations();
   });
   document.getElementById('reservationsCarFilter').addEventListener('change', e=>{
     reservationsCarFilter = e.target.value;
@@ -1828,6 +1855,18 @@ function renderReservationsRows(){
   let filtered = state.bookings
     .filter(b => reservationsCarFilter === 'all' || b.carId === reservationsCarFilter)
     .filter(b => reservationsUnitFilter === 'all' || b.unitId === reservationsUnitFilter);
+  // Creation-date range filter — inclusive on both ends. reservationsCreatedTo
+  // is a plain YYYY-MM-DD (no time), so its upper bound is pushed to the end
+  // of that calendar day or a booking created later the same day would be
+  // wrongly excluded.
+  if(reservationsCreatedFrom){
+    const fromMs = new Date(reservationsCreatedFrom + 'T00:00:00').getTime();
+    filtered = filtered.filter(b => new Date(b.bookedAt).getTime() >= fromMs);
+  }
+  if(reservationsCreatedTo){
+    const toMs = new Date(reservationsCreatedTo + 'T23:59:59.999').getTime();
+    filtered = filtered.filter(b => new Date(b.bookedAt).getTime() <= toMs);
+  }
   // A search query always searches EVERYTHING (active + archived) instantly —
   // otherwise, respect the "hide archived by default" toggle above.
   if(q){
@@ -1858,7 +1897,7 @@ function renderReservationsRows(){
     const st = bookingStatus(b);
     const paymentStatus = b.paymentStatus || 'pending';
     return `<tr>
-      <td>${esc(b.ref)||'—'}</td><td>${esc(b.customerName)||'—'}</td><td>${esc(b.nationality)||'—'}</td><td>${esc(b.phone)||'—'}</td><td>${esc(b.carName)||'—'}</td>
+      <td>${fmtDate(b.bookedAt)||'—'}<div style="font-size:.7rem;color:var(--ink-dim)">${esc(b.ref)||'—'}</div></td><td>${esc(b.customerName)||'—'}</td><td>${esc(b.nationality)||'—'}</td><td>${esc(b.phone)||'—'}</td><td>${esc(b.carName)||'—'}</td>
       <td>${unitLabelForBooking(b)}</td>
       <td>${fmtDate(b.pickup)}</td><td>${fmtDate(b.ret)}</td><td>${esc(b.total)||'—'}</td>
       <td><span class="pill pill-gray">${esc(b.source)||'website'}</span></td>
