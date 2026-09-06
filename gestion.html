@@ -2319,7 +2319,10 @@ function renderPricingTab(tab){
           <tbody>
             ${state.seasons.map(s => `<tr><td>${s.name}</td><td>${s.start}</td><td>${s.end}</td>
               <td>${isEditor() ? `<label style="display:flex;align-items:center;gap:6px"><input type="checkbox" data-toggle-recurring="${s.row}" ${s.recurring ? 'checked' : ''}> 🔁</label>` : (s.recurring ? '🔁 Oui' : 'Non')}</td>
-              <td><button type="button" class="btn btn-secondary btn-sm" data-toggle-season-prices="${s.id}">Modifier les prix</button></td>
+              <td class="tag-row">
+                ${isEditor() ? `<button type="button" class="btn btn-outline btn-sm" data-edit-season="${s.row}">Modifier</button>` : ''}
+                <button type="button" class="btn btn-secondary btn-sm" data-toggle-season-prices="${s.id}">Modifier les prix</button>
+              </td>
               ${isEditor() ? `<td><button class="btn btn-danger btn-sm" data-del-season="${s.row}">Supprimer</button></td>` : ''}</tr>
               <tr class="season-prices-row" data-season-prices-row="${s.id}" style="display:none"><td colspan="${isEditor() ? 6 : 5}">
                 <div class="field-grid">
@@ -2368,6 +2371,10 @@ function renderPricingTab(tab){
         const r = await apiPost({ action: 'deleteSeason', row: b.dataset.delSeason });
         if(r.success){ toast('Période supprimée'); await refreshAdminData(); renderPricingTab('seasonal'); }
       }));
+      el.querySelectorAll('[data-edit-season]').forEach(b => b.addEventListener('click', ()=>{
+        const season = state.seasons.find(s => String(s.row) === b.dataset.editSeason);
+        if(season) openSeasonEditModal(season);
+      }));
       el.querySelectorAll('[data-season-price-input]').forEach(input => input.addEventListener('change', async ()=>{
         const r = await apiPost({ action: 'updateSeasonPrice', seasonId: input.dataset.seasonId, carId: input.dataset.carId, price: input.value });
         if(r.success){ toast('Prix mis à jour'); await refreshAdminData(); }
@@ -2386,6 +2393,42 @@ function renderPricingTab(tab){
       document.getElementById('fxRates').textContent = `1 EUR = ${d.rates.MAD} MAD = ${d.rates.USD} USD`;
     }).catch(()=>{ document.getElementById('fxRates').textContent = 'Taux indisponibles pour le moment (hors ligne ?).'; });
   }
+}
+/* Edits a seasonal pricing period's own name/dates/recurring flag in place —
+   previously the only way to change these was delete + recreate, which lost
+   the period's per-car price overrides (SeasonPrices rows are keyed by the
+   season id, and deleteSeason never touched them, so a "recreated" period
+   under a NEW id started backend-empty even though the old override rows
+   were still silently sitting in the sheet, orphaned). This updates the
+   existing row instead, so the id — and its price overrides — never change. */
+function openSeasonEditModal(season){
+  openModal(`
+    <h3>Modifier la période « ${esc(season.name)} »</h3>
+    <div class="field-grid">
+      <div class="field"><label>Nom</label><input id="seEditName" value="${esc(season.name)}"></div>
+      <div class="field"><label>Date de début</label><input type="date" id="seEditStart" value="${esc(season.start)}"></div>
+      <div class="field"><label>Date de fin</label><input type="date" id="seEditEnd" value="${esc(season.end)}"></div>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:.85rem">
+      <input type="checkbox" id="seEditRecurring" ${season.recurring ? 'checked' : ''}>
+      Se répète chaque année (mêmes jour/mois, peu importe l'année)
+    </label>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="seEditCancel">Annuler</button>
+      <button class="btn btn-primary" id="seEditSave">Enregistrer</button>
+    </div>
+  `);
+  document.getElementById('seEditCancel').addEventListener('click', closeModal);
+  document.getElementById('seEditSave').addEventListener('click', async ()=>{
+    const name = document.getElementById('seEditName').value.trim();
+    const start = document.getElementById('seEditStart').value;
+    const end = document.getElementById('seEditEnd').value;
+    const recurring = document.getElementById('seEditRecurring').checked;
+    if(!name || !start || !end){ toast('Veuillez remplir tous les champs'); return; }
+    const r = await apiPost({ action: 'updateSeason', row: season.row, name, start, end, recurring });
+    if(r.success){ toast('Période mise à jour'); closeModal(); await refreshAdminData(); renderPricingTab('seasonal'); }
+    else toast(r.error || 'Échec');
+  });
 }
 
 /* ================= CATEGORIES ================= */

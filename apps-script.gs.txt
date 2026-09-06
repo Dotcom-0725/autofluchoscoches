@@ -372,6 +372,26 @@ function doPost(e) {
     return jsonResponse_({ success: true });
   }
 
+  // Admin dashboard's "Modifier" action on a seasonal pricing period —
+  // previously the only way to change a period's name/dates was to delete it
+  // and recreate it from scratch (losing its per-car price overrides in the
+  // process, since deleteSeason doesn't touch SeasonPrices rows keyed by the
+  // OLD season id). This updates the existing row in place instead, so the
+  // per-car prices (linked by seasonId, untouched here) stay intact.
+  if (body.action === 'updateSeason') {
+    const role = roleForPassword_(body.password);
+    if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
+    if (!body.row || !body.name || !body.start || !body.end) {
+      return jsonResponse_({ success: false, error: 'Missing fields' });
+    }
+    const sheet = getSeasonsSheet_();
+    const rowNum = Number(body.row);
+    sheet.getRange(rowNum, 1, 1, 3).setValues([[body.name, body.start, body.end]]);
+    if (body.recurring !== undefined) sheet.getRange(rowNum, 7).setValue(!!body.recurring);
+    logActivity_(role, 'update_season', body.name);
+    return jsonResponse_({ success: true });
+  }
+
   if (body.action === 'updateSeasonRecurring') {
     const role = roleForPassword_(body.password);
     if (!role || EDITOR_ROLES.indexOf(role) === -1) return jsonResponse_({ success: false, error: 'Not allowed' });
